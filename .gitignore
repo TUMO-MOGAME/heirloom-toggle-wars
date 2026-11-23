@@ -1,0 +1,44 @@
+# Rust / Anchor
+target/
+.anchor/
+test-ledger/
+**/*.rs.bk
+
+# Node
+node_modules/
+.next/
+out/
+coverage/
+
+# Secrets — never commit keys or seed phrases
+.env
+.env.*
+!.env.example
+*.keypair.json
+id.json
+wallets/
+scripts/.demo-wallets*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+
+# Vercel deploy snapshot worktree
+.deploy/
+.vercel/
+
+# Agent worktrees
+.claude/worktrees/
+
+# Original photos kept locally, not in the repo: stock photos (demo video, Trust Tree faces) and the dealer's
+# vehicle photos. The site uses converted copies (scripts/demo-people-photos.mjs, scripts/demo-asset-photos.mjs).
+/*-unsplash.jpg
+/media/
+
+# Redesign concept: stock photos stay local, like the originals
+/design/*/img/
+
+# Supabase CLI cache
+supabase/.temp/

@@ -1,0 +1,4 @@
+# Shell scripts run in Linux/WSL: keep LF even on Windows checkouts.
+*.sh text eol=lf
+# PDFs (some demo ones are plain ASCII): never convert line endings, or their byte offsets break.
+*.pdf binary

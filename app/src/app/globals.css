@@ -1,0 +1,694 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Heirloom design tokens (design/landing/index.html, the approved redesign).
+   One flat page colour everywhere: pure white by day, pure black at night.
+   No tinted section bands and no colour blends anywhere. Cards are the page
+   colour set apart by a hairline (plus a soft shadow by day only).
+
+   Default is DARK. The bare :root holds the night tokens, so the server
+   HTML, a page without JavaScript and the first paint are all dark. A
+   saved choice sets <html data-theme> before first paint (layout.tsx):
+     data-theme="light"   day tokens
+     data-theme="system"  day tokens only when the device prefers light
+     data-theme="dark"    the default, made explicit
+
+   Accent: amber. --amber for large text, icons, underlines and big
+   numbers; --amber-ink for small text (links, eyebrows); --on-amber is
+   text on an amber fill. Primary buttons stay ink on page. --accent is
+   the app's accent alias (= --amber-ink); --ok / --ok-soft is the green
+   success pill. Status never relies on colour alone: shape, icon and the
+   word carry it (see Badge / Notice in components/ui/primitives.tsx).
+
+   Inverted: --strip / --strip-ink / --ink-2-inv / --amber-inv is a band
+   that is black by day and white at night. .brand-panel is the general
+   inverted block: it swaps in the other theme's tokens wholesale.
+
+   scripts/contrast.mjs checks every text/background pair (WCAG 2.1 AA) in
+   both themes, the strip and the inverted panel, that the duplicated
+   blocks stay in step, and that only neutral, amber and green colours
+   (and no colour blends) appear. Run it after changing a colour.
+------------------------------------------------------------------- */
+:root {
+  /* Night (the default) */
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #161616;
+  --ink: #ffffff;
+  --ink-2: #ababab;
+  --ink-hover: #d6d6d6;
+  --line: #2e2e2e;
+  --line-strong: #8f8f8f;
+  --accent: #f0a35e;
+  --accent-ink: #000000;
+  --accent-soft: #161616;
+  --amber: #f0a35e;
+  --amber-ink: #f0a35e;
+  --on-amber: #000000;
+  --danger: #ffffff;
+  --ok: #6fcf9a;
+  --ok-soft: #0f2a1d;
+  --focus: #f0a35e;
+  --strip: #ffffff;
+  --strip-ink: #000000;
+  --ink-2-inv: #555555;
+  --amber-inv: #c25e12;
+  --scrim: rgb(0 0 0 / 0.72);
+  --shadow-1: 0 0 0 0 rgb(0 0 0 / 0);
+  --shadow-2: 0 10px 24px -14px rgb(0 0 0 / 0.6);
+  --shadow-3: 0 24px 48px -24px rgb(0 0 0 / 0.7);
+  --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23f0a35e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  color-scheme: dark;
+
+  /* Type scale (fluid, mobile first; sizes from the redesign, kept modest) */
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.0625rem;
+  --step-2: 1.25rem;
+  --step-3: clamp(1.625rem, 1.25rem + 1.6vw, 2.25rem);
+  --step-4: clamp(1.75rem, 1.2rem + 2.4vw, 2.75rem);
+  --step-5: clamp(2.125rem, 1.2rem + 4vw, 3.875rem);
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+
+  /* Radius: soft, rounded (cards 22px, small parts 14px, pills full) */
+  --r-sm: 0.625rem;
+  --r-md: 0.875rem;
+  --r-lg: 1.375rem;
+  --r-xl: 1.75rem;
+
+  /* Motion */
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 520ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Layout */
+  --tabbar-h: 4rem;
+  --header-h: 3.75rem;
+  /* Desktop sidebar width; <html data-sidebar="collapsed"> (set before first paint) makes it the icon rail. */
+  --sidebar-w: 18.25rem;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  /* Left/right: a phone held sideways puts the camera cut-out or rounded corners at the side. */
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+
+/* Day: a saved light choice. */
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f3f3f3;
+  --ink: #111111;
+  --ink-2: #555555;
+  --ink-hover: #333333;
+  --line: #e0e0e0;
+  --line-strong: #767676;
+  --accent: #9c4a12;
+  --accent-ink: #ffffff;
+  --accent-soft: #f3f3f3;
+  --amber: #c25e12;
+  --amber-ink: #9c4a12;
+  --on-amber: #ffffff;
+  --danger: #111111;
+  --ok: #2f6b4f;
+  --ok-soft: #e6f2eb;
+  --focus: #9c4a12;
+  --strip: #000000;
+  --strip-ink: #ffffff;
+  --ink-2-inv: #ababab;
+  --amber-inv: #f0a35e;
+  --scrim: rgb(0 0 0 / 0.6);
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.05), 0 12px 32px -16px rgb(0 0 0 / 0.22);
+  --shadow-2: 0 10px 24px -14px rgb(0 0 0 / 0.3);
+  --shadow-3: 0 24px 48px -24px rgb(0 0 0 / 0.4);
+  --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23c25e12' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+/* Day: a saved "system" choice on a device that prefers light. */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f3f3f3;
+    --ink: #111111;
+    --ink-2: #555555;
+    --ink-hover: #333333;
+    --line: #e0e0e0;
+    --line-strong: #767676;
+    --accent: #9c4a12;
+    --accent-ink: #ffffff;
+    --accent-soft: #f3f3f3;
+    --amber: #c25e12;
+    --amber-ink: #9c4a12;
+    --on-amber: #ffffff;
+    --danger: #111111;
+    --ok: #2f6b4f;
+    --ok-soft: #e6f2eb;
+    --focus: #9c4a12;
+    --strip: #000000;
+    --strip-ink: #ffffff;
+    --ink-2-inv: #ababab;
+    --amber-inv: #f0a35e;
+    --scrim: rgb(0 0 0 / 0.6);
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.05), 0 12px 32px -16px rgb(0 0 0 / 0.22);
+    --shadow-2: 0 10px 24px -14px rgb(0 0 0 / 0.3);
+    --shadow-3: 0 24px 48px -24px rgb(0 0 0 / 0.4);
+    --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23c25e12' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+    color-scheme: light;
+  }
+}
+
+/* Inverted block: the other theme's tokens. On the (default) night page it is a white block. */
+.brand-panel {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f3f3f3;
+  --ink: #111111;
+  --ink-2: #555555;
+  --ink-hover: #333333;
+  --line: #e0e0e0;
+  --line-strong: #767676;
+  --accent: #9c4a12;
+  --accent-ink: #ffffff;
+  --accent-soft: #f3f3f3;
+  --amber: #c25e12;
+  --amber-ink: #9c4a12;
+  --on-amber: #ffffff;
+  --danger: #111111;
+  --ok: #2f6b4f;
+  --ok-soft: #e6f2eb;
+  --focus: #9c4a12;
+  --strip: #000000;
+  --strip-ink: #ffffff;
+  --ink-2-inv: #ababab;
+  --amber-inv: #f0a35e;
+  --scrim: rgb(0 0 0 / 0.6);
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.05), 0 12px 32px -16px rgb(0 0 0 / 0.22);
+  --shadow-2: 0 10px 24px -14px rgb(0 0 0 / 0.3);
+  --shadow-3: 0 24px 48px -24px rgb(0 0 0 / 0.4);
+  --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23c25e12' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+/* On a day page the inverted block is black. */
+:root[data-theme="light"] .brand-panel {
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #161616;
+  --ink: #ffffff;
+  --ink-2: #ababab;
+  --ink-hover: #d6d6d6;
+  --line: #2e2e2e;
+  --line-strong: #8f8f8f;
+  --accent: #f0a35e;
+  --accent-ink: #000000;
+  --accent-soft: #161616;
+  --amber: #f0a35e;
+  --amber-ink: #f0a35e;
+  --on-amber: #000000;
+  --danger: #ffffff;
+  --ok: #6fcf9a;
+  --ok-soft: #0f2a1d;
+  --focus: #f0a35e;
+  --strip: #ffffff;
+  --strip-ink: #000000;
+  --ink-2-inv: #555555;
+  --amber-inv: #c25e12;
+  --scrim: rgb(0 0 0 / 0.72);
+  --shadow-1: 0 0 0 0 rgb(0 0 0 / 0);
+  --shadow-2: 0 10px 24px -14px rgb(0 0 0 / 0.6);
+  --shadow-3: 0 24px 48px -24px rgb(0 0 0 / 0.7);
+  --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23f0a35e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] .brand-panel {
+    --bg: #000000;
+    --surface: #000000;
+    --surface-2: #161616;
+    --ink: #ffffff;
+    --ink-2: #ababab;
+    --ink-hover: #d6d6d6;
+    --line: #2e2e2e;
+    --line-strong: #8f8f8f;
+    --accent: #f0a35e;
+    --accent-ink: #000000;
+    --accent-soft: #161616;
+    --amber: #f0a35e;
+    --amber-ink: #f0a35e;
+    --on-amber: #000000;
+    --danger: #ffffff;
+    --ok: #6fcf9a;
+    --ok-soft: #0f2a1d;
+    --focus: #f0a35e;
+    --strip: #ffffff;
+    --strip-ink: #000000;
+    --ink-2-inv: #555555;
+    --amber-inv: #c25e12;
+    --scrim: rgb(0 0 0 / 0.72);
+    --shadow-1: 0 0 0 0 rgb(0 0 0 / 0);
+    --shadow-2: 0 10px 24px -14px rgb(0 0 0 / 0.6);
+    --shadow-3: 0 24px 48px -24px rgb(0 0 0 / 0.7);
+    --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23f0a35e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-hover: var(--ink-hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+  --color-on-amber: var(--on-amber);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-strip: var(--strip);
+  --color-strip-ink: var(--strip-ink);
+  --color-ink-2-inv: var(--ink-2-inv);
+  --color-amber-inv: var(--amber-inv);
+  --color-scrim: var(--scrim);
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  /* Work Sans, then Geist: Work Sans has no ₮, so the tugrik falls through to Geist's tiny tugrik face. */
+  --font-display: var(--font-display-face), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, monospace;
+
+  --text-small: var(--step--1);
+  --text-body: var(--step-0);
+  --text-lead: var(--step-1);
+  --text-h3: var(--step-2);
+  --text-h2: var(--step-3);
+  --text-h1: var(--step-4);
+  --text-display: var(--step-5);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+
+  --shadow-card: var(--shadow-1);
+  --shadow-raised: var(--shadow-2);
+  --shadow-float: var(--shadow-3);
+
+  --ease-soft: var(--ease-out);
+
+  --animate-rise: rise var(--dur-slow) var(--ease-out) both;
+  --animate-fade: fade var(--dur-slow) ease-out both;
+  --animate-pulse-soft: pulse-soft 2.4s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+@keyframes caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  /* Keeps every in-flow screen (and the sticky header) clear of side cut-outs; fixed parts add their own insets. */
+  padding-left: var(--safe-l);
+  padding-right: var(--safe-r);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Display type: Work Sans, regular weight, tight tracking. No italics for emphasis: use .mark.
+   In the base layer, so a utility on a heading (font-sans, font-semibold, tracking-normal) still wins. */
+@layer base {
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+  }
+  h3 { line-height: 1.15; letter-spacing: -0.01em; }
+  /* Big numbers and quotes set in the display face read tighter, as in the redesign. */
+  .font-display { letter-spacing: -0.02em; }
+}
+
+/* Small uppercase label above a heading, in the accent, with a short rule before it. */
+@layer components {
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber-ink);
+}
+.eyebrow::before { content: ""; flex: none; width: 1.625rem; height: 1.5px; background: currentColor; }
+}
+
+/* The hand-drawn underline under one key word of a heading (theme-aware SVG in --underline). In content, mark the
+   word as *word*; components/ui/marked.tsx renders it. */
+.mark {
+  background: var(--underline) no-repeat left bottom / 100% 0.16em;
+  padding-bottom: 0.08em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+h1 .mark, .text-display .mark { background-size: 100% 0.12em; }
+@media (forced-colors: active) { .mark { text-decoration: underline; } }
+
+/* In the base layer so utilities win: unlayered, `text-wrap` (a shorthand that also sets the wrap mode)
+   overrode Tailwind's `truncate` (white-space: nowrap), so truncated lines wrapped instead. */
+@layer base {
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+[data-sheet-title]:focus-visible { outline: none; }
+/* The chat field sits inside the composer, which draws the focus ring (focus-within); one ring, not two. */
+[data-composer-field]:focus-visible { outline: none; }
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+button, [role="button"], a { touch-action: manipulation; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+/* Staggered CSS-only entrance used above the fold (never waits on JS). */
+.rise { animation: rise var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 90ms); }
+/* A chat message arriving, as CSS so a server-rendered opening message needs no JavaScript (same as the motion fade).
+   It starts all but transparent rather than at 0: browsers skip a fully transparent first paint when timing the
+   largest paint, which would count this message as arriving only when the app replaces it. */
+@keyframes bubble-in {
+  from { opacity: 0.01; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.bubble-in { animation: bubble-in 0.25s var(--ease-out) both; }
+
+/* Entrances and small flourishes in CSS rather than the motion library, so the pages people open first never download
+   or run it (~150 KB of first-load script). Each plays when its element mounts (a new `key` replays it). Set the
+   starting point with --from-x / --from-y / --from-s / --from-o, the length with --enter-dur, the wait with --enter-delay.
+   Reduced motion: the global rule at the end cuts every animation to a blink. */
+@keyframes enter {
+  from { opacity: var(--from-o, 0); transform: translate(var(--from-x, 0), var(--from-y, 8px)) scale(var(--from-s, 1)); }
+}
+.enter { animation: enter var(--enter-dur, 0.25s) var(--ease-out) var(--enter-delay, 0s) both; }
+/* A springy pop (a tick or lock disc arriving). */
+@keyframes spring-pop {
+  0% { transform: scale(var(--from-s, 0.4)); }
+  55% { transform: scale(1.08); }
+  80% { transform: scale(0.98); }
+  100% { transform: none; }
+}
+.spring-pop { animation: spring-pop 0.5s var(--ease-out) var(--enter-delay, 0s) both; }
+/* One beat when something changes state (a quorum dot filling, the timeline's current step). */
+@keyframes beat { 50% { transform: scale(var(--beat-s, 1.25)); } }
+.beat { animation: beat 0.45s ease-in-out; }
+/* A refusal arriving: fade in with a short shake. */
+@keyframes refuse {
+  0% { opacity: 0; transform: none; }
+  20% { opacity: 1; transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+  100% { opacity: 1; transform: none; }
+}
+.refuse { animation: refuse 0.45s ease-out both; }
+/* A bar filling to its width (set inline) from empty. */
+@keyframes fill-from-0 { from { width: 0; } }
+.fill-in { animation: fill-from-0 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.skeleton {
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  animation: pulse-soft 1.6s ease-in-out infinite;
+}
+
+/* A first demo visit (<html data-fresh>, set before paint; lib/service/fresh-visit.ts): the shared Gate shows the
+   server-rendered first screen (.fresh-only) instead of its loading frame (.fresh-hide) until the app takes over.
+   Both wrappers lay out as if absent. */
+.fresh-only { display: none; }
+.fresh-hide { display: contents; }
+:root[data-fresh] .fresh-only { display: contents; }
+:root[data-fresh] .fresh-hide { display: none; }
+
+/* Solid inverted block (vault hero, proof band, guide bar, confirmed payment): black by day, white at night. */
+.brand-panel {
+  color: var(--ink);
+  background: var(--bg);
+}
+.brand-panel ::selection { background: var(--ink); color: var(--bg); }
+
+/* Progress: one amber fill on a soft track. */
+.meter-track { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.meter-fill { background: var(--amber); }
+
+/* One crisp ring behind the "Confirmed" tick. */
+@keyframes ring-out {
+  from { transform: scale(0.8); opacity: 1; }
+  to { transform: scale(1.7); opacity: 0; }
+}
+.confirm-ring { animation: ring-out 0.9s var(--ease-out) 0.15s 1 both; border: 2px solid var(--ink); border-radius: 9999px; }
+@keyframes confirm-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.confirm-pop { animation: confirm-pop 320ms var(--ease-out) both; }
+
+/* Voice orb: concentric outlined rings. */
+@keyframes orb-ring {
+  from { transform: scale(0.62); opacity: 0.9; }
+  to { transform: scale(1); opacity: 0; }
+}
+.orb-ring { animation: orb-ring 2.4s linear infinite; }
+
+.typing-caret::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: currentColor;
+  animation: caret 1s steps(1) infinite;
+}
+
+:root[data-sidebar="collapsed"] { --sidebar-w: 5.25rem; }
+
+/* Native dialog based sheets */
+dialog.sheet {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-width: none;
+  max-height: none;
+  color: var(--ink);
+  background: var(--surface);
+  inset: auto 0 0 0;
+  width: 100%;
+  max-height: min(92dvh, 100dvh - var(--safe-t));
+  /* Bottom sheet on a phone: content and buttons stay above the home indicator and clear of side cut-outs. */
+  padding: 0 var(--safe-r) var(--safe-b) var(--safe-l);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  border-top: 1px solid var(--line);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+dialog.sheet[open] {
+  display: flex;
+  flex-direction: column;
+  animation: sheet-up var(--dur-base) var(--ease-out) both;
+}
+dialog.sheet.sheet-tall { height: min(92dvh, 100dvh - var(--safe-t)); }
+dialog.sheet::before {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 2.5rem;
+  height: 0.25rem;
+  margin-top: 0.5rem;
+  border-radius: 9999px;
+  background: var(--line-strong);
+  opacity: 0.55;
+}
+dialog.sheet::backdrop {
+  background: var(--scrim);
+  animation: fade var(--dur-base) ease-out both;
+}
+@keyframes sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes sheet-side {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@media (min-width: 768px) {
+  dialog.sheet {
+    inset: 0 0 0 auto;
+    width: min(30rem, 100%);
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    padding: var(--safe-t) var(--safe-r) var(--safe-b) 0;
+  }
+  dialog.sheet.sheet-tall { height: 100dvh; }
+  dialog.sheet[open] { animation-name: sheet-side; }
+  dialog.sheet::before { display: none; }
+}
+
+/* Phone navigation drawer: the sidebar as a modal panel from the left edge. */
+dialog.drawer {
+  margin: 0;
+  padding: var(--safe-t) 0 var(--safe-b) var(--safe-l);
+  border: 0;
+  border-right: 1px solid var(--line);
+  inset: 0 auto 0 0;
+  width: min(20rem, 88vw);
+  max-width: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+dialog.drawer[open] {
+  display: flex;
+  flex-direction: column;
+  animation: drawer-in var(--dur-base) var(--ease-out) both;
+}
+dialog.drawer::backdrop {
+  background: var(--scrim);
+  animation: fade var(--dur-base) ease-out both;
+}
+@keyframes drawer-in {
+  from { transform: translateX(-24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.pb-safe { padding-bottom: var(--safe-b); }
+.pt-safe { padding-top: var(--safe-t); }
+
+.scroll-thin { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Trust Tree (/tree, components/tree). Each trust role has a stroke and its own dash pattern, so a role never
+   relies on colour alone (the legend and the cards also name it). The strokes are existing tokens only (amber,
+   ok green, ink, ink-2), which scripts/contrast.mjs already checks at 3:1 or more against the page in the night
+   and day themes; set on the element itself, so the inverted panel and print pick up their own values.
+------------------------------------------------------------------- */
+.tree-role-trustedPerson { --role: var(--amber); --role-dash: none; }
+.tree-role-guardian { --role: var(--ok); --role-dash: none; }
+.tree-role-heir { --role: var(--ink); --role-dash: none; }
+.tree-role-beneficiary { --role: var(--amber); --role-dash: 7 5; }
+.tree-role-successor { --role: var(--ok); --role-dash: 7 5; }
+.tree-role-monitor { --role: var(--ink-2); --role-dash: 1.5 5; }
+.tree-role-fallback { --role: var(--ink-2); --role-dash: 10 4 2 4; }
+.tree-trust { fill: none; stroke: var(--role); stroke-dasharray: var(--role-dash); stroke-linecap: round; }
+.tree-swatch { stroke: var(--role); stroke-dasharray: var(--role-dash); stroke-linecap: round; }
+.tree-node { cursor: pointer; outline: none; }
+.tree-node .tree-focus { fill: none; stroke: transparent; stroke-width: 3; }
+.tree-node:focus-visible .tree-focus, .tree-node:hover .tree-focus { stroke: var(--line-strong); }
+.tree-node:focus-visible .tree-focus { stroke: var(--focus); }
+/* The imagined years on the slider: a dashed band, not a tint. */
+.tree-imagined { border-top: 2px dashed var(--line-strong); }
+.tree-range { accent-color: var(--ink); }
+/* Map text keeps a ring of the card colour, so lines pass behind a name instead of through it. */
+.tree-halo { paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+
+/* ------------------------------------------------------------------
+   Print: a page holding a .print-sheet (the handover pack) prints only
+   that sheet, black on white, without the app's frame (sidebar, top
+   bar, demo guide, chat button, toasts). .print-hide drops on-screen
+   controls; .print-avoid keeps a block on one page.
+------------------------------------------------------------------- */
+@media print {
+  @page { margin: 14mm; }
+  html:has(.print-sheet), body:has(.print-sheet) { background: #ffffff !important; }
+  body:has(.print-sheet) aside,
+  body:has(.print-sheet) header:not(.print-sheet header),
+  body:has(.print-sheet) nav:not(.print-sheet nav),
+  body:has(.print-sheet) dialog,
+  body:has(.print-sheet) [role="status"]:not(.print-sheet [role="status"]),
+  body:has(.print-sheet) [aria-live]:not(.print-sheet [aria-live]),
+  body:has(.print-sheet) a[href="#main"],
+  .print-hide { display: none !important; }
+  body:has(.print-sheet) main { padding: 0 !important; max-width: none !important; }
+  body:has(.print-sheet) .min-h-dvh { min-height: 0 !important; padding-left: 0 !important; }
+  .print-sheet {
+    --bg: #ffffff; --surface: #ffffff; --surface-2: #f2f2f2; --ink: #000000; --ink-2: #404040;
+    --line: #bdbdbd; --line-strong: #767676; --accent: #000000; --accent-ink: #ffffff; --accent-soft: #f2f2f2;
+    --amber: #000000; --amber-ink: #000000; --on-amber: #ffffff; --danger: #000000; --ok: #000000; --ok-soft: #ffffff;
+    --focus: #000000; --shadow-1: 0 0 0 0 rgb(0 0 0 / 0); color-scheme: light;
+    max-width: none !important; color: #000000; background: #ffffff; gap: 0.75rem !important;
+  }
+  .print-sheet * { box-shadow: none !important; animation: none !important; transition: none !important; }
+  .print-avoid { break-inside: avoid; }
+  .print-sheet a { text-decoration: none; }
+}

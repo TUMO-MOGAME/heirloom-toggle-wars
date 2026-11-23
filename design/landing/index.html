@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Heirloom · Redesign concept</title>
+<meta name="description" content="Heirloom redesign concept: the landing page.">
+<meta name="robots" content="noindex">
+<link rel="preload" href="fonts/work-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="img/dad-son-800.webp" as="image" media="(max-width: 899px)">
+<link rel="preload" href="img/dad-son-1600.webp" as="image" media="(min-width: 900px)">
+<script>try { const t = localStorage.getItem("heirloom-theme"); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
+<style>
+/* ---------- Fonts: self-hosted, no CDN (the ₮ glyph has its own tiny file) ---------- */
+@font-face { font-family: "Work Sans"; src: url(fonts/work-sans-latin.woff2) format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Geist"; src: url(fonts/geist-latin.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist"; src: url(fonts/geist-tugrik.woff2) format("woff2"); font-weight: 100 900; font-display: swap; unicode-range: U+20AE; }
+
+/* ---------- Design tokens ---------- */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;           /* the page, everywhere: no section changes colour */
+  --card: #ffffff;         /* cards are the page colour, set apart by a hairline */
+  --soft: #f3f3f3;         /* small fills: chat bubbles, toggles, chips */
+  --ink: #111111;
+  --ink-2: #555555;        /* 7.5:1 on white */
+  --line: rgba(0, 0, 0, .12);
+  --amber: #c25e12;        /* accent: underlines, icons, big numbers (4.8:1 on white) */
+  --amber-ink: #9c4a12;    /* accent for small text (6.9:1 on white) */
+  --on-amber: #ffffff;
+  --ok: #2f6b4f;
+  --ok-soft: #e6f2eb;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 12px 32px -16px rgba(0,0,0,.22);
+  --radius: 22px;
+  --radius-sm: 14px;
+  --serif: "Work Sans", "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --gutter: clamp(16px, 4vw, 40px);
+  --max: 1160px;
+  --strip: #000000; --strip-ink: #ffffff;
+  --ink-2-inv: #ababab;     /* secondary text on the inverted strip */
+  --amber-inv: #f0a35e;     /* accent on the inverted strip */
+  --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23c25e12' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #000000; --card: #000000; --soft: #161616;
+    --ink: #ffffff; --ink-2: #ababab; --line: rgba(255, 255, 255, .18);
+    --amber: #f0a35e; --amber-ink: #f0a35e; --on-amber: #000000;
+    --ok: #6fcf9a; --ok-soft: #0f2a1d;
+    --strip: #ffffff; --strip-ink: #000000; --ink-2-inv: #555555; --amber-inv: #c25e12;
+  --shadow: none; --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23f0a35e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000000; --card: #000000; --soft: #161616;
+  --ink: #ffffff; --ink-2: #ababab; --line: rgba(255, 255, 255, .18);
+  --amber: #f0a35e; --amber-ink: #f0a35e; --on-amber: #000000;
+  --ok: #6fcf9a; --ok-soft: #0f2a1d;
+  --strip: #ffffff; --strip-ink: #000000; --ink-2-inv: #555555; --amber-inv: #c25e12;
+  --shadow: none; --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23f0a35e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--sans); overflow-x: hidden; }
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--amber-ink); outline-offset: 3px; border-radius: 6px; }
+
+.skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; z-index: 100; }
+.skip:focus { left: 8px; }
+.wrap { width: min(var(--max), 100% - 2 * var(--gutter)); margin-inline: auto; }
+.eyebrow { font: 600 11.5px/1.2 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--amber-ink); display: inline-flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 26px; height: 1.5px; background: currentColor; }
+
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -.025em; line-height: 1.12; margin: 0; }
+h2 { font-size: clamp(28px, 3.6vw, 44px); }
+h3 { font-size: 20px; line-height: 1.15; letter-spacing: -.01em; }
+em { font-style: normal; color: inherit; background: var(--underline) no-repeat left bottom / 100% .16em; padding-bottom: .08em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+h1 em { background-size: 100% .12em; }
+p { margin: 0; }
+.lede { font-size: clamp(15.5px, 1.3vw, 17px); color: var(--ink-2); max-width: 56ch; }
+
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Buttons ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 0 20px; border-radius: 999px; font: 600 15px/1 var(--sans); text-decoration: none; border: 1.5px solid transparent; transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease; cursor: pointer; }
+.btn-primary { background: var(--ink); color: var(--bg); }
+.btn-primary:hover { transform: translateY(-2px); }
+.btn-ghost { border-color: var(--ink); color: var(--ink); background: transparent; }
+.btn-ghost:hover { background: var(--ink); color: var(--bg); }
+.btn svg { width: 18px; height: 18px; transition: transform .2s ease; }
+.btn:hover svg { transform: translateX(3px); }
+
+/* ---------- Header ---------- */
+.top { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid transparent; transition: border-color .3s; padding-top: env(safe-area-inset-top); }
+.top.scrolled { border-bottom-color: var(--line); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; font: 500 20px/1 var(--serif); text-decoration: none; letter-spacing: -.01em; }
+.logo svg { width: 26px; height: 26px; }
+.nav { display: none; gap: 30px; font-size: 15px; }
+.nav a { text-decoration: none; color: var(--ink-2); padding: 8px 0; }
+.nav a:hover { color: var(--ink); }
+.top .btn { min-height: 40px; padding: 0 16px; font-size: 14px; }
+@media (min-width: 900px) { .nav { display: flex; } }
+.tools { display: flex; align-items: center; gap: 8px; }
+.theme { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.theme svg { width: 18px; height: 18px; }
+.theme .moon { display: none; }
+:root[data-theme="dark"] .theme .sun { display: none; } :root[data-theme="dark"] .theme .moon { display: block; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .theme .sun { display: none; } :root:not([data-theme="light"]) .theme .moon { display: block; } }
+
+/* ---------- Hero ---------- */
+.hero { padding: clamp(20px, 3vw, 36px) 0 clamp(40px, 5vw, 64px); }
+.hero .wrap { display: grid; gap: clamp(32px, 4vw, 56px); align-items: center; }
+@media (min-width: 900px) { .hero .wrap { grid-template-columns: 1.1fr .9fr; } .stage { max-width: 440px; justify-self: end; width: 100%; } }
+.hero h1 { font-size: clamp(34px, 5.2vw, 62px); margin: 14px 0 18px; }
+.hero h1 .line { display: block; }
+.hero .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.hero .note { margin-top: 14px; font-size: 13px; color: var(--ink-2); display: flex; gap: 8px; align-items: center; }
+.hero .note svg { width: 16px; height: 16px; color: var(--ok); flex: none; }
+
+.stage { position: relative; }
+.arch { position: relative; border-radius: 999px 999px var(--radius) var(--radius); overflow: hidden; aspect-ratio: 4 / 5; background: var(--soft); box-shadow: var(--shadow); }
+.arch img { width: 100%; height: 100%; object-fit: cover; object-position: 64% 40%; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.estate { position: absolute; left: -10%; bottom: -8%; width: min(300px, 80%); padding: 14px 14px 10px; }
+.estate .head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--sans); padding: 6px 10px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.vault { margin: 12px 0 10px; }
+.vault small { display: block; font-size: 12px; color: var(--ink-2); letter-spacing: .04em; text-transform: uppercase; }
+.vault b { font: 400 clamp(24px, 7vw, 28px)/1.1 var(--serif); letter-spacing: -.02em; white-space: nowrap; }
+.vault span { font-size: 13px; color: var(--ink-2); margin-left: 6px; white-space: nowrap; }
+.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.rows li { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.rows li:last-child { border-bottom: 0; }
+.rows .d { grid-column: 1; font-size: 11.5px; color: var(--ink-2); }
+.rows .a { grid-row: 1 / span 2; grid-column: 2; text-align: right; font-weight: 600; align-self: center; }
+.rows .a small { display: block; font-weight: 500; font-size: 11.5px; color: var(--ink-2); }
+.receipt { position: absolute; right: -6%; top: 10%; padding: 10px 12px; display: flex; gap: 10px; align-items: center; font-size: 12px; max-width: 220px; }
+.receipt .tick { width: 32px; height: 32px; border-radius: 50%; background: var(--ok); color: var(--bg); display: grid; place-items: center; flex: none; }
+.receipt .tick svg { width: 16px; height: 16px; }
+.receipt b { display: block; font-size: 12.5px; }
+.receipt span { color: var(--ink-2); }
+@media (max-width: 899px) {
+  .stage { margin: 0 2%; }
+  .arch { aspect-ratio: 5 / 6; }
+  /* On phones the card sits under the photo, overlapping its foot, so the faces stay visible. */
+  .estate { position: relative; left: auto; bottom: auto; margin: -72px auto 0; width: min(380px, 94%); }
+  .receipt { right: 0; top: 4%; max-width: 200px; font-size: 12px; padding: 10px 12px; }
+}
+
+/* ---------- Trust strip ---------- */
+.strip { background: var(--strip); color: var(--strip-ink); }
+.strip ul { list-style: none; margin: 0; padding: 14px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 32px; font-size: 13px; color: var(--ink-2-inv); }
+.strip li { display: inline-flex; align-items: center; gap: 8px; }
+.strip li b { color: var(--strip-ink); font-weight: 600; }
+.strip svg { width: 18px; height: 18px; color: var(--amber-inv); }
+
+/* ---------- Sections ---------- */
+section { padding: clamp(40px, 5vw, 72px) 0; }
+.dark { background: var(--bg); color: var(--ink); }
+.head-row { display: grid; gap: 14px; margin-bottom: clamp(22px, 3vw, 32px); }
+@media (min-width: 900px) { .head-row { grid-template-columns: 1fr 1fr; align-items: end; column-gap: 48px; } }
+
+/* Problem */
+.problem .wrap { display: grid; gap: clamp(28px, 4vw, 48px); align-items: stretch; }
+@media (min-width: 900px) { .problem .wrap { grid-template-columns: 5fr 7fr; } .problem .wrap > div { align-self: center; } }
+.worry { position: relative; width: 100%; display: flex; flex-direction: column; }
+.worry img { border-radius: var(--radius); aspect-ratio: 4 / 5; }
+@media (min-width: 900px) { .worry img { aspect-ratio: auto; flex: 1; min-height: 0; } }
+.worry img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); }
+.worry figcaption { font: 400 17px/1.35 var(--serif); color: var(--ink); padding: 14px 2px 0; }
+.problem h2 { margin: 14px 0 16px; }
+.facts { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 0; }
+.facts li { display: grid; grid-template-columns: minmax(90px, auto) 1fr; gap: 18px; align-items: baseline; padding: 14px 0; font-size: 15px; border-top: 1px solid var(--line); }
+.facts b { font: 400 clamp(30px, 3.2vw, 40px)/1 var(--serif); color: var(--amber); letter-spacing: -.03em; }
+.facts span { color: var(--ink-2); }
+.facts span strong { color: var(--ink); font-weight: 600; }
+.source { margin-top: 22px; font-size: 12.5px; color: var(--ink-2); }
+.source a { color: var(--ink); }
+
+/* Purposes */
+.purposes { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .purposes { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1040px) { .purposes { grid-template-columns: repeat(4, 1fr); } }
+.purpose { position: relative; border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; color: var(--ink); text-decoration: none; border: 1px solid var(--line); background: var(--card); }
+.purpose .ph { overflow: hidden; aspect-ratio: 4 / 3; }
+.purpose img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.purpose:hover img { transform: scale(1.06); }
+.purpose .body { padding: 16px; display: flex; flex-direction: column; flex: 1; }
+.purpose .to { margin-top: auto !important; }
+.purpose .tag { display: inline-flex; font: 600 10.5px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; background: var(--soft); color: var(--amber-ink); padding: 7px 10px; border-radius: 999px; margin-bottom: 10px; }
+.purpose h3 { font-size: 18px; }
+.purpose .amt { font: 400 24px/1.1 var(--serif); margin: 8px 0 2px; }
+.purpose p { font-size: 13px; color: var(--ink-2); }
+.purpose .to { display: flex; gap: 8px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink); }
+.purpose .to svg { width: 15px; height: 15px; flex: none; }
+
+/* How it works */
+.how { background: var(--bg); }
+.steps { display: grid; gap: clamp(28px, 4vw, 44px); }
+.step { display: grid; gap: clamp(18px, 3vw, 48px); align-items: center; }
+@media (min-width: 900px) { .step { grid-template-columns: 1fr 1fr; } .step:nth-child(even) .visual { order: -1; } }
+.step .n { font: 400 14px/1 var(--serif); color: var(--amber-ink); display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1.5px solid currentColor; border-radius: 50%; margin-bottom: 18px; }
+.step h3 { font-size: clamp(22px, 2.4vw, 28px); margin-bottom: 10px; }
+.step p { color: var(--ink-2); max-width: 50ch; }
+.visual { background: var(--bg); border-radius: var(--radius); padding: clamp(18px, 3vw, 32px); box-shadow: var(--shadow); min-height: 200px; width: 100%; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.bubble { max-width: 90%; padding: 10px 14px; border-radius: 16px; font-size: 13.5px; line-height: 1.45; }
+.bubble.me { align-self: flex-end; background: var(--ink); color: var(--bg); border-bottom-right-radius: 6px; }
+.bubble.ai { align-self: flex-start; background: var(--soft); border-bottom-left-radius: 6px; }
+.bubble.ai ul { margin: 8px 0 0; padding-left: 18px; }
+.who { font-size: 12px; color: var(--ink-2); margin-bottom: -6px; }
+.who.r { align-self: flex-end; }
+.sign { display: grid; grid-template-columns: 1fr; justify-content: stretch; gap: 14px; align-content: center; }
+.sign > * { width: 100%; }
+.sign .bal { display: flex; justify-content: space-between; align-items: end; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.sign .bal b { font: 400 32px/1 var(--serif); letter-spacing: -.03em; }
+.sign .bal small { color: var(--ink-2); font-size: 13px; }
+.toggle-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; gap: 12px; }
+.toggle-row small { display: block; color: var(--ink-2); font-size: 12.5px; }
+.seg { display: inline-flex; background: var(--soft); border-radius: 999px; padding: 3px; font: 600 12.5px/1 var(--sans); flex: none; }
+.seg span { padding: 8px 12px; border-radius: 999px; color: var(--ink-2); }
+.seg .on { background: var(--ink); color: var(--bg); }
+.visual.photo { padding: 0; overflow: hidden; position: relative; min-height: 280px; }
+.visual.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; }
+.visual.photo .over { position: relative; margin: auto 16px 16px; padding: 16px 18px; }
+.timeline { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.timeline li { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; }
+.timeline li::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); margin-top: 7px; flex: none; }
+.timeline li.wait::before { background: var(--amber); }
+
+/* Safety */
+.safety-grid { display: grid; gap: clamp(20px, 3vw, 32px); }
+@media (min-width: 1000px) { .safety-grid { grid-template-columns: 5fr 7fr; align-items: start; } }
+.hands { position: sticky; top: 84px; display: flex; flex-direction: column; }
+.hands img { width: 100%; filter: grayscale(1); border-radius: var(--radius); }
+.hands blockquote { margin: 0; padding: 14px 2px 0; color: var(--ink); font: 400 clamp(18px, 1.8vw, 22px)/1.3 var(--serif); }
+@media (max-width: 999px) { .hands { position: relative; top: 0; } }
+.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+@media (min-width: 640px) { .rules { grid-template-columns: 1fr 1fr; } }
+.rule { background: var(--card); border-radius: var(--radius-sm); padding: 16px; border: 1px solid var(--line); transition: transform .25s ease, border-color .25s ease; }
+.rule:hover { transform: translateY(-3px); border-color: var(--amber); }
+.rule .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--soft); color: var(--amber); display: grid; place-items: center; margin-bottom: 10px; }
+.rule .ic svg { width: 18px; height: 18px; }
+.rule h3 { font-size: 17px; margin-bottom: 6px; }
+.rule p { font-size: 13.5px; color: var(--ink-2); }
+
+/* Proof */
+.proof .wrap { display: grid; gap: clamp(24px, 3vw, 40px) clamp(28px, 4vw, 56px); }
+@media (min-width: 960px) { .proof .wrap { grid-template-columns: 1fr 1fr; align-items: center; } }
+.ledger { padding: 8px 0; }
+.ledger .lh { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.ledger ol { list-style: none; margin: 0; padding: 0; }
+.ledger li { display: grid; grid-template-columns: auto 1fr auto; gap: 3px 12px; padding: 11px 16px; border-bottom: 1px solid var(--line); align-items: center; }
+.ledger li:last-child { border-bottom: 0; }
+.ledger .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--soft); grid-row: span 2; }
+.ledger .dot svg { width: 17px; height: 17px; }
+.ledger .t { font-weight: 600; font-size: 14px; }
+.ledger .h { grid-column: 2; font: 500 12.5px/1.3 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; color: var(--ink-2); }
+.ledger .h a { color: var(--amber-ink); }
+.ledger .v { grid-row: span 2; font-weight: 600; text-align: right; }
+.points { display: grid; gap: 0; margin-top: 20px; }
+.points div { display: grid; grid-template-columns: 120px 1fr; gap: 14px; padding: 12px 0; font-size: 14.5px; border-top: 1px solid var(--line); }
+.points dt { font-weight: 600; }
+.points dd { margin: 0; color: var(--ink-2); font-size: 14px; }
+@media (max-width: 520px) { .points div { grid-template-columns: 1fr; gap: 4px; } }
+.honest { margin-top: 0; font-size: 13.5px; color: var(--ink-2); padding: 14px 16px; border-left: 3px solid var(--amber); border-radius: 0; }
+
+/* CTA: text on forest, the walking photo beside it (portrait, so not cropped to a strip) */
+.cta { background: var(--bg); color: var(--ink); padding: 0; overflow: hidden; border-top: 1px solid var(--line); }
+.cta .grid { display: grid; align-items: stretch; }
+@media (min-width: 900px) { .cta .grid { grid-template-columns: 1.3fr .7fr; min-height: 420px; } }
+.cta .text { padding: clamp(40px, 5vw, 72px) clamp(24px, 4vw, 56px) clamp(40px, 5vw, 72px) max(var(--gutter), calc((100vw - var(--max)) / 2)); display: flex; flex-direction: column; justify-content: center; }
+.cta h2 { max-width: 14ch; }
+.cta p { margin: 16px 0 24px; max-width: 46ch; color: var(--ink-2); font-size: 16px; }
+.cta .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.cta .photo { position: relative; min-height: 340px; }
+.cta .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 40% 55%; }
+.cta .photo .card { position: absolute; left: 16px; right: 16px; bottom: 16px; max-width: 320px; padding: 14px 16px; color: var(--ink); font-size: 14px; }
+.cta .photo .card b { display: block; font: 400 18px/1.2 var(--serif); }
+
+/* Footer */
+footer { background: var(--bg); color: var(--ink-2); border-top: 1px solid var(--line); padding: 40px 0 calc(32px + env(safe-area-inset-bottom)); font-size: 14px; }
+footer .wrap { display: grid; gap: 28px; }
+@media (min-width: 800px) { footer .wrap { grid-template-columns: 1.2fr 1fr 1fr; } }
+footer .logo { color: var(--ink); }
+footer h2 { margin: 0 0 10px; font: 600 12px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+footer a { color: var(--ink-2); text-decoration: none; }
+footer a:hover { color: var(--ink); text-decoration: underline; }
+footer .legal { grid-column: 1 / -1; border-top: 1px solid var(--line); padding-top: 20px; font-size: 12.5px; color: var(--ink-2); }
+.placeholder { background: var(--soft); color: var(--amber-ink); padding: 0 4px; border-radius: 4px; }
+
+/* ---------- Motion (CSS first; the first screen never waits on JS) ---------- */
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes reveal { from { clip-path: inset(100% 0 0 0 round 999px 999px 22px 22px); } to { clip-path: inset(0 0 0 0 round 999px 999px 22px 22px); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.hero .copy > * { animation: rise .8s cubic-bezier(.2,.7,.2,1) both; }
+.hero .copy > :nth-child(2) { animation-delay: .08s; }
+.hero .copy > :nth-child(3) { animation-delay: .16s; }
+.hero .copy > :nth-child(4) { animation-delay: .24s; }
+.hero .copy > :nth-child(5) { animation-delay: .32s; }
+.arch { animation: reveal 1.1s cubic-bezier(.65,0,.2,1) .1s both; }
+.estate { animation: rise .9s cubic-bezier(.2,.7,.2,1) .7s both; }
+.receipt { animation: rise .9s cubic-bezier(.2,.7,.2,1) 1s both, float 6s ease-in-out 2s infinite; }
+/* Below the fold: revealed on scroll, but only when JS is running (content is visible without it). */
+.js .reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+.js .reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .js .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="logo" href="#" aria-label="Heirloom, home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="currentColor"/><path d="M16 8c-3.2 0-5.5 2.4-5.5 5.4 0 2 1 3.4 2.4 4.4L11 24h10l-1.9-6.2c1.4-1 2.4-2.4 2.4-4.4C21.5 10.4 19.2 8 16 8Z" fill="var(--amber)"/></svg>
+      Heirloom
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#purposes">What it pays for</a>
+      <a href="#how">How it works</a>
+      <a href="#safety">Safety</a>
+      <a href="#proof">Proof</a>
+    </nav>
+    <div class="tools"><button class="theme" type="button" aria-label="Switch to night mode" id="theme"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button><a class="btn btn-primary" href="#cta">Try the demo</a></div>
+  </div>
+</header>
+
+<main id="main">
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div class="copy">
+        <span class="eyebrow">A living family plan for South African families</span>
+        <h1 id="hero-title"><span class="line">Plan for your family,</span> <span class="line"><em>now</em> and after</span> <span class="line">you're gone.</span></h1>
+        <p class="lede">Tell Heirloom what your family needs, in your own words. It becomes a plan on a secure vault of USD₮: books and term fees paid on schedule today, and the same rules carrying on after you're gone. Money only ever moves for its purpose, straight to the university or the residence.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#cta">Try the demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <p class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> No app store. No browser extension. Works on any phone.</p>
+      </div>
+
+      <div class="stage">
+        <div class="arch">
+          <img src="img/dad-son-800.webp" srcset="img/dad-son-800.webp 800w, img/dad-son-1600.webp 1600w" sizes="(min-width: 900px) 70vw, 140vw" width="800" height="592" alt="A father kisses his smiling young son on the cheek." fetchpriority="high">
+        </div>
+        <div class="card receipt" aria-hidden="true">
+          <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <div><b>3 200 USD₮ paid</b><span>to University of Cape Town</span></div>
+        </div>
+        <div class="card estate" role="img" aria-label="Example: the Mokoena family estate, active, with 24 000 USD₮ in its vault, paying Lerato's book allowance now, her tuition paid, and the family car to be sold later.">
+          <div class="head"><span>Mokoena family estate</span><span class="pill">Active</span></div>
+          <div class="vault"><small>Secure vault</small><b class="num">24 000 USD₮</b><span>≈ R 428 400</span></div>
+          <ul class="rows">
+            <li><span>Lerato · books</span><span class="d">Every month to Van Schaik</span><span class="a num">85 USD₮<small>Now</small></span></li>
+            <li><span>Lerato · tuition</span><span class="d">Straight to UCT</span><span class="a num">3 200 USD₮<small>Paid</small></span></li>
+            <li><span>Family car</span><span class="d">Sold above Dad's floor, later</span><span class="a num">12 500 USD₮<small>Later</small></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip" aria-label="Built with">
+    <ul class="wrap">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 9h8M12 9v8"/></svg><b>Tether USD₮</b> stable digital dollars</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M10 17h4"/></svg><b>Tether WDK</b> keys on your phone</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h13l3 3-3 3H4zM20 17H7l-3-3"/></svg><b>Solana</b> low-fee payments</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 20c.8-3 2.8-5 5-5s4.2 2 5 5M11 20c.8-3 2.8-5 5-5s4.2 2 5 5"/></svg><b>2 of 3</b> trusted people decide</li>
+    </ul>
+  </div>
+
+  <!-- PROBLEM -->
+  <section class="dark problem" aria-labelledby="problem-title">
+    <div class="wrap">
+      <figure class="worry reveal" style="margin:0">
+        <img src="img/worry-800.webp" srcset="img/worry-800.webp 800w, img/worry-1600.webp 1600w" sizes="(min-width: 900px) 38vw, 92vw" width="800" height="1067" loading="lazy" alt="A woman holds her head in both hands, overwhelmed.">
+        <figcaption>"The fees are due on Monday. The estate won't pay out for a year."</figcaption>
+      </figure>
+      <div>
+        <span class="eyebrow reveal">The problem</span>
+        <h2 id="problem-title" class="reveal">Good intentions get lost. And an estate can take <em>a year</em> to wind up.</h2>
+        <p class="lede reveal">When a parent dies, bank accounts freeze while the estate is reported, an executor is appointed and creditors are paid. In that gap, registration is blocked, rent falls behind and the family car is sold in a hurry for far less than it's worth.</p>
+        <ul class="facts">
+          <li class="reveal"><b class="num" data-count="66" data-suffix="%">66%</b><span><strong>of South Africans don't have a will.</strong></span></li>
+          <li class="reveal" style="--d:.08s"><b class="num">2×</b><span><strong>A simple estate used to take 6–9 months to wind up.</strong> Now it takes about twice as long.</span></li>
+          <li class="reveal" style="--d:.16s"><b class="num" data-count="2.8" data-decimals="1" data-suffix="m">2.8m</b><span><strong>South African children have lost a parent;</strong> 64% of them lost their father.</span></li>
+        </ul>
+        <p class="source reveal">Sources: Sanlam Legacy Wills Survey 2025 via TimesLIVE (19 Sep 2025); Moneyweb via The Citizen (2 Dec 2024); South African Child Gauge 2024 via Cape Times (22 Aug 2024).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PURPOSES -->
+  <section id="purposes" aria-labelledby="purposes-title">
+    <div class="wrap">
+      <div class="head-row">
+        <div>
+          <span class="eyebrow reveal">What your plan pays for</span>
+          <h2 id="purposes-title" class="reveal">Every rand has a <em>purpose</em>, and a place it goes.</h2>
+        </div>
+        <p class="lede reveal">Rules are written in plain language and enforced by a contract. Money is paid to the bookstore, the university or the residence, never to a pocket where it can drift.</p>
+      </div>
+      <div class="purposes">
+        <article class="purpose reveal">
+          <div class="ph"><img src="img/students-800.webp" width="800" height="533" loading="lazy" alt="University students working in a lecture room."></div>
+          <div class="body"><span class="tag">Now · every month</span><h3>Books and study costs</h3><p class="amt num">85 USD₮</p><p>Lerato's book allowance, paid on the 1st.</p><p class="to"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>To Van Schaik Bookstore</p></div>
+        </article>
+        <article class="purpose reveal" style="--d:.06s">
+          <div class="ph"><img src="img/graduation-800.webp" width="800" height="1200" loading="lazy" alt="A graduate raises her cap in front of a university building."></div>
+          <div class="body"><span class="tag">Every term</span><h3>Tuition, all the way to graduation</h3><p class="amt num">3 200 USD₮</p><p>Term fees, today and after you're gone.</p><p class="to"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>To University of Cape Town</p></div>
+        </article>
+        <article class="purpose reveal" style="--d:.12s">
+          <div class="ph"><img src="img/walk-800.webp" width="800" height="1200" loading="lazy" alt="A father holds his daughter's hand as she walks along a wall under a blue sky." style="object-position: 40% 60%"></div>
+          <div class="body"><span class="tag">Monthly</span><h3>A safe place to live</h3><p class="amt num">300 USD₮</p><p>Residence rent that never falls behind.</p><p class="to"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>To Tugwell Residence</p></div>
+        </article>
+        <article class="purpose reveal" style="--d:.18s">
+          <div class="ph"><img src="img/car-1200.webp" width="1200" height="900" loading="lazy" alt="A silver 2017 Toyota Corolla, seen from the front."></div>
+          <div class="body"><span class="tag">Later · after you're gone</span><h3>The family car, sold fairly</h3><p class="amt num">≥ 12 500 USD₮</p><p>Never below Dad's floor. Escrowed offers, no rushed sale.</p><p class="to"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Back into the family vault</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how" class="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="head-row">
+        <div>
+          <span class="eyebrow reveal">How it works</span>
+          <h2 id="how-title" class="reveal">Three steps. <em>Plain language</em> throughout.</h2>
+        </div>
+        <p class="lede reveal">No forms full of legal terms. You talk, Heirloom writes it down, you check it and sign.</p>
+      </div>
+      <ol class="steps" style="list-style:none;margin:0;padding:0">
+        <li class="step">
+          <div class="reveal">
+            <span class="n">1</span>
+            <h3>Say what your family needs</h3>
+            <p>Chat or talk with the Heirloom agent, in English, isiZulu, Sesotho or Afrikaans. It writes the plan back in plain language, and you choose which rules start now.</p>
+          </div>
+          <div class="visual reveal" style="--d:.1s" aria-label="Example conversation with the Heirloom agent" role="img">
+            <span class="who r">Thabo</span>
+            <div class="bubble me">R1 500 a month for Lerato's books. UCT fees every term. Sell my Corolla for no less than R225 000 when I'm gone.</div>
+            <span class="who">Heirloom</span>
+            <div class="bubble ai">Here's your plan in plain words:<ul><li>Books: 85 USD₮ monthly to Van Schaik, starting now</li><li>Tuition: paid to UCT each term</li><li>The Corolla: sold at 12 500 USD₮ or more, later</li></ul></div>
+          </div>
+        </li>
+        <li class="step">
+          <div class="reveal">
+            <span class="n">2</span>
+            <h3>Sign and fund the vault</h3>
+            <p>Create a wallet on your phone with Tether WDK, sign your plan and deposit USD₮. Rules you marked "now" start paying approved institutions on schedule. The rest wait. You can withdraw at any time.</p>
+          </div>
+          <div class="visual sign reveal" style="--d:.1s" role="img" aria-label="Example: a vault holding 24 000 USD₮, with books and tuition starting now and the car sale after.">
+            <div class="bal"><div><small>Your vault</small><br><b class="num">24 000 USD₮</b></div><small>≈ R 428 400</small></div>
+            <div class="toggle-row"><div>Books for Lerato<small>85 USD₮ every month</small></div><span class="seg"><span class="on">Now</span><span>After</span></span></div>
+            <div class="toggle-row"><div>UCT tuition<small>3 200 USD₮ every term</small></div><span class="seg"><span class="on">Now</span><span>After</span></span></div>
+            <div class="toggle-row"><div>Sell the Corolla<small>Floor 12 500 USD₮</small></div><span class="seg"><span>Now</span><span class="on">After</span></span></div>
+          </div>
+        </li>
+        <li class="step">
+          <div class="reveal">
+            <span class="n">3</span>
+            <h3>The plan outlives you</h3>
+            <p>After two of your three trusted people confirm your passing and a waiting period ends, the same plan carries on. The contract keeps paying the university directly and sells the car at or above your floor.</p>
+          </div>
+          <div class="visual photo reveal" style="--d:.1s">
+            <img src="img/sunset-800.webp" srcset="img/sunset-800.webp 800w, img/sunset-1600.webp 1600w" sizes="(min-width: 900px) 45vw, 92vw" width="800" height="1200" loading="lazy" alt="Silhouette of a father lifting his child onto his shoulders at sunset.">
+            <div class="card over">
+              <ul class="timeline">
+                <li>Passing confirmed by Adv. Ndlovu and Ms. Pillay</li>
+                <li class="wait">Waiting period: Thabo can still cancel</li>
+                <li>Plan unlocked. Tuition keeps going to UCT</li>
+              </ul>
+            </div>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- SAFETY -->
+  <section id="safety" class="dark" aria-labelledby="safety-title">
+    <div class="wrap">
+      <div class="head-row">
+        <div>
+          <span class="eyebrow reveal">Trust and safety</span>
+          <h2 id="safety-title" class="reveal">The agent advises. The contract enforces. <em>People you trust</em> decide.</h2>
+        </div>
+      </div>
+      <div class="safety-grid">
+        <figure class="hands reveal" style="margin:0">
+          <img src="img/hands-800.webp" srcset="img/hands-800.webp 800w, img/hands-1600.webp 1600w" sizes="(min-width: 1000px) 40vw, 92vw" width="800" height="600" loading="lazy" alt="A baby's hand resting in an adult's open palm.">
+          <blockquote>What you promise them today is still kept when you can't be there.</blockquote>
+        </figure>
+        <ul class="rules">
+          <li class="rule reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><h3>Limits no one can talk past</h3><p>Caps, approved institutions and the car's minimum price live in a Solana program. Not even the AI agent can move money outside them.</p></li>
+          <li class="rule reveal" style="--d:.05s"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 20c.8-3 2.8-5 5-5s4.2 2 5 5M11 20c.8-3 2.8-5 5-5s4.2 2 5 5"/></svg></span><h3>Two of three trusted people</h3><p>Your executor, a lawyer, a family elder. A passing is only accepted when two of them confirm it, and unusual requests need them too.</p></li>
+          <li class="rule reveal" style="--d:.1s"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10Z"/></svg></span><h3>"I'm still here"</h3><p>A waiting period follows every report of a passing. One tap from you cancels it and locks the vault again.</p></li>
+          <li class="rule reveal" style="--d:.15s"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z"/></svg></span><h3>Hardship, handled with care</h3><p>A sworn affidavit and two trusted people can let the car sell below your price, but never below your hardship floor.</p></li>
+          <li class="rule reveal" style="--d:.2s"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 14l2 2 4-4"/></svg></span><h3>Private papers stay private</h3><p>Death certificates and IDs never go on a public ledger. Only a fingerprint of each document does, so anyone can check nothing was altered.</p></li>
+          <li class="rule reveal" style="--d:.25s"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></svg></span><h3>Your keys, on your phone</h3><p>Wallets are created with Tether WDK and the recovery phrase stays on your device. Heirloom's servers never hold your keys.</p></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROOF -->
+  <section id="proof" class="proof" aria-labelledby="proof-title">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow reveal">Proof, one tap away</span>
+        <h2 id="proof-title" class="reveal">Every payment has a <em>receipt</em> anyone can check.</h2>
+        <p class="lede reveal" style="margin-top:18px">Heirloom keeps the technology out of your way and the evidence within reach. Every deposit, approval and payment can be opened on Solana Explorer.</p>
+        <dl class="points">
+          <div class="reveal"><dt>USD₮</dt><dd>The only money the vault accepts. The contract rejects look-alike tokens.</dd></div>
+          <div class="reveal"><dt>Tether WDK</dt><dd>Every wallet in the app, including the agent's own, is created and signed with the Wallet Development Kit.</dd></div>
+          <div class="reveal"><dt>Solana</dt><dd>Low fees make small, purpose-by-purpose payouts practical.</dd></div>
+          <div class="reveal"><dt>Rand</dt><dd>Amounts are shown in rand at a live South African exchange rate.</dd></div>
+        </dl>
+      </div>
+      <div class="card ledger reveal" style="--d:.1s" aria-label="Example receipts">
+        <div class="lh"><span>Mokoena family · receipts</span><span>Solana devnet</span></div>
+        <ol>
+          <li><span class="dot" style="color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="t">Tuition paid to UCT</span><span class="h"><a href="#">4zCV…xskw</a> · Fee paid by Heirloom</span><span class="v num">3 200 USD₮</span></li>
+          <li><span class="dot" style="color:var(--amber-ink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 20c.8-3 2.8-5 5-5s4.2 2 5 5M11 20c.8-3 2.8-5 5-5s4.2 2 5 5"/></svg></span><span class="t">School fees approved</span><span class="h"><a href="#">5aG6…6ifZ</a> · Agent 98% · Adv. Ndlovu</span><span class="v num">350 USD₮</span></li>
+          <li><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span><span class="t">Deposit into the vault</span><span class="h"><a href="#">5jJv…gRp2</a> · Thabo</span><span class="v num">+ 500 USD₮</span></li>
+          <li><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h13l3 3-3 3H4"/></svg></span><span class="t">Books to Van Schaik</span><span class="h"><a href="#">ZNo1…aQff</a> · Scheduled</span><span class="v num">85 USD₮</span></li>
+        </ol>
+      </div>
+      <p class="honest reveal" style="grid-column:1/-1">Honest limits: this is a prototype on a test network. It sits beside a signed, witnessed will under the Wills Act and does not replace one. The car's digital title gates the handover; eNaTIS registration remains the legal record.</p>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta" class="cta dark" aria-labelledby="cta-title">
+    <div class="grid">
+      <div class="text">
+        <span class="eyebrow reveal">Try it in three minutes</span>
+        <h2 id="cta-title" class="reveal" style="margin-top:16px">See a whole family story, <em>start to finish.</em></h2>
+        <p class="reveal">Step into the demo as Thabo, a father of three from Soweto. Build his family plan, watch the first payment go out, then switch to his children, his trusted people and a car buyer to see the rules hold after he's gone.</p>
+        <div class="actions reveal">
+          <a class="btn btn-primary" href="#">Try the demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-ghost" href="#">Create my own wallet</a>
+        </div>
+      </div>
+      <div class="photo">
+        <img src="img/walk-800.webp" srcset="img/walk-800.webp 800w, img/walk-1600.webp 1600w" sizes="(min-width: 900px) 45vw, 100vw" width="800" height="1200" loading="lazy" alt="A father holds his daughter's hand as she walks along a wall under a blue sky.">
+        <div class="card"><b>Still holding her hand</b>Every promise in the plan is kept, even when you can't be there.</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="logo" href="#"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="currentColor"/><path d="M16 8c-3.2 0-5.5 2.4-5.5 5.4 0 2 1 3.4 2.4 4.4L11 24h10l-1.9-6.2c1.4-1 2.4-2.4 2.4-4.4C21.5 10.4 19.2 8 16 8Z" fill="var(--amber)"/></svg>Heirloom</a>
+      <p style="margin-top:14px;max-width:38ch">A living family plan on a secure USD₮ vault, for South African families.</p>
+    </div>
+    <div><h2>Product</h2><ul><li><a href="#purposes">What it pays for</a></li><li><a href="#how">How it works</a></li><li><a href="#safety">Safety</a></li><li><a href="#proof">Proof</a></li></ul></div>
+    <div><h2>Legal</h2><ul><li><a href="#">Privacy policy</a></li><li><a href="#">Terms</a></li><li><a href="#">PAIA manual</a></li></ul></div>
+    <p class="legal">Heirloom is built by <span class="placeholder">[full legal name]</span>, <span class="placeholder">[legal status]</span>, <span class="placeholder">[registration number or "not registered"]</span>, <span class="placeholder">[physical address]</span>, <span class="placeholder">[phone]</span>, <span class="placeholder">[email]</span>. Photos: Unsplash (placeholders for this concept).</p>
+  </div>
+</footer>
+
+<script>
+  // Progressive enhancement only: everything is visible and usable without this script.
+  document.documentElement.classList.add("js");
+  // Day / night: follows the device unless the viewer picks one (remembered on this device only).
+  const root = document.documentElement, btn = document.getElementById("theme");
+  const dark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const label = () => btn.setAttribute("aria-label", dark() ? "Switch to day mode" : "Switch to night mode");
+  btn.addEventListener("click", () => { root.dataset.theme = dark() ? "light" : "dark"; try { localStorage.setItem("heirloom-theme", root.dataset.theme); } catch {} label(); });
+  label();
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Header border once the page scrolls.
+  const header = document.getElementById("top");
+  addEventListener("scroll", () => header.classList.toggle("scrolled", scrollY > 8), { passive: true });
+
+  // Reveal sections as they come into view.
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); countUp(e.target); }
+  }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+
+  // Count-up for the big numbers (skipped with reduced motion).
+  function countUp(scope) {
+    scope.querySelectorAll("[data-count]").forEach((el) => {
+      if (reduce) return;
+      const to = parseFloat(el.dataset.count), dec = +(el.dataset.decimals || 0), suf = el.dataset.suffix || "";
+      const t0 = performance.now(), dur = 1400;
+      const step = (t) => { const p = Math.min(1, (t - t0) / dur), k = 1 - Math.pow(1 - p, 3); el.textContent = (to * k).toFixed(dec) + suf; if (p < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
+  }
+</script>
+</body>
+</html>

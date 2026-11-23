@@ -1,0 +1,371 @@
+"use client";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, m as motion } from "motion/react";
+import { MotionScope } from "@/components/ui/motion-provider";
+import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, ShieldCheck, Smartphone, TriangleAlert, UsersRound, Wallet } from "@/components/ui/icons";
+import type { ScreensCopy } from "@/content/screens";
+import { useLocalized } from "@/lib/i18n/client";
+import type { Role } from "@/lib/types";
+import { usePhoneWallets, useWallet, type PhoneWalletOption } from "@/lib/hooks/wallet-source";
+import { useEstate } from "@/lib/hooks/estate";
+import { Badge, Button, ButtonLink, Card, Consent, Eyebrow, Field, inputClass, Notice } from "@/components/ui/primitives";
+import { Sheet } from "@/components/ui/client";
+import { fmt, useCopy } from "@/components/shell/copy";
+import { usePin } from "@/components/shell/pin-gate";
+import { Marked } from "@/components/ui/marked";
+
+type Step = "choose" | "about" | "pin" | "seed" | "phone";
+type SignWith = "wdk" | "phone";
+const ROLES: Exclude<Role, "agent">[] = ["owner", "beneficiary", "verifier", "monitor", "buyer"];
+
+/** Animated with motion, so it brings its own <MotionScope> (the first pages never load the library). */
+export function StartScreen(props: Parameters<typeof StartScreenBody>[0]) {
+  return <MotionScope><StartScreenBody {...props} /></MotionScope>;
+}
+
+function StartScreenBody({ copy: english }: { copy: ScreensCopy["start"] }) {
+  const copy = useLocalized(english, (t) => t.screens.start);
+  const { common } = useCopy();
+  const router = useRouter();
+  const wallet = useWallet();
+  const pinGate = usePin();
+  const { snap, isMock } = useEstate();
+  const [step, setStep] = useState<Step>("choose");
+  const [name, setName] = useState("");
+  const [role, setRole] = useState<Exclude<Role, "agent">>("owner");
+  const [importing, setImporting] = useState(false);
+  const [phrase, setPhrase] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pin2, setPin2] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [seed, setSeed] = useState<string[] | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
+  // Phone wallets (Wallet Standard / Mobile Wallet Adapter): offered only when this device has one (demo: simulated).
+  const phone = usePhoneWallets();
+  const canPhone = phone.options.length > 0;
+  const [signWith, setSignWith] = useState<SignWith>("wdk");
+  const [phoneName, setPhoneName] = useState<string | null>(null);
+  const [simOpen, setSimOpen] = useState(false);
+  const pickedPhone: PhoneWalletOption | undefined = phone.options.find((o) => o.name === phoneName) ?? phone.options[0];
+  const usePhone = signWith === "phone" && canPhone;
+
+  // Next keeps a visited route's state alive in the background, so coming back to /start ("Add another wallet")
+  // would show the previous person's name, the ticked import box and even their recovery phrase. Start clean.
+  const resetForm = () => {
+    setName(""); setRole("owner"); setImporting(false); setPhrase(""); setConsent(false);
+    setPin(""); setPin2(""); setError(null); setSeed(null); setSaved(false); setCopied(false);
+    setSignWith("wdk"); setPhoneName(null); setSimOpen(false);
+  };
+
+  useEffect(() => {
+    // Read the URL after mount (and each time the page is shown again) so the server-rendered markup matches.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    resetForm();
+    setStep(new URLSearchParams(window.location.search).get("new") === "1" ? "about" : "choose");
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // Clear the phrase from memory when the page is hidden or left.
+    return () => { setPhrase(""); setPin(""); setPin2(""); };
+  }, []);
+
+  const owner = wallet.sessions.find((s) => s.role === "owner");
+  const home = "/chat"; // everyone lands on the chat home; it points to the right next step
+
+  const startDemo = () => {
+    if (!owner) return;
+    if (!snap) wallet.switchTo(owner.address);
+    router.push("/chat");
+  };
+
+  const submitAbout = (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) { setError(copy.form.nameError); return; }
+    if (!usePhone && importing && phrase.trim().split(/\s+/).length < 12) { setError(copy.form.importHint); return; }
+    if (!consent) { setError(common.consentRequired); return; }
+    setError(null);
+    setStep(usePhone ? "phone" : "pin");
+  };
+
+  const connectPhone = async () => {
+    if (!pickedPhone) return;
+    setError(null);
+    setBusy(true);
+    try {
+      await wallet.connectPhone(name.trim(), role, pickedPhone.name);
+      resetForm();
+      router.push(home);
+    } catch {
+      setError(copy.phone.error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // The demo's simulated wallet shows its own approval sheet first; a real wallet shows its own screen in its app.
+  const startPhone = () => {
+    if (pickedPhone?.simulated) { setError(null); setSimOpen(true); } else void connectPhone();
+  };
+  const phoneLabel = (o: PhoneWalletOption) => (o.simulated ? copy.phone.simulatedName : o.mwa ? copy.phone.mwaName : o.name);
+
+  const submitPin = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!/^\d{6,}$/.test(pin)) { setError(copy.pin.invalid); return; }
+    if (pin !== pin2) { setError(copy.pin.mismatch); return; }
+    setError(null);
+    setBusy(true);
+    try {
+      pinGate.preset(pin);
+      if (importing) {
+        await wallet.importSeed(name.trim(), role, phrase.trim().toLowerCase().replace(/\s+/g, " "));
+        resetForm();
+        router.push(home);
+      } else {
+        const { seedPhrase } = await wallet.create(name.trim(), role);
+        setSeed(seedPhrase.split(/\s+/));
+        setStep("seed");
+      }
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : copy.error);
+    } finally {
+      pinGate.preset(null);
+      setPin(""); setPin2("");
+      setBusy(false);
+    }
+  };
+
+  const stepIndex = step === "about" ? 1 : step === "pin" || step === "phone" ? 2 : 3;
+  const steps: readonly string[] = usePhone ? copy.phone.steps : copy.steps;
+
+  return (
+    <div className="mx-auto w-full max-w-xl">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={step} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }}>
+          {step === "choose" && (
+            <>
+              <Eyebrow>{copy.eyebrow}</Eyebrow>
+              <h1 className="mt-2 text-h1"><Marked text={copy.title} /></h1>
+              <p className="mt-3 text-lead text-ink-2">{copy.body}</p>
+              <div className="mt-6 grid gap-4">
+                <Card>
+                  <div className="flex items-start gap-3.5">
+                    <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-accent-ink"><UsersRound className="size-6" aria-hidden="true" /></span>
+                    <div className="min-w-0">
+                      <h2 className="text-h3">{copy.demo.title}</h2>
+                      <p className="mt-1 text-ink-2">{copy.demo.body}</p>
+                    </div>
+                  </div>
+                  {owner ? (
+                    <Button block className="mt-4" onClick={startDemo} disabled={!wallet.ready}>
+                      {snap ? copy.demo.resume : copy.demo.cta}<ArrowRight className="size-5" aria-hidden="true" />
+                    </Button>
+                  ) : wallet.ready && !isMock ? (
+                    <>
+                      <p className="mt-3 text-small text-ink-2">{copy.demo.unavailable}</p>
+                      <ButtonLink href={copy.demo.demoUrl} variant="secondary" block className="mt-4">
+                        {copy.demo.openDemo}<ArrowRight className="size-5" aria-hidden="true" />
+                      </ButtonLink>
+                    </>
+                  ) : null}
+                </Card>
+                <Card>
+                  <div className="flex items-start gap-3.5">
+                    <span className="grid size-12 shrink-0 place-items-center rounded-full bg-surface-2 text-ink"><Wallet className="size-6" aria-hidden="true" /></span>
+                    <div className="min-w-0">
+                      <h2 className="text-h3">{copy.create.title}</h2>
+                      <p className="mt-1 text-ink-2">{copy.create.body}</p>
+                    </div>
+                  </div>
+                  <Button variant="secondary" block className="mt-4" onClick={() => { setSignWith("wdk"); setStep("about"); }}>{copy.create.cta}</Button>
+                </Card>
+                {canPhone && (
+                  <Card>
+                    <div className="flex items-start gap-3.5">
+                      <span className="grid size-12 shrink-0 place-items-center rounded-full bg-surface-2 text-ink"><Smartphone className="size-6" aria-hidden="true" /></span>
+                      <div className="min-w-0">
+                        <h2 className="flex flex-wrap items-center gap-2 text-h3">
+                          {copy.phone.title}
+                          {phone.options.every((o) => o.simulated) && <Badge>{copy.phone.simulated.badge}</Badge>}
+                        </h2>
+                        <p className="mt-1 text-ink-2">{phone.options.every((o) => o.simulated) ? copy.phone.simulatedBody : copy.phone.body}</p>
+                      </div>
+                    </div>
+                    <Button variant="secondary" block className="mt-4" onClick={() => { setSignWith("phone"); setStep("about"); }}>{copy.phone.cta}</Button>
+                  </Card>
+                )}
+              </div>
+            </>
+          )}
+
+          {step !== "choose" && (
+            <>
+              <ol className="mb-5 flex items-center gap-2" aria-label={fmt(copy.stepLabel, { n: stepIndex, total: steps.length, name: steps[stepIndex - 1] })}>
+                {steps.map((s, i) => (
+                  <li key={s} aria-current={i + 1 === stepIndex ? "step" : undefined} className="flex flex-1 flex-col gap-1.5">
+                    <span className={`h-1.5 rounded-full ${i + 1 <= stepIndex ? "bg-accent" : "bg-line"}`} />
+                    <span className={`text-[0.75rem] font-semibold ${i + 1 === stepIndex ? "text-ink" : "text-ink-2"}`}>{s}</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+
+          {step === "about" && (
+            <form onSubmit={submitAbout} noValidate className="flex flex-col gap-4">
+              <h1 className="text-h2">{copy.form.title}</h1>
+              <Field label={copy.form.name} htmlFor="start-name" hint={copy.form.nameHint}>
+                <input id="start-name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} aria-describedby="start-name-hint" />
+              </Field>
+              <fieldset>
+                <legend className="mb-1.5 text-small font-semibold">{copy.form.role}</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {ROLES.map((r) => (
+                    <label key={r} className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md border px-3.5 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--focus)] ${role === r ? "border-accent bg-accent-soft" : "border-line-strong bg-surface"}`}>
+                      <input type="radio" name="role" value={r} checked={role === r} onChange={() => setRole(r)} className="size-4 accent-[var(--accent)]" />
+                      <span className="text-small font-medium">{copy.form.roles[r]}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              {canPhone && (
+                <fieldset>
+                  <legend className="mb-1.5 text-small font-semibold">{copy.phone.choiceLegend}</legend>
+                  <div className="grid gap-2">
+                    {(["wdk", "phone"] as const).map((w) => (
+                      <label key={w} className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md border px-3.5 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--focus)] ${signWith === w ? "border-accent bg-accent-soft" : "border-line-strong bg-surface"}`}>
+                        <input type="radio" name="sign-with" value={w} checked={signWith === w} onChange={() => setSignWith(w)} className="size-4 accent-[var(--accent)]" />
+                        {w === "wdk" ? <Wallet className="size-5 shrink-0" aria-hidden="true" /> : <Smartphone className="size-5 shrink-0" aria-hidden="true" />}
+                        <span className="text-small font-medium">{w === "wdk" ? copy.phone.choiceWdk : copy.phone.choicePhone}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+              {!usePhone && (
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 text-small font-medium">
+                  <input type="checkbox" checked={importing} onChange={(e) => setImporting(e.target.checked)} className="size-5 accent-[var(--accent)]" />
+                  {copy.form.importToggle}
+                </label>
+              )}
+              {!usePhone && importing && (
+                <Field label={copy.form.importLabel} htmlFor="start-phrase" hint={copy.form.importHint}>
+                  <textarea id="start-phrase" rows={3} autoComplete="off" autoCapitalize="none" spellCheck={false} value={phrase} onChange={(e) => setPhrase(e.target.value)} className={`${inputClass} py-3 font-mono`} aria-describedby="start-phrase-hint" />
+                </Field>
+              )}
+              <Consent id="start-consent" checked={consent} onChange={setConsent} copy={common.consent} />
+              {error && <p role="alert" className="border-l-4 border-ink pl-2 text-small font-semibold text-ink">{error}</p>}
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={() => { setError(null); setStep("choose"); }}><ArrowLeft className="size-4" aria-hidden="true" />{copy.form.back}</Button>
+                <Button type="submit" className="flex-1">{copy.form.next}</Button>
+              </div>
+            </form>
+          )}
+
+          {step === "phone" && pickedPhone && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <h1 className="text-h2">{copy.phone.title2}</h1>
+                <p className="mt-2 text-ink-2">{pickedPhone.simulated ? copy.phone.simulatedBody : copy.phone.connectBody}</p>
+              </div>
+              {phone.options.length > 1 ? (
+                <fieldset>
+                  <legend className="mb-1.5 text-small font-semibold">{copy.phone.pick}</legend>
+                  <div className="grid gap-2">
+                    {phone.options.map((o) => (
+                      <label key={o.name} className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md border px-3.5 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--focus)] ${pickedPhone.name === o.name ? "border-accent bg-accent-soft" : "border-line-strong bg-surface"}`}>
+                        <input type="radio" name="phone-wallet" value={o.name} checked={pickedPhone.name === o.name} onChange={() => setPhoneName(o.name)} className="size-4 accent-[var(--accent)]" />
+                        {/* eslint-disable-next-line @next/next/no-img-element -- the wallet's own data: icon */}
+                        {o.icon ? <img src={o.icon} alt="" className="size-6 rounded" /> : <Smartphone className="size-5 shrink-0" aria-hidden="true" />}
+                        <span className="text-small font-medium">{phoneLabel(o)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : (
+                <p className="flex items-center gap-2 font-semibold">
+                  <Smartphone className="size-5 shrink-0" aria-hidden="true" />{phoneLabel(pickedPhone)}
+                  {pickedPhone.simulated && <Badge>{copy.phone.simulated.badge}</Badge>}
+                </p>
+              )}
+              <Notice tone="neutral" icon={<ShieldCheck className="size-5" aria-hidden="true" />}>{copy.phone.fees}</Notice>
+              {error && <p role="alert" className="border-l-4 border-ink pl-2 text-small font-semibold text-ink">{error}</p>}
+              <p role="status" aria-live="polite" className="sr-only">{busy ? copy.phone.connecting : ""}</p>
+              <div className="flex gap-3">
+                <Button variant="secondary" disabled={busy} onClick={() => { setError(null); setStep("about"); }}><ArrowLeft className="size-4" aria-hidden="true" />{copy.form.back}</Button>
+                <Button className="flex-1" loading={busy} onClick={startPhone}><Smartphone className="size-5" aria-hidden="true" />{busy ? copy.phone.connecting : copy.phone.connect}</Button>
+              </div>
+            </div>
+          )}
+
+          {step === "pin" && (
+            <form onSubmit={submitPin} noValidate className="flex flex-col gap-4">
+              <div>
+                <h1 className="text-h2">{copy.pin.title}</h1>
+                <p className="mt-2 text-ink-2">{copy.pin.body}</p>
+              </div>
+              <Field label={copy.pin.label} htmlFor="start-pin" hint={copy.pin.hint}>
+                <input id="start-pin" type="password" inputMode="numeric" autoComplete="new-password" required autoFocus value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} className={`${inputClass} font-mono text-h3 tracking-[0.4em]`} aria-describedby="start-pin-hint" />
+              </Field>
+              <Field label={copy.pin.confirm} htmlFor="start-pin2">
+                <input id="start-pin2" type="password" inputMode="numeric" autoComplete="new-password" required value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, ""))} className={`${inputClass} font-mono text-h3 tracking-[0.4em]`} />
+              </Field>
+              {error && <p role="alert" className="border-l-4 border-ink pl-2 text-small font-semibold text-ink">{error}</p>}
+              <p role="status" aria-live="polite" className="sr-only">{busy ? copy.pin.creating : ""}</p>
+              <div className="flex gap-3">
+                <Button variant="secondary" disabled={busy} onClick={() => { setError(null); setStep("about"); }}><ArrowLeft className="size-4" aria-hidden="true" />{copy.form.back}</Button>
+                <Button type="submit" className="flex-1" loading={busy}><KeyRound className="size-5" aria-hidden="true" />{busy ? copy.pin.creating : importing ? copy.pin.importCta : copy.pin.create}</Button>
+              </div>
+            </form>
+          )}
+
+          {step === "seed" && seed && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <h1 className="text-h2">{copy.seed.title}</h1>
+                <p className="mt-2 text-ink-2">{copy.seed.body}</p>
+              </div>
+              <ol aria-label={copy.seed.listLabel} className="grid grid-cols-2 gap-2 rounded-lg border border-line bg-surface p-3 sm:grid-cols-3">
+                {seed.map((w, i) => (
+                  <li key={`${w}-${i}`} className="flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2.5">
+                    <span className="w-5 text-right text-small tabular-nums text-ink-2">{i + 1}</span>
+                    <span className="font-mono font-medium">{w}</span>
+                  </li>
+                ))}
+              </ol>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Badge tone="accent"><ShieldCheck className="size-4" aria-hidden="true" />{copy.seed.wdk}</Badge>
+                <Button variant="ghost" small onClick={async () => { try { await navigator.clipboard.writeText(seed.join(" ")); setCopied(true); } catch { /* clipboard blocked */ } }}>
+                  {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}{copy.seed.copy}
+                </Button>
+              </div>
+              <p role="status" className="text-small text-ink-2">{copied ? copy.seed.copied : ""}</p>
+              <Notice tone="warn" icon={<TriangleAlert className="size-5" aria-hidden="true" />}>{copy.seed.warning}</Notice>
+              <label className="flex min-h-11 cursor-pointer items-start gap-3 text-small font-medium">
+                <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--accent)]" />
+                {copy.seed.confirm}
+              </label>
+              <Button disabled={!saved} onClick={() => { setSeed(null); router.push(home); }}>{copy.seed.done}<ArrowRight className="size-5" aria-hidden="true" /></Button>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+      <Sheet
+        open={simOpen} onClose={() => { setSimOpen(false); }} closeLabel={copy.phone.simulated.decline}
+        title={copy.phone.simulated.title} description={copy.phone.simulated.body}
+      >
+        <div className="flex flex-col gap-3">
+          <p className="flex items-center gap-3 rounded-md border border-line-strong bg-surface-2 p-3 font-semibold">
+            <Smartphone className="size-6 shrink-0" aria-hidden="true" /><span className="min-w-0 flex-1">{copy.phone.simulatedName}</span>
+            <Badge tone="warn">{copy.phone.simulated.badge}</Badge>
+          </p>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={() => { setSimOpen(false); setError(copy.phone.simulated.declined); }}>{copy.phone.simulated.decline}</Button>
+            <Button className="flex-1" onClick={() => { setSimOpen(false); void connectPhone(); }}><Check className="size-5" aria-hidden="true" />{copy.phone.simulated.approve}</Button>
+          </div>
+        </div>
+      </Sheet>
+    </div>
+  );
+}

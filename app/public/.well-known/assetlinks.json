@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "tech.tumoolo.heirloom",
+      "sha256_cert_fingerprints": [
+        "AC:BB:AF:D1:17:3F:13:DE:80:39:D4:E7:CF:3E:E7:59:10:F2:EC:F7:9F:93:FC:C5:5E:2F:C5:5B:27:9D:35:E9"
+      ]
+    }
+  }
+]

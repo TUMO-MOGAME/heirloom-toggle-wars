@@ -1,0 +1,216 @@
+/**
+ * Legacy Voice copy: the parent records their voice and a Legacy Book while alive; after they pass, each child
+ * can choose to hear the parent's own messages in that voice, always labelled as AI.
+ * The rule (18 Nov 2026, plan §16.17): the voice only ever says words its owner wrote or approved while alive.
+ * No chat and no calls in a parent's voice. Placeholders in {braces} are filled with fmt().
+ */
+
+/** The one line the owner can hear in their new voice while alive (the server speaks this, never client text). */
+export const legacyVoiceSample = "Hello my children. This is how I sound in Heirloom. I'm proud of you.";
+
+/**
+ * Helplines used when a child seems distressed. Verified 11 Nov 2026 against public listings (SADAG / press);
+ * re-check sadag.org before launch, as hours and numbers change.
+ */
+export const legacySafety = {
+  title: "You don't have to carry this alone",
+  open: "Having a hard time? Find help",
+  close: "Hide the help lines",
+  intro: "This is Heirloom, not {called}'s voice.",
+  body: "If things feel too heavy, please talk to someone today. These lines are free and confidential:",
+  lines: [
+    { name: "SADAG Suicide Crisis Helpline", number: "0800 567 567", tel: "0800567567", note: "Free call" },
+    { name: "SADAG 24-hour Mental Health Helpline", number: "0800 456 789", tel: "0800456789", note: "24 hours, 7 days" },
+    { name: "Emergency (from any phone)", number: "112", tel: "112", note: "If you are in danger right now" },
+  ],
+  adult: "Please also tell a trusted adult near you: {adults}, a teacher, or someone at your residence.",
+  website: "More help: sadag.org",
+} as const;
+
+export const legacyEntry = {
+  ownerTitle: "Your voice for them",
+  ownerBody: "Record your voice and the words you want your children to hear when you can't be there.",
+  ownerCta: "Set up your legacy voice",
+  ownerReady: "Your legacy voice is ready. Keep your Legacy Book up to date.",
+  ownerReadyCta: "Open your Legacy Book",
+  childTitle: "{called}'s messages for you",
+  childBody: "{called} wrote messages for you while {pronoun} was alive. Hear them in {possessive} own words, in {possessive} voice.",
+  /** No cloned voice: a labelled stand-in reads the words, so never "in his voice". */
+  childBodyStandin: "{called} wrote messages for you while {pronoun} was alive. Hear them in {possessive} own words, read by a stand-in voice.",
+  childCta: "Hear {called}'s messages",
+  childLocked: "{called} left words for you. They open once the estate unlocks.",
+  childMaybe: "If {called} recorded {possessive} voice for you, you can hear the words {pronoun} left here.",
+  sheetCta: "Hear {called}'s messages",
+  sheetHint: "{called}'s own words, in {possessive} voice: an AI copy made with {possessive} consent. It only plays what {pronoun} wrote.",
+  sheetHintStandin: "{called}'s own words, read by a stand-in voice. It only plays what {pronoun} wrote.",
+  moment: {
+    title: "{called} left you a message for this moment",
+    play: "Play {called}'s message",
+    stop: "Stop",
+    label: "AI voice, created with {called}'s consent",
+    simulated: "Stand-in voice: an ElevenLabs stock voice reads {called}'s own words",
+    optInFirst: "Switch on {called}'s voice to hear it",
+    maybe: "{called} may have left you a message for this moment",
+  },
+} as const;
+
+export const legacy = {
+  meta: { title: "Legacy voice" },
+  eyebrow: "Legacy voice",
+  owner: {
+    title: "Your voice for them",
+    body: "One day your children may need you and you won't be there. Record your voice and write messages for the moments you may miss. Heirloom will only ever play your own words, and always says it is an AI voice.",
+    steps: ["Consent", "Record", "Your voice", "Legacy Book", "Listen"],
+    stepLabel: "Step {n} of {total}: {name}",
+    promise: {
+      title: "What Heirloom promises",
+      items: [
+        "Only you can create your voice, while you are alive. Nobody can upload someone else's recordings.",
+        "It only ever says the words you wrote while you were alive. It never answers questions, takes calls or makes up new words in your voice.",
+        "Before your words play, Heirloom says that this is an AI copy of your voice. The screen always says \"AI voice\".",
+        "It can never approve claims, move money or ask anyone for money, PINs or passwords.",
+        "Help lines are always one tap away on your children's page.",
+        "You can delete your voice at any time. It is deleted at ElevenLabs too.",
+      ],
+    },
+    consent: {
+      title: "Your consent",
+      body: "Read this sentence out loud. We keep the recording as proof that you agreed.",
+      nameLabel: "Your full name",
+      nameHint: "As your children know you to have signed it.",
+      lineLabel: "The consent line",
+      record: "Record the consent line",
+      checkbox: { before: "I am the person in these recordings, I am alive and recording my own voice, and I agree to Heirloom creating an AI copy of my voice as described in the", link: "privacy policy", after: "." },
+      continue: "Continue to recording",
+      needRecording: "Record the consent line first.",
+      needTick: "Please tick the box to continue.",
+      needName: "Please enter your name.",
+    },
+    record: {
+      title: "Record your voice",
+      body: "Find a quiet room. Speak the way you speak to your children. Each prompt takes 20 to 40 seconds.",
+      prompts: [
+        { title: "Say hello", text: "Greet your children the way you do when you come home. Tell them about your day." },
+        { title: "Something you always say", text: "Say a few of the things you often tell them: about school, about money, about being kind." },
+        { title: "A story", text: "Tell a short story from when you were young, or read a paragraph from a book you love." },
+        { title: "Encouragement", text: "Encourage them as if they had a hard day. Take your time." },
+      ],
+      minNote: "Record at least {n}. More helps the voice sound like you.",
+      start: "Start recording",
+      stop: "Stop",
+      again: "Record again",
+      play: "Play back",
+      recording: "Recording… {secs}s",
+      level: "Microphone level",
+      recorded: "Recorded ({secs}s)",
+      notRecorded: "Not recorded yet",
+      micBlocked: "Microphone access was blocked. Allow it in your browser settings to record.",
+      unsupported: "This browser can't record audio. Try Chrome, Edge, Firefox or Safari.",
+      create: "Create my voice",
+      creating: "Creating your voice…",
+      count: "{n} of {total} recorded",
+    },
+    voice: {
+      title: "Your legacy voice",
+      created: "Created with your consent on {date}",
+      samples: "{n} recordings",
+      simulated: "Stand-in voice: no voice has been cloned yet, so an ElevenLabs stock voice reads these words. Record your voice to hear yourself.",
+      verification: "ElevenLabs asks the account holder to verify this new voice in the ElevenLabs dashboard before it can speak.",
+      hear: "Hear a sample",
+      delete: "Delete my voice",
+      deleteConfirm: "Delete your voice? Your recordings and the voice copy at ElevenLabs are deleted. Your Legacy Book stays until you delete it.",
+      deleteYes: "Yes, delete my voice",
+      deleteNo: "Keep it",
+      deleted: "Your voice was deleted.",
+      rerecord: "Record again from the start",
+      none: "You have not created a voice yet.",
+      sealed: "Your estate is no longer active, so a legacy voice can't be created or changed now.",
+      createdToast: "Your legacy voice is ready.",
+    },
+    book: {
+      title: "Your Legacy Book",
+      body: "Your children can read everything here. Your messages for moments play in your voice once you have recorded it; until then a labelled stand-in voice reads them. Nothing else is ever said in your voice.",
+      calledBy: "What your children call you",
+      calledByHint: "For example Dad, Papa, Baba, Tata, Mama.",
+      pronoun: "Speak about you as",
+      pronouns: { he: "he / him", she: "she / her", they: "they / them" },
+      values: "Your values",
+      valuesHint: "One per line. What matters most to you.",
+      lessons: "Life lessons",
+      lessonsHint: "One per line. Things you learnt the hard way.",
+      phrases: "Things you often say",
+      phrasesHint: "One per line. Your own words, the way you say them.",
+      guidanceTitle: "How to guide them, for all your children",
+      topics: { study: "Study and school", money: "Money", faith: "Faith and culture", family: "Family", other: "Anything else" },
+      childTitle: "For {name}",
+      childNote: "A personal note to {name}",
+      milestonesTitle: "Messages for moments",
+      milestonesBody: "Write a message for a moment you may miss. It plays when that moment comes.",
+      milestoneFor: "For",
+      milestoneAll: "All my children",
+      milestoneKind: "Moment",
+      kinds: { firstFees: "First fees paid", graduation: "Graduation", firstJob: "First job", birthday: "Birthday", hardDay: "A hard day", other: "Another moment" },
+      milestoneTitle: "Title",
+      milestoneText: "Your message",
+      addMilestone: "Add a message",
+      removeMilestone: "Remove this message",
+      save: "Save Legacy Book",
+      saved: "Legacy Book saved.",
+      deleteBook: "Delete Legacy Book",
+      deleteBookConfirm: "Delete everything in your Legacy Book? This cannot be undone.",
+      deletedBook: "Legacy Book deleted.",
+      invalid: "Please check the highlighted fields.",
+      /** Shown above the book while no voice is recorded: the book never waits for a cloned voice. */
+      standinNote: "You can write your messages now. Until you record your voice, a stand-in voice (an ElevenLabs stock voice, labelled as such) reads them to your children.",
+      starterNote: "Your Legacy Book is empty. Write what you want your children to read, and messages for the moments you may miss, then save it.",
+    },
+    preview: {
+      title: "Hear how it sounds to {name}",
+      body: "Pick a message and listen. This is exactly what {name} would hear.",
+      child: "Child",
+      play: "Play",
+      none: "Add a message in your Legacy Book to preview it.",
+    },
+  },
+  child: {
+    title: "{called}'s messages for you",
+    body: "{called} recorded {possessive} voice and wrote these messages for you while {pronoun} was alive. The voice only says {possessive} own words. It doesn't answer questions or take calls.",
+    /** No cloned voice: the words are {called}'s, the voice is a labelled stand-in. */
+    bodyStandin: "{called} wrote these messages for you while {pronoun} was alive. {called} did not record {possessive} voice, so a stand-in voice reads {possessive} own words. It doesn't answer questions or take calls.",
+    /** No Legacy Book at all. */
+    bodyNone: "Messages and words {called} wrote for you in a Legacy Book appear here.",
+    label: "AI voice, created with {called}'s consent on {date}",
+    labelSimulated: "Stand-in voice: an ElevenLabs stock voice reads these words",
+    optIn: {
+      title: "Would you like to hear {called}'s messages in {possessive} voice?",
+      body: "You will hear {called}'s messages in {possessive} own words, in {possessive} voice. The voice is an AI copy, made with {possessive} consent. It only plays what {pronoun} wrote, and it can't decide anything about money. You can switch it off at any time, and it's okay to not be ready.",
+      titleStandin: "Would you like to hear {called}'s messages read aloud?",
+      bodyStandin: "You will hear {called}'s messages in {possessive} own words, read by a stand-in voice: an ElevenLabs stock voice, not {possessive} own. It only plays what {pronoun} wrote, and it can't decide anything about money. You can switch it off at any time, and it's okay to not be ready.",
+      yes: "Yes, switch it on",
+      notNow: "Not now",
+      off: "Switch the voice off",
+      offDone: "The legacy voice is off. You can switch it on again here.",
+    },
+    locked: "{called}'s words open once the estate unlocks.",
+    noBook: "{called} didn't leave a Legacy Book",
+    noBookBody: "There are no messages here. If {called} wrote you a letter, you'll find it under Letters.",
+    lettersCta: "Open your letters",
+    messages: "Messages {called} left for you",
+    noMessages: "{called} didn't leave a message for you to play yet.",
+    play: "Play",
+    stopPlaying: "Stop",
+    words: "Words {called} wrote for you",
+    wordsBody: "To read in your own time. Only the messages above play in {possessive} voice.",
+    note: "A note for you",
+    values: "What mattered to {called}",
+    lessons: "What {called} learnt",
+    phrases: "Things {called} often said",
+    guidance: "{called}'s guidance",
+    error: "Something went wrong. Please try again.",
+    retry: "Try again",
+  },
+} as const;
+
+export type LegacyCopy = typeof legacy;
+export type LegacyEntryCopy = typeof legacyEntry;
+export type LegacySafetyCopy = typeof legacySafety;

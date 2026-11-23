@@ -1,0 +1,12 @@
+{
+  "name": "bigint-buffer",
+  "version": "2.0.0-heirloom.1",
+  "private": true,
+  "description": "Vendored pure-JS stand-in for bigint-buffer, whose native toBigIntLE overflows (GHSA-3gc7-fjrx-p6mg) and has no fixed release. Same four functions; no native code, no install script.",
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "dependencies": {
+    "buffer": "^6.0.3"
+  }
+}

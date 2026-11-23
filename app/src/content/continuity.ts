@@ -1,0 +1,238 @@
+/**
+ * Copy for continuity (plan.md §17): starter funds, practice wallets, what is left, ending a rule, referrals.
+ * One file with all four languages, loaded only by the components that use it.
+ * af, st and zu are machine-assisted and wait for a first-language read, like the rest of the translations.
+ */
+import type { Locale } from "@/lib/i18n/locales";
+
+const en = {
+  starter: {
+    title: "Get test money to begin",
+    body: "This is a test network. Heirloom gives a new wallet 500 test USD₮ and a little SOL for setup costs, once. It has no real value.",
+    cta: "Get test money",
+    working: "Getting it ready, a few seconds…",
+    done: "Test money received",
+    refused: {
+      alreadyFunded: "This wallet already had its test money. It is given once.",
+      hourlyCap: "This hour's test money has been given out. Try again at {time}.",
+      dailyCap: "Today's test money has been given out. Try again at {time}.",
+      rateLimited: "Too many requests from this connection. Try again at {time}.",
+      busy: "The test network is busy. Try again at {time}.",
+      empty: "The test money has run out until we top it up.",
+      unavailable: "Test money is not available on this site.",
+      failed: "That did not work. Reload and try again now.",
+    },
+    faucet: "You can also get free test SOL for setup costs with this wallet's address at",
+  },
+  practice: {
+    title: "Connect the people in your plan",
+    body: "Each person needs a wallet address. Paste theirs, or make practice wallets on this device to try every role yourself.",
+    cta: "Make practice wallets",
+    working: "Making wallets…",
+    note: "Practice wallets are for the test network. They stay in this browser under your PIN. Practice institutions are made too, so your rules have someone to pay.",
+    address: "{name}'s wallet address",
+    invalid: "That is not a Solana wallet address.",
+    ready: "Everyone has a wallet.",
+  },
+  residual: {
+    title: "Whatever is left",
+    body: "After your passing, money that no rule still needs can be paid to this person, and anyone can start that payment. Money a live rule can still pay stays in the vault.",
+    label: "Who receives what is left",
+    save: "Save",
+    saved: "Saved",
+    none: "Nobody is named yet. Until you choose someone, what is left follows your fallback list, or stays in the vault if you have none.",
+    goesTo: "Goes to {name}",
+    ready: "{amount} is no longer needed by any rule.",
+    waiting: "Every rule still needs what is in the vault.",
+    sweep: "Pay out what is left",
+    swept: "Paid out what was left",
+  },
+  endRule: {
+    cta: "End this rule",
+    confirm: "End it now",
+    keep: "Keep it",
+    warn: "It stops paying straight away, and this cannot be undone.",
+    ended: "Ended",
+    done: "Rule ended",
+  },
+  names: {
+    notDurable: "Names are not stored permanently on this test site yet. They are kept in the owner's browser, and the app doesn't write them on-chain. If they go missing for the family, the owner opens Heirloom in that browser and unlocks the wallet, and they are put back.",
+  },
+  referred: "The agent was not sure, so it did not approve. People decide: two trusted people, or the only one left who may decide, or the owner on a living plan.",
+  relist: "The last listing ended. It can be listed again.",
+};
+
+export type ContinuityCopy = typeof en;
+
+const af: ContinuityCopy = {
+  starter: {
+    title: "Kry toetsgeld om te begin",
+    body: "Hierdie is 'n toetsnetwerk. Heirloom gee 'n nuwe beursie een keer 500 toets-USD₮ en 'n bietjie SOL vir opstelkoste. Dit het geen werklike waarde nie.",
+    cta: "Kry toetsgeld",
+    working: "Maak gereed, 'n paar sekondes…",
+    done: "Toetsgeld ontvang",
+    refused: {
+      alreadyFunded: "Hierdie beursie het reeds sy toetsgeld gekry. Dit word een keer gegee.",
+      hourlyCap: "Hierdie uur se toetsgeld is uitgedeel. Probeer weer om {time}.",
+      dailyCap: "Vandag se toetsgeld is uitgedeel. Probeer weer om {time}.",
+      rateLimited: "Te veel versoeke vanaf hierdie verbinding. Probeer weer om {time}.",
+      busy: "Die toetsnetwerk is besig. Probeer weer om {time}.",
+      empty: "Die toetsgeld is op totdat ons dit aanvul.",
+      unavailable: "Toetsgeld is nie op hierdie werf beskikbaar nie.",
+      failed: "Dit het nie gewerk nie. Herlaai en probeer nou weer.",
+    },
+    faucet: "Jy kan ook gratis toets-SOL vir opstelkoste met hierdie beursie se adres kry by",
+  },
+  practice: {
+    title: "Koppel die mense in jou plan",
+    body: "Elke persoon het 'n beursie-adres nodig. Plak hulle s'n, of maak oefenbeursies op hierdie toestel om self elke rol te probeer.",
+    cta: "Maak oefenbeursies",
+    working: "Maak tans beursies…",
+    note: "Oefenbeursies is vir die toetsnetwerk. Hulle bly in hierdie blaaier agter jou PIN. Oefeninstansies word ook gemaak, sodat jou reëls iemand het om te betaal.",
+    address: "{name} se beursie-adres",
+    invalid: "Dit is nie 'n Solana-beursie-adres nie.",
+    ready: "Almal het 'n beursie.",
+  },
+  residual: {
+    title: "Wat ook al oorbly",
+    body: "Ná jou afsterwe kan geld wat geen reël meer nodig het nie aan hierdie persoon betaal word, en enigiemand kan daardie betaling begin. Geld wat 'n lewende reël nog kan betaal, bly in die kluis.",
+    label: "Wie ontvang wat oorbly",
+    save: "Stoor",
+    saved: "Gestoor",
+    none: "Niemand is nog benoem nie. Totdat jy iemand kies, volg die res jou terugvallys, of bly dit in die kluis as jy geen lys het nie.",
+    goesTo: "Gaan na {name}",
+    ready: "{amount} word deur geen reël meer benodig nie.",
+    waiting: "Die reëls het nog alles in die kluis nodig.",
+    sweep: "Betaal uit wat oorbly",
+    swept: "Die res is uitbetaal",
+  },
+  endRule: {
+    cta: "Beëindig hierdie reël",
+    confirm: "Beëindig dit nou",
+    keep: "Behou dit",
+    warn: "Dit hou dadelik op betaal, en dit kan nie ongedaan gemaak word nie.",
+    ended: "Beëindig",
+    done: "Reël beëindig",
+  },
+  names: {
+    notDurable: "Name word nog nie permanent op hierdie toetswerf gestoor nie. Hulle word in die eienaar se blaaier gehou, en die app skryf hulle nie op die blokketting nie. As die familie hulle nie meer sien nie, maak die eienaar Heirloom in daardie blaaier oop en ontsluit die beursie, en dan word hulle teruggesit.",
+  },
+  referred: "Die agent was onseker en het dus nie goedgekeur nie. Mense besluit: twee vertroude mense, of die enigste oorblywende een wat mag besluit, of die eienaar by 'n lewende plan.",
+  relist: "Die vorige lys het verval. Dit kan weer gelys word.",
+};
+
+const st: ContinuityCopy = {
+  starter: {
+    title: "Fumana tjhelete ya teko ho qala",
+    body: "Ena ke netweke ya teko. Heirloom e fa sepatjhe se setjha USD₮ e 500 ya teko le SOL e nyane bakeng sa ho qala, hang feela. Ha e na boleng ba nnete.",
+    cta: "Fumana tjhelete ya teko",
+    working: "E a lokiswa, metsotswana e mmalwa…",
+    done: "Tjhelete ya teko e fihlile",
+    refused: {
+      alreadyFunded: "Sepatjhe sena se se se fumane tjhelete ya sona ya teko. E fanwa hang feela.",
+      hourlyCap: "Tjhelete ya teko ya hora ena e fedile. Leka hape ka {time}.",
+      dailyCap: "Tjhelete ya teko ya kajeno e fedile. Leka hape ka {time}.",
+      rateLimited: "Dikopo tse tswang kgokelong ena di ngata haholo. Leka hape ka {time}.",
+      busy: "Netweke ya teko e phathahane. Leka hape ka {time}.",
+      empty: "Tjhelete ya teko e fedile ho fihlela re e tlatsa.",
+      unavailable: "Tjhelete ya teko ha e fumanehe webosaeteng ena.",
+      failed: "Ha e a sebetsa. Kenya leqephe hape mme o leke hona jwale.",
+    },
+    faucet: "O ka fumana le SOL ya teko ya mahala bakeng sa ho qala ka aterese ya sepatjhe sena ho",
+  },
+  practice: {
+    title: "Hokela batho ba morerong wa hao",
+    body: "Motho ka mong o hloka aterese ya sepatjhe. Kenya ya bona, kapa etsa dipatjhe tsa boikwetliso sesebedisweng sena ho leka karolo e nngwe le e nngwe.",
+    cta: "Etsa dipatjhe tsa boikwetliso",
+    working: "E etsa dipatjhe…",
+    note: "Dipatjhe tsa boikwetliso ke tsa netweke ya teko. Di dula sebatling sena ka tlasa PIN ya hao. Ho etswa le ditheo tsa boikwetliso, hore melao ya hao e be le eo e mo lefang.",
+    address: "Aterese ya sepatjhe ya {name}",
+    invalid: "Eo ha se aterese ya sepatjhe ya Solana.",
+    ready: "Motho e mong le e mong o na le sepatjhe.",
+  },
+  residual: {
+    title: "Se setseng",
+    body: "Ka mora lefu la hao, tjhelete e sa hlokweng ke molao e ka lefuwa motho enwa, mme mang kapa mang a ka qala tefo eo. Tjhelete eo molao o sebetsang o ntseng o ka e lefa e dula polokelong.",
+    label: "Ya amohelang se setseng",
+    save: "Boloka",
+    saved: "E bolokilwe",
+    none: "Ha ho motho ya boletsweng. Ho fihlela o kgetha motho, se setseng se latela lethathamo la hao la ho qetela, kapa se dula polokelong ha o se na lona.",
+    goesTo: "E ya ho {name}",
+    ready: "{amount} ha e sa hlokwa ke molao ofe kapa ofe.",
+    waiting: "Melao e ntse e hloka tsohle tse polokelong.",
+    sweep: "Lefa se setseng",
+    swept: "Se setseng se lefilwe",
+  },
+  endRule: {
+    cta: "Fedisa molao ona",
+    confirm: "O fedise jwale",
+    keep: "O boloke",
+    warn: "O emisa ho lefa hanghang, mme sena se ke ke sa kgutliswa.",
+    ended: "O fedile",
+    done: "Molao o fedisitswe",
+  },
+  names: {
+    notDurable: "Mabitso a so bolokwe ka ho sa feleng webosaeteng ena ya teko. A bolokwa sebatling sa mong'a wona, mme app ha e a ngole blockchaineng. Ha lelapa le sa a bone, mong'a moralo o bula Heirloom sebatling seo mme o notlolla sepatjhe, ebe a a kgutliswa.",
+  },
+  referred: "Agent e ne e sa kgodiseha, kahoo ha e a dumela. Batho ba etsa qeto: ba babedi ba tshepuwang, kapa ya setseng a le mong ya ka etsang qeto, kapa mong'a moralo o phelang.",
+  relist: "Lenane le fetileng le fedile. E ka behwa thekisong hape.",
+};
+
+const zu: ContinuityCopy = {
+  starter: {
+    title: "Thola imali yokuhlola ukuze uqale",
+    body: "Le yinethiwekhi yokuhlola. I-Heirloom inika isikhwama esisha u-500 USD₮ wokuhlola ne-SOL encane yokuqala, kanye kuphela. Ayinalo inani langempela.",
+    cta: "Thola imali yokuhlola",
+    working: "Iyalungiswa, imizuzwana embalwa…",
+    done: "Imali yokuhlola ifikile",
+    refused: {
+      alreadyFunded: "Lesi sikhwama sesiyitholile imali yaso yokuhlola. Inikwa kanye.",
+      hourlyCap: "Imali yokuhlola yaleli hora isiphelile. Zama futhi ngo-{time}.",
+      dailyCap: "Imali yokuhlola yanamuhla isiphelile. Zama futhi ngo-{time}.",
+      rateLimited: "Ziningi kakhulu izicelo ezivela kulokhu kuxhumana. Zama futhi ngo-{time}.",
+      busy: "Inethiwekhi yokuhlola imatasa. Zama futhi ngo-{time}.",
+      empty: "Imali yokuhlola iphelile kuze kube siyayigcwalisa.",
+      unavailable: "Imali yokuhlola ayitholakali kule sayithi.",
+      failed: "Akusebenzanga. Layisha kabusha uzame futhi manje.",
+    },
+    faucet: "Ungathola ne-SOL yokuhlola yamahhala yokuqala ngekheli lalesi sikhwama lapha:",
+  },
+  practice: {
+    title: "Xhuma abantu abasohlelweni lwakho",
+    body: "Umuntu ngamunye udinga ikheli lesikhwama. Namathisela elakhe, noma wenze izikhwama zokuzilolonga kule divayisi ukuze uzame zonke izindima.",
+    cta: "Yenza izikhwama zokuzilolonga",
+    working: "Yenza izikhwama…",
+    note: "Izikhwama zokuzilolonga ezenethiwekhi yokuhlola. Zihlala kulesi siphequluli ngaphansi kwe-PIN yakho. Kwenziwa nezikhungo zokuzilolonga, ukuze imithetho yakho ibe nongamkhokhela.",
+    address: "Ikheli lesikhwama lika-{name}",
+    invalid: "Lelo akulona ikheli lesikhwama se-Solana.",
+    ready: "Wonke umuntu unesikhwama.",
+  },
+  residual: {
+    title: "Okusele",
+    body: "Ngemva kokushona kwakho, imali engasadingwa ngumthetho ingakhokhelwa lo muntu, futhi noma ubani angaqalisa leyo nkokhelo. Imali umthetho osebenzayo osengayikhokha ihlala esisefeni.",
+    label: "Ozothola okusele",
+    save: "Londoloza",
+    saved: "Kulondoloziwe",
+    none: "Akekho oqokiwe. Kuze kube ukhetha umuntu, okusele kulandela uhlu lwakho lokugcina, noma kuhlale esisefeni uma ungenalo.",
+    goesTo: "Kuya ku-{name}",
+    ready: "U-{amount} akasadingwa yinoma yimuphi umthetho.",
+    waiting: "Imithetho isadinga konke okusesisefeni.",
+    sweep: "Khokha okusele",
+    swept: "Okusele kukhokhiwe",
+  },
+  endRule: {
+    cta: "Qeda lo mthetho",
+    confirm: "Wuqede manje",
+    keep: "Wugcine",
+    warn: "Uyeka ukukhokha ngokushesha, futhi lokhu akunakuhlehliswa.",
+    ended: "Uphelile",
+    done: "Umthetho uqediwe",
+  },
+  names: {
+    notDurable: "Amagama awakagcinwa unomphela kule sayithi yokuhlola. Agcinwa esipheqululini somnikazi, futhi i-app ayiwabhali ku-blockchain. Uma umndeni ungasawaboni, umnikazi uvula i-Heirloom kuleso siphequluli avule isikhwama, bese ebuyiselwa.",
+  },
+  referred: "I-agent ibingaqiniseki, ngakho ayivumanga. Abantu bayanquma: ababili abathembekile, noma oyedwa osele onganquma, noma umnikazi ohlelweni oluphilayo.",
+  relist: "Uhlu lwangaphambilini luphelile. Ingafakwa futhi ukuze ithengiswe.",
+};
+
+export const continuity: Record<Locale, ContinuityCopy> = { en, af, st, zu };

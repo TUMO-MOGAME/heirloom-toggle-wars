@@ -1,0 +1,122 @@
+# Testing every payment on Solana devnet
+
+The public site (heirloom-one-iota.vercel.app) is the **demo mode**: payments there are simulated.
+To see **real** transactions, run Heirloom on your laptop in **chain mode** on Solana **devnet**.
+Devnet uses free test USD₮ and test SOL: nothing here costs real money, so the amounts don't matter.
+Small amounts still keep the vault full for the next run.
+
+Every step below ends with a **Receipt** or Explorer link (explorer.solana.com, `?cluster=devnet`).
+Open it: "Success" / "Finalized" means the transaction really happened on-chain.
+
+## 0. Before you start (5 minutes)
+
+1. Free disk space: at least 3 GB (`Get-PSDrive C`).
+2. Start the app on devnet (keep this window open):
+   ```powershell
+   cd <repo root>
+   powershell -ExecutionPolicy Bypass -File scripts\demo-devnet.ps1
+   ```
+   Wait for `Ready`, then open **http://localhost:3000**. The first page takes about a minute to compile.
+3. Check it is on devnet: http://localhost:3000/api/health should show `"mode":"chain"`, `"programDeployed":true`,
+   `"sponsorAvailable":true`.
+4. Bring in the demo wallets, **once per browser** (use Chrome or Edge, not a private window):
+   open `scripts\.demo-wallets.json` in Notepad. For each person below, go to **http://localhost:3000/start?new=1**:
+   - Name: as below. "I am": as below. Tick **I already have a recovery phrase** and paste that person's
+     `seeds` value from the file (the 12/24 words). Tick the consent box, then **Continue**.
+   - PIN: use the same 6-digit PIN for everyone (e.g. `246810`). Then **Bring in my wallet**.
+
+   | Name | "I am" | Seed in the file |
+   |---|---|---|
+   | Thabo | Planning for my family | `thabo2` (owner of the demo estate since 17 Nov; `thabo` owns the previous one, `dad` the first, already unlocked one) |
+   | Lerato | A family member | `lerato` |
+   | Adv. Ndlovu | A trusted person | `ndlovu` |
+   | Ms. Pillay | A trusted person | `pillay` |
+   | Pieter | Buying a car from an estate | `pieter` |
+   | Aunt Zodwa (optional) | Watching a trusted person's approvals | `zodwa` |
+
+   Switch person at any time with the **person card at the bottom of the sidebar**. To add the next person, open
+   that card and choose **Add another wallet**: the form starts empty each time.
+   Never share or screen-record that file: the seeds are devnet-only, but keep the habit.
+5. Documents to upload: `docs\demo-documents\accepted\` (they pass) and `docs\demo-documents\rejected\` (they fail on
+   purpose). Which file goes where: `docs\demo-documents\README.md`.
+   The accepted ones are approved by the AI agent; each rejected one is stopped with a clear reason
+   (wrong person, altered amount, wrong document, hidden instructions to the AI, unsigned affidavit).
+
+## The demo estate (since 15 Nov 2026)
+
+The app opens **Thabo's guardians demo estate** `J6WCQvgk…KMaj` (17 Nov 2026: 5-minute waiting period, so disputes have 5 minutes; no test rules), seeded by `scripts/seed-guardians-assets.ts --owner thabo2`
+(see `scripts/README.md`). It tells the same story as the demo site:
+- **Assets**: the 2017 Toyota Corolla 1.8 Exclusive CVT (asking 13,500, minimum 12,500, hardship floor 10,500 USD₮,
+  16 photos + spec sheet) and the 2025 Big Boy Mustang 250 (2,000 / 1,800 / 1,500 USD₮, 9 photos + spec sheet). The
+  photos are bundled with the app; they show because each asset's media root on-chain equals the bundled set's root.
+- **People**: Uncle Bongani's seat has backups Cousin Kagiso and Adv. Priya Naidoo and Aunt Zodwa as monitor; the
+  fallback plan is Lerato, Sipho, Naledi, then Ithemba Children's Charity. Objection window 60 s, succession wait 60 s,
+  fallback wait 2 minutes.
+- **Yearly limit**: Naledi's school fees, at most 3,000 USD₮ a year (350 already used by the seeded claim).
+- History: one residence payment (300), Naledi's school-fee claim (350, agent review → Thabo's approval → paid),
+  a 500 top-up and 50 sent to Lerato.
+
+The first demo estate `JBds…G9E` (owner `dad`) is **Unlocked** and its 2019 Corolla was sold on 13 Nov; it keeps
+that real history and is still listed for the family, after the demo estate.
+
+## A. While Thabo is alive (can be repeated any time)
+
+| # | Who | Where | Do | You should see |
+|---|---|---|---|---|
+| A1 | Thabo | **Estate** | Look at the vault, rules and the activity list | Vault about 20,000 USD₮; recent history: a residence payment, Naledi's school fees paid, a 500 top-up, 50 sent to Lerato; Naledi's rule shows "350 of 3 000 USD₮ used this year" |
+| A2 | Thabo | **Estate** → scheduled payment | **Pay now** on Lerato's residence payment when it says **Due now** | Payment sheet → Confirmed → Receipt. Residence +300 |
+| A3 | Thabo | **Estate** → **Add or withdraw** → **Add to vault** | Add **5** USD₮ | Confirmed; vault +5 |
+| A4 | Thabo | **Send to family** | Pick Lerato, amount **1**, **Review payment** → **Approve**, enter PIN | "Network fee … paid by Heirloom"; Confirmed; Receipt |
+| A5 | Lerato | **Send to family** | **Someone else**, paste Sipho's address from the file (`addresses.sipho`), **1** → Review → Approve | Fee paid by Heirloom: Lerato's SOL does not change |
+| A5b | Thabo | **Assets** | Open each asset | Photos with a gallery by label, the spec sheet, the price ladder (minimum 12,500 for the Corolla) |
+| A5c | Thabo | **People** | Look at Uncle Bongani's seat and the fallback plan | Backups Kagiso and Priya, monitor Zodwa; fallback children → charity |
+| A6 | Any | **Call Heirloom** | Ask "How much is in the vault?", "Who are my trusted people?" | Spoken answers with the real devnet numbers |
+
+## B. The passing → unlock (one-way: do it once, ideally on camera)
+
+After this, the estate stays unlocked. Section A's living-plan steps then stop and section C opens.
+
+| # | Who | Where | Do | You should see |
+|---|---|---|---|---|
+| B1 | Lerato | **Timeline** → **Report a passing** | Upload `accepted/1-death-certificate-thabo-mokoena.pdf` (or first `rejected/1-…` to show a rejection), submit | "Report received"; the agent's report ("Looks genuine"); Receipt |
+| B2 | Adv. Ndlovu | **Inbox** | Read the report → **Confirm the passing** | "1 of 2 trusted people approved" |
+| B3 | Ms. Pillay | **Inbox** | **Confirm the passing** | "The waiting period is running" (60 seconds on this demo) |
+| B4 | Thabo (optional) | **Estate** | You'll see **I'm still here**. Don't press it unless you want to cancel the passing | |
+| B5 | Anyone | **Estate** / **Timeline** | After 60 s: **Unlock the estate** | "The estate is unlocked"; Receipt |
+
+## C. After unlock: claims and the car sale
+
+| # | Who | Where | Do | You should see |
+|---|---|---|---|---|
+| C1 | Lerato | **Claims** | Tuition rule → payee University of Cape Town → amount **5** → upload `accepted/2-uct-fee-statement-lerato.pdf` (try `rejected/4-…` first to show the AI catching a trick) → **Submit claim** | "Claim submitted"; agent's report "Looks genuine"; Receipt |
+| C2 | Adv. Ndlovu | **Inbox** | **Approve and pay** | Approved; the demo estate has a Guard, so the payment waits for the 60-second objection window (Aunt Zodwa could object), then is paid to University of Cape Town; Receipt; vault −5 |
+| C3 | Lerato | **Claims** | Type **5,000** on the same rule (don't submit) | A warning: over the per-claim cap of 4,000. The contract would refuse it too |
+| C4 | Adv. Ndlovu | **Car** | **Open the sale** | Car listed; "Offers in escrow" |
+| C5 | Pieter | **Car** | **Make an offer** of **13,000** → **Put offer in escrow** | Offer in escrow; Receipt (test USD₮; the Corolla's minimum is 12,500) |
+| C6 | Pieter | **Car** | Type an offer of **11,000** (don't submit) | "Blocked: below the minimum". The contract never accepts a sale under the floor |
+| C7 | Adv. Ndlovu | **Car** | **Ask the agent to settle** | The agent ranks the offers and accepts the best one; the car's title goes to Pieter and 13,000 to the vault; Receipt. With the Guard, a sale objection by a monitor would pause it |
+| C8 | Optional: Lerato | **Hardship** | Upload `accepted/5-hardship-affidavit-lerato.pdf` (must be done **before** C7) | Two trusted people approve, then offers from 10,500 are allowed. **Each family member can ask only once per car** (the contract creates one request account), so upload the unsigned `rejected/5-…` only if you want to show the rejection instead |
+
+## Where the first demo estate stands (13 Nov 2026)
+
+Sections A, B and C were run on the first demo estate (`JBds…G9E`, owner `dad`); `docs/demo-screenshots/` has a picture of every step and its
+Explorer proof. The estate is **Unlocked**, the car is **Sold** and Lerato's one hardship request was declined.
+Still repeatable: A2 (Pay now, every 60 s), A4/A5 (Send to family), C1–C3 (more claims, small amounts) and A6 (the call).
+
+## D. Check it really happened
+
+- Each **Receipt** opens Solana Explorer: status **Success**, the program `b3PBVwkL…FY`, the token transfer amounts.
+- The demo estate: https://explorer.solana.com/address/J6WCQvgkJmzYQXjo37GLktZnFB9nbpwCchkCVKbcKMaj?cluster=devnet
+  (the first one: https://explorer.solana.com/address/JBdsDy67YBfpV8YAc2H1h7w95h8uJ2XUzTDh9vt34G9E?cluster=devnet)
+- The whole B + C story was rehearsed on 12 Nov 2026 on a throwaway estate (`scripts/rehearse-devnet.ts`,
+  estate `9jn713f444XH5E9uywJ6oNJJDrWWDoEcho2gWUrPnE3d`): unlocked, claim paid, car sold, vault 20 → 26.
+
+## If something goes wrong
+
+| Problem | Fix |
+|---|---|
+| "Server responded with 429" in the dev overlay | The free devnet RPC is busy; the app retries by itself. Wait a few seconds |
+| Sponsor unavailable / fee not paid by Heirloom | The fee wallet `261pQ…sjNg` is low on SOL. Top it up at https://faucet.solana.com |
+| A step says "BadStatus" | That step belongs to another phase (e.g. a claim on an after-passing rule before unlock) |
+| Want to record B and C again | An estate can't be "un-passed". Seed a fresh one with a new owner persona (`scripts/seed-guardians-assets.ts --owner <persona>`, as done for `thabo2`) |
+| Voice call says it can't see the estate | Open the call from a page after the estate has loaded (the sidebar shows the person) |
