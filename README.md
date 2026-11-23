@@ -3,9 +3,10 @@
 **A living estate plan on Solana: pay your children's school fees and allowances today, and keep paying them after
 you're gone, under rules a program enforces.**
 
-> Dev3pack Global Hackathon, 27–29 November 2026 · Best App Overall on Solana · [submission](docs/dev3pack-submission.md)
->
-> Built before the event and first submitted to W3Node on 13 November 2026. See [work done before the event](#work-done-before-the-event).
+> **Toggle Wars (WeMakeDevs × Flagsmith), 26–29 November 2026 · Track 01: Test Something Real.**
+> One real A/B test on the plan builder with Flagsmith Experimentation: [the brief, the rules and our plan](docs/toggle-wars.md).
+> The app itself was built before this event (first commit of this repo); everything after that commit is Toggle Wars work.
+> Work in progress: the experiment, results and setup steps land here during the hackathon.
 
 **The problem.** 66% of South Africans have no will ([Sanlam Legacy Wills Survey 2025, via TimesLIVE](https://www.timeslive.co.za/news/south-africa/2025-09-19-66-of-south-africans-risk-family-feuds-by-dying-without-wills-sanlam-survey/)).
 When a parent dies, the estate freezes: a simple estate used to take 6–9 months to wind up and now takes about
