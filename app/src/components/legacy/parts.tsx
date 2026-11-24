@@ -3,6 +3,8 @@ import clsx from "clsx";
 import { HeartHandshake, Pause, Phone, Play, ShieldCheck } from "@/components/ui/icons";
 import type { LegacySafetyCopy } from "@/content/legacy";
 import { fmt } from "@/components/shell/copy";
+import { VOICE_LANGUAGES, languagesFor, type VoiceLanguage } from "@/lib/voice/languages";
+import { useVoiceLanguage } from "@/lib/voice/languages-client";
 
 /**
  * Persistent "AI voice" label (rule 3). Always visible while the legacy voice is on screen.
@@ -70,3 +72,24 @@ export function LevelMeter({ level, label }: { level: number; label: string }) {
     </div>
   );
 }
+
+/**
+ * The spoken-language choice for Legacy Voice (the shared one from lib/voice/languages-client.ts, so the call,
+ * receipts and messages follow one picker). Only languages the voice can speak are offered.
+ */
+export function SpeechLanguagePicker({ id, label, hint, className }: { id: string; label: string; hint?: string; className?: string }) {
+  const { lang, set } = useVoiceLanguage("speech");
+  return (
+    <div className={clsx("flex flex-col gap-1.5", className)}>
+      <label htmlFor={id} className="text-small font-semibold text-ink">{label}</label>
+      <select id={id} value={lang} onChange={(e) => set(e.target.value as VoiceLanguage)} aria-describedby={hint ? `${id}-hint` : undefined}
+        className="block min-h-12 w-full max-w-xs rounded-md border border-line-strong bg-surface px-3.5 text-body text-ink hover:border-ink focus:border-ink">
+        {languagesFor("speech").map((l) => <option key={l} value={l} lang={VOICE_LANGUAGES[l].tag}>{VOICE_LANGUAGES[l].name}</option>)}
+      </select>
+      {hint && <p id={`${id}-hint`} className="text-small text-ink-2">{hint}</p>}
+    </div>
+  );
+}
+
+/** `lang` and `dir` for text in a voice language (Arabic reads right to left). */
+export const langProps = (l: VoiceLanguage) => ({ lang: VOICE_LANGUAGES[l].tag, dir: VOICE_LANGUAGES[l].rtl ? "rtl" as const : "ltr" as const });

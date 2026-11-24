@@ -1060,6 +1060,9 @@ export function createChainService(): HeirloomService {
     deleteLegacyBook: (estate) => legacyApi.deleteBook(legacySigner(estate)),
     setLegacyOptIn: (estate, on) => legacyApi.optIn(legacySigner(estate), on),
     legacySpeak: (estate, input) => legacyApi.speak(legacySigner(estate), input),
+    saveLegacyTranslation: (estate, input) => legacyApi.saveTranslation(legacySigner(estate), input),
+    deleteLegacyTranslation: (estate, key) => legacyApi.deleteTranslation(legacySigner(estate), key),
+    suggestLegacyTranslation: (estate, key) => legacyApi.suggestTranslation(legacySigner(estate), key),
   };
   return service;
 }

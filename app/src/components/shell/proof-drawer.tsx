@@ -11,6 +11,8 @@ import { ExplorerLink, Notice } from "@/components/ui/primitives";
 import { timeAgo, useCopy } from "./copy";
 import { ActivityText, useNameBook } from "./activity-text";
 import type { NameBook } from "@/lib/people";
+import { ReceiptButton } from "@/components/voice/receipt-button";
+import type { DemoReceiptSource } from "@/lib/voice/receipts";
 
 const PROGRAM_ID = process.env.NEXT_PUBLIC_HEIRLOOM_PROGRAM_ID ?? "";
 
@@ -31,8 +33,11 @@ export function CopyValue({ value, copyLabel, copiedLabel }: { value: string; co
   );
 }
 
-/** Activity lines, newest first, each with its receipt (the Proof drawer and the public record share it). */
-export function ActivityList({ items, now, book }: { items: ActivityItem[]; now: number | null; book: NameBook }) {
+/**
+ * Activity lines, newest first, each with its receipt (the Proof drawer and the public record share it). Payments
+ * also get "Hear it" (a spoken receipt); `receipts` gives the demo the rules and assets its receipt ids name.
+ */
+export function ActivityList({ items, now, book, receipts }: { items: ActivityItem[]; now: number | null; book: NameBook; receipts?: Omit<DemoReceiptSource, "item"> }) {
   const { common } = useCopy();
   const c = common.proof;
   return (
@@ -45,7 +50,10 @@ export function ActivityList({ items, now, book }: { items: ActivityItem[]; now:
           </div>
           <div className="flex flex-wrap items-center justify-between gap-x-3">
             <span className="text-[0.75rem] text-ink-2"><span className="font-mono">{a.kind}</span> · {timeAgo(a.ts, now, common.time)}</span>
-            {a.txSignature && <ExplorerLink signature={a.txSignature} label={c.receipt} srLabel={c.receiptSr} />}
+            <span className="flex flex-wrap items-center gap-x-2">
+              {a.txSignature && <ExplorerLink signature={a.txSignature} label={c.receipt} srLabel={c.receiptSr} />}
+              <ReceiptButton item={a} demo={receipts} />
+            </span>
           </div>
         </li>
       ))}
@@ -109,7 +117,7 @@ export function ProofDrawer() {
         {!snap || snap.activity.length === 0 ? (
           <p className="py-8 text-center text-ink-2">{c.empty}</p>
         ) : (
-          <ActivityList items={snap.activity} now={now} book={book} />
+          <ActivityList items={snap.activity} now={now} book={book} receipts={{ estate: snap.estate.address, rules: snap.rules, assets: snap.assets }} />
         )}
       </div>
     </Sheet>

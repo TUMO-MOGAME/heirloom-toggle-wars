@@ -24,6 +24,7 @@ import { fmt, useCopy } from "@/components/shell/copy";
 import { Gate } from "@/components/shell/gate";
 import { ActivityText, useNameBook } from "@/components/shell/activity-text";
 import { categoryIcon } from "./category-icon";
+import { ReceiptButton } from "@/components/voice/receipt-button";
 
 type Copy = ScreensCopy["statement"];
 
@@ -93,6 +94,7 @@ function Statement({ copy, snap, initial }: { copy: Copy; snap: EstateSnapshot; 
   const purposeName = (p: Purpose) => (p === "Fallback" ? copy.fallback : p === "Unknown" ? copy.unknown : common.status.category[p]);
   const person = (w: Base58 | null) => (w ? nameOf(book, w) ?? copy.unknown : copy.unknown);
   const payeeName = (w: Base58 | null) => (w ? book.get(w)?.name ?? copy.unknown : copy.unknown);
+  const receipts = useMemo(() => ({ estate: snap.estate.address, rules: snap.rules, assets: snap.assets }), [snap]);
   const i = months.indexOf(month);
   const older = i >= 0 && i < months.length - 1 ? months[i + 1] : null;
   const newer = i > 0 ? months[i - 1] : null;
@@ -168,7 +170,10 @@ function Statement({ copy, snap, initial }: { copy: Copy; snap: EstateSnapshot; 
                     </div>
                     <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3">
                       <span className="text-[0.75rem] text-ink-2">{fmtDay(l.ts)} · {l.scheduled ? copy.scheduled : l.kind === "FallbackExecuted" ? copy.fallback : copy.claim}</span>
-                      {l.txSignature && <ExplorerLink signature={l.txSignature} label={copy.receipt} srLabel={copy.receiptSr} className="min-h-9!" />}
+                      <span className="flex flex-wrap items-center gap-x-2">
+                        {l.txSignature && <ExplorerLink signature={l.txSignature} label={copy.receipt} srLabel={copy.receiptSr} className="min-h-9!" />}
+                        <ReceiptButton item={l.item} demo={receipts} />
+                      </span>
                     </div>
                   </li>
                 );
@@ -200,6 +205,7 @@ function Statement({ copy, snap, initial }: { copy: Copy; snap: EstateSnapshot; 
                           <>
                             <ExplorerLink signature={l.txSignature} label={copy.receipt} srLabel={copy.receiptSr} className="min-h-9! print-hide" />
                             <span className="hidden break-all font-mono text-[0.7rem] print:inline">{l.txSignature}</span>
+                            <ReceiptButton item={l.item} demo={receipts} className="-ms-2" />
                           </>
                         )}
                       </td>

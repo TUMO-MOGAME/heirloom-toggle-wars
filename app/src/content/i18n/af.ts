@@ -11,11 +11,19 @@ import { safeguardsAf } from "./safeguards";
 import { askAf } from "./ask";
 import { treeAf } from "./tree";
 import { lettersAf } from "./letters";
+import { listenAf } from "./listen";
+import { voiceAf } from "./voice";
+import { receiptsAf } from "./receipts";
+import { legacyAf } from "./legacy";
 
 export const af: Bundle = {
   ask: askAf,
   tree: treeAf,
   letters: lettersAf,
+  listen: listenAf,
+  voice: voiceAf,
+  receipts: receiptsAf,
+  legacy: legacyAf,
   legalNote: "Hierdie bladsy is net in Engels beskikbaar. Dit is 'n sjabloon wat 'n regsadviseur moet nagaan.",
 
   site: {
@@ -967,6 +975,12 @@ export const af: Bundle = {
         canWin: "Haal die minimum",
         blocked: "Geblokkeer: onder die minimum",
         blockedHard: "Geblokkeer: onder die swaarkryminimum",
+        why: {
+          best: "Die hoogste aanbod op of bo die minimum van {min}.",
+          outbid: "Haal die minimum van {min}, maar daar is 'n hoër aanbod.",
+          below: "Onder die minimumprys van {min}. Geblokkeer tensy 'n swaarkryversoek goedgekeur word.",
+          belowHard: "Onder die swaarkryminimum van {min}. Die kontrak aanvaar dit nooit nie.",
+        },
         ranking: "Die agent se siening",
         rankingLoading: "Die agent rangskik die aanbiedinge",
       },

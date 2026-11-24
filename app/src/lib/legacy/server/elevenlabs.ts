@@ -54,13 +54,23 @@ export async function deleteElevenVoice(voiceId: string): Promise<void> {
   catch (e) { if (!(e instanceof ElevenLabsError && e.status === 404)) throw e; }
 }
 
-export async function textToSpeech(voiceId: string, text: string): Promise<Uint8Array> {
+/**
+ * The text-to-speech model for a language (checked 24 Nov 2026, elevenlabs.io/docs/overview/models):
+ * eleven_multilingual_v2 does not speak Afrikaans, Swahili or isiZulu; eleven_v4 does. Everything else stays on
+ * eleven_multilingual_v2. ELEVENLABS_TTS_MODEL overrides both. `null` = the original words (multilingual v2).
+ */
+const V4_ONLY = new Set(["af", "sw", "zu"]);
+export function ttsModelFor(lang: string | null | undefined): string {
+  return process.env.ELEVENLABS_TTS_MODEL || (lang && V4_ONLY.has(lang) ? "eleven_v4" : "eleven_multilingual_v2");
+}
+
+export async function textToSpeech(voiceId: string, text: string, model = ttsModelFor(null)): Promise<Uint8Array> {
   const res = await call(`/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "content-type": "application/json", accept: "audio/mpeg" },
     body: JSON.stringify({
       text,
-      model_id: process.env.ELEVENLABS_TTS_MODEL || "eleven_multilingual_v2",
+      model_id: model,
       voice_settings: { stability: 0.55, similarity_boost: 0.85, style: 0.1, use_speaker_boost: true },
     }),
   });

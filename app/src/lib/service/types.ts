@@ -11,7 +11,7 @@ import type {
   PaymentReview, PaymentReceipt, SavedRecipient, Recurrence, FeeQuote, FeeQuoteInput,
 } from "../types";
 import type { Locale } from "../i18n/locales";
-import type { LegacyBook, LegacySpeech, LegacyStatus, LegacyVoiceInfo } from "../legacy/schema";
+import type { LegacyBook, LegacySpeech, LegacyStatus, LegacyTranslation, LegacyVoiceInfo, TranslationInput, TranslationKey } from "../legacy/schema";
 import type { LegacyVoiceUpload, SpeakInput } from "../legacy/client";
 import type { AssetKind, GuardiansService, GuardiansSnapshot } from "../guardians/types";
 import type { Dispute, DisputesService } from "../disputes/types";
@@ -160,7 +160,7 @@ export interface HeirloomService extends GuardiansService, DisputesService, AskS
 
   // Legacy voice (lib/legacy/*): the owner's consented voice clone + Legacy Book; after unlock a child who opts in
   // hears the owner's own messages for moments in that voice.
-  // Writes are owner-only; the voice id never reaches the browser. Mock: browser speech stands in, clearly labelled.
+  // Writes are owner-only; the voice id never reaches the browser. Mock: the demo's ElevenLabs lines, or the words shown.
   /** `quiet`: a background read that must not ask for the PIN (chain: fails with code "locked" when it would). */
   legacyStatus(estate: Base58, opts?: { quiet?: boolean }): Promise<LegacyStatus>;
   /** Owner, while alive: spoken consent line + ticked box + ≥ 3 samples → Instant Voice Clone. */
@@ -176,4 +176,9 @@ export interface HeirloomService extends GuardiansService, DisputesService, AskS
    * simulated text to speak locally. Never free text: no chat, no calls, no new words (plan §16.17).
    */
   legacySpeak(estate: Base58, input: SpeakInput): Promise<LegacySpeech>;
+  /** Owner, while Active: approve their own words for a message in another spoken language (plan §20.1 item 4). */
+  saveLegacyTranslation(estate: Base58, input: TranslationInput): Promise<LegacyTranslation>;
+  deleteLegacyTranslation(estate: Base58, key: TranslationKey): Promise<void>;
+  /** Owner, while Active: a machine suggestion of their own message in another language. Nothing is stored. */
+  suggestLegacyTranslation(estate: Base58, key: TranslationKey): Promise<{ text: string }>;
 }

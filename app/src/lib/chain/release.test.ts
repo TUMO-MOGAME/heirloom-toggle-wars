@@ -107,7 +107,8 @@ describe("the pin", () => {
   });
 });
 
-describe("the server fails closed (this build is unpinned)", () => {
+// The fake chain deploys at SLOT, never the pinned slot: an unpinned build says "unpinned", a pinned one "deployment".
+describe("the server fails closed (this build is unpinned, or pinned to another deployment)", () => {
   it("nothing the agent signs: assertProgram, and agentSignAndSend before any key is opened", async () => {
     deploy();
     await expect(assertProgram()).rejects.toMatchObject({ status: 503, code: "program_mismatch" });
@@ -133,7 +134,8 @@ describe("the server fails closed (this build is unpinned)", () => {
     const { GET } = await import("@/app/api/health/route");
     const res = await GET(new Request("http://t/api/health", { headers: { "x-forwarded-for": "203.0.113.50" } }));
     expect(res.status).toBe(503);
-    expect(await res.json()).toMatchObject({ ok: false, programCurrent: false, programProblem: "unpinned" });
+    expect(RELEASE.deploySlot).not.toBe(SLOT);
+    expect(await res.json()).toMatchObject({ ok: false, programCurrent: false, programProblem: RELEASE.deploySlot === null ? "unpinned" : "deployment" });
   });
 
   it("the check is one small read, shared for a few seconds", async () => {

@@ -5,10 +5,11 @@
  *  - MilestoneMoment: "Dad left you a message for this moment" when that moment has happened
  *    (first fees: a paid claim to a university for this child)
  *  - LegacySheetLink: "Hear Dad's messages" in the agent sheet
- * Copy comes from the small `legacyEntry` object only.
+ * Copy comes from the small `legacyEntry` object only, in the app's language (content/i18n/legacy.ts).
  */
 import { HeartHandshake, Mic } from "@/components/ui/icons";
-import { legacyEntry as copy } from "@/content/legacy";
+import { legacyEntry } from "@/content/legacy";
+import { useLocalized } from "@/lib/i18n/client";
 import { useEstate } from "@/lib/hooks/estate";
 import { findMoment, isStandin, pronouns } from "@/lib/legacy/rules";
 import type { LegacyStatus } from "@/lib/legacy/schema";
@@ -24,7 +25,10 @@ function vars(s: LegacyStatus | null) {
   return { called, pronoun: p.subject, possessive: p.possessive };
 }
 
+const useEntryCopy = () => useLocalized(legacyEntry, (t) => t.legacy.entry);
+
 export function LegacyEntry() {
+  const copy = useEntryCopy();
   const { role, snap } = useEstate();
   const { status, passive } = useLegacyStatus({ passive: true });
   if (!snap || (!status && !passive) || (role !== "owner" && role !== "beneficiary")) return null;
@@ -61,6 +65,7 @@ export function LegacyEntry() {
 }
 
 export function MilestoneMoment() {
+  const copy = useEntryCopy();
   const { role, snap, session, service, notify } = useEstate();
   const { status, passive } = useLegacyStatus({ passive: true });
   const { play, stop, playing } = useLegacyPlayer();
@@ -110,6 +115,7 @@ export function MilestoneMoment() {
 }
 
 export function LegacySheetLink({ onGo }: { onGo?: () => void }) {
+  const copy = useEntryCopy();
   const { role } = useEstate();
   const { snap } = useEstate();
   const { status, passive } = useLegacyStatus({ passive: true });

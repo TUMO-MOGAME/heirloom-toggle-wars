@@ -1,15 +1,19 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { dailyCap, handler, HttpError, isChainMode, json, parseJson, rateLimitShared } from "@/lib/api/http";
-import { chatMessageSchema, localeSchema } from "@/lib/agent/schemas";
+import { chatMessageSchema } from "@/lib/agent/schemas";
 import { orchestrate, ROUTABLE } from "@/lib/agent/orchestrator";
 import { toEstateFacts, type EstateFacts } from "@/lib/agent/facts";
 import { estateFactsSchema } from "@/lib/agent/facts-schema";
 import { loadPublicSnapshot, loadSnapshot } from "@/lib/server/estate";
 import { memberReader } from "@/lib/access/server";
 import { saveTranscript } from "@/lib/db";
+import { isVoiceLanguage, type VoiceLanguage } from "@/lib/voice/languages";
 
 export const maxDuration = 60;
+
+/** A spoken language (lib/voice/languages.ts, a superset of the UI locales); anything else (e.g. "none") is ignored. */
+const language = z.preprocess((v) => (isVoiceLanguage(v) ? v : undefined), z.custom<VoiceLanguage>().optional());
 
 const addr = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
 const body = z.object({
@@ -31,8 +35,10 @@ const body = z.object({
   estate: z.string().max(64).optional(),
   page: z.string().max(120).optional(),
   conversation_id: z.string().max(80).optional(),
-  // The visitor's language (both shapes); the agent replies in it.
-  locale: localeSchema.optional(),
+  // The visitor's language (both shapes); the agent replies in it. `lang` is the call's spoken language
+  // ({{lang}} from the voice session, plan §20) and wins over `locale`, the app's language.
+  locale: language,
+  lang: language,
 }).refine((b) => b.text || b.message || b.history?.length, "text, message or history is required");
 
 function secretOk(given: string): boolean {
@@ -72,7 +78,7 @@ export const POST = handler(async (req) => {
   }
   facts ??= b.facts ?? null;
 
-  const result = await orchestrate({ history, facts, context: { persona, role, page: b.context?.page ?? b.page, channel, locale: b.locale } }, b.specialist);
+  const result = await orchestrate({ history, facts, context: { persona, role, page: b.context?.page ?? b.page, channel, locale: b.lang ?? b.locale } }, b.specialist);
 
   const sessionId = b.sessionId ?? b.conversation_id;
   if (sessionId && userText) {

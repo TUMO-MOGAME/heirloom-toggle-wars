@@ -11,11 +11,19 @@ import { safeguardsZu } from "./safeguards";
 import { askZu } from "./ask";
 import { treeZu } from "./tree";
 import { lettersZu } from "./letters";
+import { listenZu } from "./listen";
+import { voiceZu } from "./voice";
+import { receiptsZu } from "./receipts";
+import { legacyZu } from "./legacy";
 
 export const zu: Bundle = {
   ask: askZu,
   tree: treeZu,
   letters: lettersZu,
+  listen: listenZu,
+  voice: voiceZu,
+  receipts: receiptsZu,
+  legacy: legacyZu,
   legalNote: "Leli khasi litholakala ngesiNgisi kuphela. Liyisifanekiso okumele sihlolwe ngumeluleki wezomthetho.",
 
   site: {
@@ -979,6 +987,12 @@ export const zu: Bundle = {
         canWin: "Sifinyelela intengo ephansi",
         blocked: "Kuvinjiwe: ngaphansi kwentengo ephansi",
         blockedHard: "Kuvinjiwe: ngaphansi kwentengo ephansi yobunzima",
+        why: {
+          best: "Isinikezo esiphezulu esifinyelela intengo ephansi ka-{min}.",
+          outbid: "Sifinyelela intengo ephansi ka-{min}, kodwa kukhona isinikezo esiphezulu.",
+          below: "Ngaphansi kwentengo ephansi ka-{min}. Kuvinjiwe ngaphandle uma isicelo sobunzima samukelwa.",
+          belowHard: "Ngaphansi kwentengo ephansi yobunzima ka-{min}. Inkontileka ayisoze yasamukela.",
+        },
         ranking: "Umbono we-agent",
         rankingLoading: "I-agent ilandelanisa izinikezo",
       },

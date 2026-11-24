@@ -11,7 +11,11 @@ import {
 } from "@/lib/legacy/schema";
 import { Button, Card, Consent, Field, inputClass, Notice } from "@/components/ui/primitives";
 import { fmt } from "@/components/shell/copy";
-import { DisclosureLabel, LevelMeter, PlayButton } from "./parts";
+import { DisclosureLabel, LevelMeter, PlayButton, SpeechLanguagePicker } from "./parts";
+import { TranslationStudio } from "./translations";
+import { approvedVersion, type LegacyTranslation } from "@/lib/legacy/rules";
+import { VOICE_LANGUAGES } from "@/lib/voice/languages";
+import { useVoiceLanguage } from "@/lib/voice/languages-client";
 import { useRecorder } from "./use-recorder";
 import { useLegacyPlayer } from "./use-player";
 import { legacyError } from "./use-legacy";
@@ -65,7 +69,8 @@ export function OwnerStudio({ copy, status, snap, reload }: { copy: Copy; status
         <Notice tone="neutral"><p>{[status.book ? "" : copy.owner.book.starterNote, isStandin(status.voice) ? copy.owner.book.standinNote : ""].filter(Boolean).join(" ")}</p></Notice>
       )}
       {book && <BookEditor key={status.book ? "saved" : "starter"} copy={copy} initial={book} readOnly={!active} reload={reload} />}
-      {status.book && <Preview copy={copy} book={status.book} />}
+      {status.book && <TranslationStudio copy={copy} book={status.book} versions={status.translations ?? []} active={active} reload={reload} />}
+      {status.book && <Preview copy={copy} book={status.book} versions={status.translations ?? []} />}
     </div>
   );
 }
@@ -390,7 +395,7 @@ function BookEditor({ copy, initial, readOnly, reload }: { copy: Copy; initial: 
 
 /* ---------- preview ---------- */
 
-function Preview({ copy, book }: { copy: Copy; book: LegacyBook }) {
+function Preview({ copy, book, versions }: { copy: Copy; book: LegacyBook; versions: readonly LegacyTranslation[] }) {
   const p = copy.owner.preview;
   const { service, snap } = useEstate();
   const [childId, setChildId] = useState(book.children[0]?.id ?? "");
@@ -400,11 +405,12 @@ function Preview({ copy, book }: { copy: Copy; book: LegacyBook }) {
   const [error, setError] = useState<string | null>(null);
   const sid = useId();
   const ms = useMemo(() => book.milestones.filter((m) => m.childId === "all" || m.childId === childId), [book, childId]);
+  const { lang } = useVoiceLanguage("speech");
 
   const playM = async (m: Milestone) => {
     if (!service || !snap) return;
     setError(null);
-    try { await play(m.id, await service.legacySpeak(snap.estate.address, { milestoneId: m.id })); }
+    try { await play(m.id, await service.legacySpeak(snap.estate.address, { milestoneId: m.id, lang })); }
     catch (e) { setError(legacyError(e, copy.child.error)); }
   };
 
@@ -419,13 +425,14 @@ function Preview({ copy, book }: { copy: Copy; book: LegacyBook }) {
           </select>
         </Field>
       )}
+      <SpeechLanguagePicker id={`${sid}-lang`} className="mt-3" label={copy.child.language.label} />
       {ms.length === 0 ? <p className="mt-3 text-ink-2">{p.none}</p> : (
         <ul className="mt-3 grid gap-2">
           {ms.map((m) => (
             <li key={m.id} className="flex items-center gap-3 rounded-md border border-line p-3">
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{m.title}</span>
-                <span className="block text-small text-ink-2">{copy.owner.book.kinds[m.kind]}</span>
+                <span className="block text-small text-ink-2">{copy.owner.book.kinds[m.kind]} · {approvedVersion(versions, m.id, lang) ? fmt(copy.child.language.inLanguage, { language: VOICE_LANGUAGES[lang].name }) : copy.child.language.original}</span>
               </span>
               <PlayButton small playing={playing === m.id} onPlay={() => void playM(m)} onStop={stop} label={p.play} stopLabel={copy.child.stopPlaying} />
             </li>

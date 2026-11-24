@@ -1,12 +1,14 @@
 "use client";
 /**
  * The chat composer: a large rounded box pinned to the bottom of the chat home. Type (Enter sends,
- * Shift+Enter adds a line), dictate, start a voice call, attach a document for the agent to read, or
- * start a payment request (which always ends in the payment review, never a silent send).
+ * Shift+Enter adds a line), speak instead of typing (ElevenLabs speech to text, put in the box to edit
+ * and send), start a voice call, attach a document for the agent to read, or start a payment request
+ * (which always ends in the payment review, never a silent send).
  */
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import clsx from "clsx";
-import { ArrowUp, FileText, HandCoins, Mic, Paperclip, Phone, Send, Square, X } from "@/components/ui/icons";
+import { ArrowUp, FileText, HandCoins, Paperclip, Phone, Send, X } from "@/components/ui/icons";
+import { appendTranscript, useMicButton } from "@/components/agent/mic-button";
 import type { ChatAttachment } from "@/lib/chat/types";
 import { useEstate } from "@/lib/hooks/estate";
 import { wasRemoved } from "@/lib/guardians/decisions";
@@ -17,21 +19,6 @@ import { checkEvidence, EVIDENCE_ACCEPT } from "@/lib/evidence";
 
 type Purpose = NonNullable<ChatAttachment["purpose"]>;
 const PURPOSES: Purpose[] = ["general", "death", "claim", "hardship"];
-
-/* Speech recognition is not in TypeScript's DOM types yet; this is the part we use. */
-interface Recognition {
-  lang: string; interimResults: boolean; continuous: boolean;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-  start(): void; stop(): void; abort(): void;
-}
-type RecognitionCtor = new () => Recognition;
-const recognitionCtor = (): RecognitionCtor | undefined => {
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
-};
-const noop = () => () => undefined;
 
 const tool = "inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-line-strong bg-surface text-small font-medium text-ink transition-colors hover:bg-surface-2 disabled:opacity-50";
 
@@ -45,19 +32,20 @@ export function ChatComposer({ onSend, disabled }: { onSend: (text: string, opts
   const [value, setValue] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [purpose, setPurpose] = useState<Purpose>("general");
-  const [listening, setListening] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
-  const rec = useRef<Recognition | null>(null);
   const fieldId = useId();
-  const canDictate = useSyncExternalStore(noop, () => !!recognitionCtor(), () => false);
-
-  useEffect(() => () => rec.current?.abort(), []);
+  // Dictated words go after what is typed, for the person to check and send; never sent by voice.
+  const heard = useCallback((text: string) => {
+    setValue((v) => appendTranscript(v, text));
+    const el = field.current;
+    if (el) { el.focus(); window.requestAnimationFrame(() => el.setSelectionRange(el.value.length, el.value.length)); }
+  }, []);
+  const mic = useMicButton({ onText: heard, statusClassName: "px-2 pt-1" });
 
   const submit = (e?: FormEvent) => {
     e?.preventDefault();
     if (disabled || (!value.trim() && !file)) return;
-    rec.current?.stop();
     onSend(value.trim() || (file ? c.defaultMessage[purpose] : ""), file ? { attachment: file, purpose } : undefined);
     setValue("");
     setFile(null);
@@ -74,22 +62,6 @@ export function ChatComposer({ onSend, disabled }: { onSend: (text: string, opts
     if ("problem" in r) { notify("error", r.problem === "FileSize" ? c.fileTooBig : c.fileType); return; }
     setFile(r.file);
     field.current?.focus();
-  };
-
-  const dictate = () => {
-    if (listening) { rec.current?.stop(); return; }
-    const Ctor = recognitionCtor();
-    if (!Ctor) return;
-    const r = new Ctor();
-    const base = value.trim() ? `${value.trim()} ` : "";
-    r.lang = document.documentElement.lang || "en-ZA";
-    r.interimResults = true;
-    r.continuous = false;
-    r.onresult = (ev) => setValue(base + Array.from(ev.results).map((x) => x[0]?.transcript ?? "").join(""));
-    r.onerror = (ev) => { if (ev.error !== "aborted" && ev.error !== "no-speech") notify("error", c.dictateError); };
-    r.onend = () => { setListening(false); rec.current = null; field.current?.focus(); };
-    rec.current = r;
-    try { r.start(); setListening(true); } catch { rec.current = null; notify("error", c.dictateError); }
   };
 
   const draftPayment = () => {
@@ -138,11 +110,7 @@ export function ChatComposer({ onSend, disabled }: { onSend: (text: string, opts
       </div>
 
       <div role="group" aria-label={c.toolsLabel} className="mt-1 flex flex-wrap items-center gap-1.5">
-        {canDictate && (
-          <button type="button" onClick={dictate} aria-pressed={listening} aria-label={listening ? c.dictateStop : c.dictate} title={listening ? c.dictateStop : c.dictate} className={clsx(tool, "w-11", listening && "border-ink bg-ink text-bg hover:bg-ink")}>
-            {listening ? <Square className="size-4 animate-pulse-soft" aria-hidden="true" /> : <Mic className="size-5" aria-hidden="true" />}
-          </button>
-        )}
+        {mic.button}
         <button type="button" onClick={() => openAgent("call")} aria-label={c.call} title={c.call} className={clsx(tool, "w-11")}>
           <Phone className="size-5" aria-hidden="true" />
         </button>
@@ -158,8 +126,8 @@ export function ChatComposer({ onSend, disabled }: { onSend: (text: string, opts
           <Send className="size-4" aria-hidden="true" />{c.sendMoney}
         </button>
         <input ref={picker} type="file" accept={EVIDENCE_ACCEPT} tabIndex={-1} aria-hidden="true" className="sr-only" onChange={(e) => void choose(e)} />
-        <span className="sr-only" role="status">{listening ? c.dictating : ""}</span>
       </div>
+      {mic.status}
     </form>
   );
 }

@@ -7,6 +7,8 @@
  * It plays the owner's messages for moments; it never answers questions, takes calls or writes new words.
  */
 import type { Guidance, LegacyBook, LegacyChild, Milestone } from "./schema";
+import { VOICE_LANGUAGES, isVoiceLanguage, type VoiceLanguage } from "../voice/languages";
+import { sha256Hex } from "../agent/hash";
 
 export const MILESTONE_KINDS = ["firstFees", "graduation", "firstJob", "birthday", "hardDay", "other"] as const;
 export type MilestoneKind = (typeof MILESTONE_KINDS)[number];
@@ -18,7 +20,7 @@ export interface LegacyVoiceInfo {
   /** Epoch ms when the owner recorded consent. */
   consentedAt: number;
   samples: number;
-  /** True when no real ElevenLabs voice exists (browser speech stands in). */
+  /** True when no cloned voice exists: a labelled ElevenLabs stock voice reads the words (never the browser's voice). */
   simulated: boolean;
   /** ElevenLabs may ask the account holder to verify a new voice before it can be used. */
   needsVerification?: boolean;
@@ -35,15 +37,68 @@ export interface LegacyStatus {
   childId: string | null;
   /** Children hear the messages only after the estate unlocks. */
   unlocked: boolean;
+  /**
+   * The owner's approved versions of their messages in other spoken languages (plan §20.1 item 4). The owner sees
+   * all of them, stale ones flagged; a child sees only current ones, and only when the book is open to them.
+   */
+  translations?: LegacyTranslation[];
 }
 
 export interface LegacySpeech {
   text: string;
-  /** Object URL of rendered audio (ElevenLabs). Null when simulated: the UI uses speech synthesis. */
+  /** Object URL of rendered audio (ElevenLabs). Null when there is no audio: the UI shows the words instead. */
   audioUrl: string | null;
   simulated: boolean;
   /** "heirloom" = the default assistant voice (the disclosure), never the parent's. */
   voice: "parent" | "heirloom";
+}
+
+/* ---------- the owner's own words in other languages ---------- */
+
+/**
+ * One message in another spoken language, approved by the living owner (signed by their wallet while the estate was
+ * Active). The voice reads it in that language; it is still the owner's own words, because the owner read, edited
+ * and approved every word. A machine suggestion is never stored or played until the owner approves it.
+ */
+export interface LegacyTranslation {
+  milestoneId: string;
+  lang: VoiceLanguage;
+  /** The approved words, exactly as the owner approved them. */
+  text: string;
+  /** SHA-256 of `text`. */
+  sha256: string;
+  /** SHA-256 of the original message when the owner approved this. */
+  sourceSha256: string;
+  /** Epoch ms of the approval. */
+  approvedAt: number;
+  /** The original message changed after approval: never played until the owner approves it again. */
+  stale?: boolean;
+}
+
+export const MAX_TRANSLATION_CHARS = 2000;
+
+/** Languages a message can be read in: those ElevenLabs text to speech can speak (lib/voice/languages.ts). */
+export function isSpeechLanguage(l: unknown): l is VoiceLanguage {
+  return isVoiceLanguage(l) && VOICE_LANGUAGES[l].support.speech;
+}
+
+/** The current (not stale) approved version of a message in `lang`, if there is one. */
+export function approvedVersion(list: readonly LegacyTranslation[] | undefined, milestoneId: string, lang: VoiceLanguage | null | undefined): LegacyTranslation | null {
+  if (!lang || !list) return null;
+  return list.find((t) => t.milestoneId === milestoneId && t.lang === lang && !t.stale) ?? null;
+}
+
+/**
+ * Lays the stored versions over the book as it is now: versions of deleted messages are dropped, and a version whose
+ * original changed after approval is marked stale (it never plays until the owner approves it again).
+ */
+export async function currentVersions(book: LegacyBook, list: readonly LegacyTranslation[]): Promise<LegacyTranslation[]> {
+  const shas = new Map<string, string>();
+  for (const m of book.milestones) shas.set(m.id, await sha256Hex(m.text));
+  return list.flatMap((t) => {
+    const sha = shas.get(t.milestoneId);
+    return sha ? [{ ...t, stale: sha !== t.sourceSha256 }] : [];
+  });
 }
 
 /* ---------- what the voice says around the messages ---------- */

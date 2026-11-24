@@ -14,6 +14,10 @@ import { useCopy } from "@/components/shell/copy";
 import { LegacySheetLink } from "@/components/legacy/legacy-entry";
 import { ActionButtons, Bubble, Chips, Composer, SpecialistChip, Thinking } from "./chat-parts";
 import { toEstateFacts } from "@/lib/agent/facts";
+import { useVoiceLanguage } from "@/lib/voice/languages-client";
+import { voice as voiceEnglish } from "@/content/voice";
+import { useLocalized } from "@/lib/i18n/client";
+import { VoiceLanguagePicker } from "./voice-language-picker";
 
 // The voice orb springs with the sound level (motion), so it and the library load only when a call view opens:
 // the sheet itself is mounted, closed, on every page once it has settled.
@@ -25,6 +29,7 @@ export function AgentSheet() {
   const { agent, openAgent, closeAgent, session, snap } = useEstate();
   const pathname = usePathname();
   const voice = useHeirloomVoice();
+  const { lang } = useVoiceLanguage("agent");
   const chat = useAssistant(copy, pathname);
   const live = voice.status === "connected" || voice.status === "connecting" || voice.status === "requesting-mic";
 
@@ -39,8 +44,9 @@ export function AgentSheet() {
       estate: snap?.estate.address,
       page: pathname,
       facts: snap ? JSON.stringify(toEstateFacts(snap)) : undefined,
+      lang,
     });
-  }, [voice, session, snap, pathname]);
+  }, [voice, session, snap, pathname, lang]);
 
   const tabs = (
     <div role="tablist" aria-label={copy.sheet.title} className="flex shrink-0 rounded-full border border-line-strong bg-surface p-1">
@@ -119,6 +125,7 @@ function ChatView({ chat, onNavigate }: { chat: ReturnType<typeof useAssistant>;
 function CallView({ voice, onStart, onChat }: { voice: HeirloomVoice & { simulated?: boolean }; onStart: () => void; onChat: () => void }) {
   const { assistant: copy } = useCopy();
   const v = copy.voice;
+  const spoken = useLocalized(voiceEnglish, (t) => t.voice);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [voice.transcript.length]);
   const s = voice.status;
@@ -140,6 +147,7 @@ function CallView({ voice, onStart, onChat }: { voice: HeirloomVoice & { simulat
           <h3 className="text-h3">{v.explainerTitle}</h3>
           <p className="mx-auto mt-2 max-w-sm text-ink-2">{v.explainerBody}</p>
         </div>
+        <VoiceLanguagePicker className="w-full text-left" />
         <Notice icon={<Mic className="size-5" aria-hidden="true" />} title={v.micTitle} className="w-full text-left">{v.micBody}</Notice>
         <div className="flex w-full flex-col gap-2">
           <Button onClick={onStart} block><Phone className="size-5" aria-hidden="true" />{v.start}</Button>
@@ -168,6 +176,7 @@ function CallView({ voice, onStart, onChat }: { voice: HeirloomVoice & { simulat
             {s === "connected" && lastAgent?.specialist && lastAgent.specialist !== "Orchestrator" && <SpecialistChip name={lastAgent.specialist} copy={copy} />}
             {voice.simulated && <Badge tone="warn">{v.simulated}</Badge>}
           </div>
+          {voice.translated === "machine" && <p className="max-w-sm text-small text-ink-2">{spoken.machine}</p>}
         </div>
         {s === "ended" && <p className="mt-1 text-small text-ink-2">{v.endedBody}</p>}
         {s === "error" && <p role="alert" className="mx-auto mt-1 max-w-sm text-small text-ink-2">{voice.error ?? v.errorBody}</p>}
@@ -185,7 +194,7 @@ function CallView({ voice, onStart, onChat }: { voice: HeirloomVoice & { simulat
                     <span className={l.role === "agent" ? "text-ink" : "text-ink-2"}>{l.role === "agent" ? v.agent : v.you}</span>
                     {l.role === "agent" && l.specialist && l.specialist !== "Orchestrator" && <SpecialistChip name={l.specialist} copy={copy} />}
                   </p>
-                  <p className={clsx("rounded-md px-3 py-2", l.role === "agent" ? "bg-surface-2" : "border border-line-strong")}>{l.text}</p>
+                  <p dir="auto" className={clsx("rounded-md px-3 py-2", l.role === "agent" ? "bg-surface-2" : "border border-line-strong")}>{l.text}</p>
                 </li>
               ))}
             </ol>
@@ -195,7 +204,8 @@ function CallView({ voice, onStart, onChat }: { voice: HeirloomVoice & { simulat
 
       <div className="sticky bottom-0 -mx-4 flex items-center justify-center gap-4 bg-surface px-4 pb-1 pt-3 sm:-mx-5">
         {s === "ended" || s === "error" ? (
-          <div className="flex w-full flex-col gap-2 sm:flex-row">
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <VoiceLanguagePicker id="voice-language-again" className="w-full text-left" />
             <Button onClick={onStart} className="flex-1"><Phone className="size-5" aria-hidden="true" />{s === "error" ? v.retry : v.again}</Button>
             <Button variant="secondary" onClick={onChat} className="flex-1"><MessageCircle className="size-5" aria-hidden="true" />{v.useChat}</Button>
           </div>

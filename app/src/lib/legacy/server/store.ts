@@ -1,14 +1,14 @@
 import "server-only";
 /**
- * Legacy Voice storage (schema: supabase/migrations/0002_legacy.sql). Personal information under POPIA:
+ * Legacy Voice storage (schema: supabase/migrations/0002_legacy.sql, translations in 0011_legacy_translations.sql). Personal information under POPIA:
  * voice samples, the consent recording, rendered audio and the Legacy Book. Private bucket `legacy-audio` and
  * RLS-locked tables, accessed only with the service-role key on the server. In-memory fallback without Supabase.
  * The ElevenLabs voice_id and agent_id live here and are never returned to the browser.
  */
 import { getSupabase } from "@/lib/supabase";
 import { sha256Hex, hashJson } from "@/lib/agent/hash";
-import type { LegacyBook } from "../schema";
-import { demoLegacyBook } from "../demo-book";
+import type { LegacyBook, LegacyTranslation } from "../schema";
+import { demoLegacyBook, demoTranslations } from "../demo-book";
 import { chainConfig } from "@/lib/chain/config";
 import { DEVNET_DEMO_CHILDREN, DEVNET_DEMO_LEGACY_VOICE, DEVNET_DEMO_META } from "@/lib/chain/demo-estate";
 import { MAX_MEMORY_FILE_BYTES, roomForBytes } from "@/lib/server/memory-limits";
@@ -37,7 +37,11 @@ const mem = {
   books: new Map<string, BookRow>(),
   audio: new Map<string, { bytes: Uint8Array; mime: string }>(),
   messages: new Map<string, string>(), // `${estate}:${textSha}` → audio path
+  translations: new Map<string, TranslationRow[]>(), // estate → the owner's approved versions
 };
+
+/** An approved version of one message in another language, and the owner wallet that signed the approval. */
+export type TranslationRow = Omit<LegacyTranslation, "stale"> & { estate: string; ownerWallet: string };
 
 // Devnet laptop demo without Supabase: the fictional Mokoena family's Legacy Book and a stand-in stock voice, so
 // Dad's messages play on the already-unlocked demo estate (a real book can only be written while the estate is
@@ -52,6 +56,7 @@ if (chainConfig.cluster === "devnet" && !getSupabase()) {
     consentText: "Demo only: a stock ElevenLabs voice stands in for a fictional parent.", consentSha256: "", consentPath: "",
     samplePaths: [], sampleSha256: [], consentedAt: Date.UTC(2026, 10, 1),
   });
+  void demoTranslations().then((list) => mem.translations.set(estate, list.map((t) => ({ ...t, estate, ownerWallet: DEVNET_DEMO_META.ownerWallet }))));
 }
 
 function warn(what: string, err: { message: string } | null) { if (err) console.warn(`[legacy] ${what} failed: ${err.message}`); }
@@ -161,7 +166,8 @@ export async function saveBook(estate: string, ownerWallet: string, book: Legacy
 
 export async function deleteBook(estate: string): Promise<void> {
   const sb = getSupabase();
-  if (!sb) { mem.books.delete(estate); return; }
+  // Translations go with the book (on delete cascade in Supabase).
+  if (!sb) { mem.books.delete(estate); mem.translations.delete(estate); return; }
   warn("deleteBook", (await sb.from("legacy_books").delete().eq("estate", estate)).error);
 }
 
@@ -193,4 +199,46 @@ export async function cacheMessage(estate: string, textSha: string, milestoneId:
   const sb = getSupabase();
   if (!sb) { mem.messages.set(`${estate}:${textSha}`, path); return; }
   warn("cacheMessage", (await sb.from("legacy_messages").upsert({ estate, text_sha256: textSha, milestone_id: milestoneId, audio_path: path }, { onConflict: "estate,text_sha256" })).error);
+}
+
+/* ---------- the owner's approved versions in other languages ---------- */
+
+export async function getTranslations(estate: string): Promise<TranslationRow[]> {
+  const sb = getSupabase();
+  if (!sb) return [...(mem.translations.get(estate) ?? [])];
+  const { data, error } = await sb.from("legacy_translations").select("*").eq("estate", estate);
+  warn("getTranslations", error);
+  return (data ?? []).map((r) => ({
+    estate: r.estate, ownerWallet: r.owner_wallet, milestoneId: r.milestone_id, lang: r.lang, text: r.text,
+    sha256: r.text_sha256, sourceSha256: r.source_sha256, approvedAt: new Date(r.approved_at).getTime(),
+  }));
+}
+
+export async function saveTranslation(t: TranslationRow): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) {
+    const list = (mem.translations.get(t.estate) ?? []).filter((x) => !(x.milestoneId === t.milestoneId && x.lang === t.lang));
+    mem.translations.set(t.estate, [...list, t]);
+    return;
+  }
+  const { error } = await sb.from("legacy_translations").upsert({
+    estate: t.estate, milestone_id: t.milestoneId, lang: t.lang, text: t.text, text_sha256: t.sha256,
+    source_sha256: t.sourceSha256, owner_wallet: t.ownerWallet, approved_at: new Date(t.approvedAt).toISOString(),
+  }, { onConflict: "estate,milestone_id,lang" });
+  if (error) throw new Error(`Could not save the translation: ${error.message}`);
+}
+
+export async function deleteTranslation(estate: string, milestoneId: string, lang: string): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) { mem.translations.set(estate, (mem.translations.get(estate) ?? []).filter((x) => !(x.milestoneId === milestoneId && x.lang === lang))); return; }
+  warn("deleteTranslation", (await sb.from("legacy_translations").delete().eq("estate", estate).eq("milestone_id", milestoneId).eq("lang", lang)).error);
+}
+
+/** Drops versions of messages that are no longer in the book. */
+export async function pruneTranslations(estate: string, keep: readonly string[]): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) { mem.translations.set(estate, (mem.translations.get(estate) ?? []).filter((x) => keep.includes(x.milestoneId))); return; }
+  let q = sb.from("legacy_translations").delete().eq("estate", estate);
+  if (keep.length) q = q.not("milestone_id", "in", `(${keep.join(",")})`);
+  warn("pruneTranslations", (await q).error);
 }

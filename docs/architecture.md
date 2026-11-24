@@ -27,7 +27,7 @@
 | **Off-chain data** | Supabase Postgres (names, will drafts, full agent reports, transcripts) + private `evidence` bucket; in-memory fallback | `app/src/lib/{db,storage,supabase}.ts`, `supabase/migrations/0001_init.sql` |
 | **FX** | VALR public USDT/ZAR market summary, mid price, 60 s cache, labelled fallback | `app/src/lib/fx.ts`, `/api/fx` |
 | **ZAR off-ramp** | `SimulatedZarPayout`: describes the PayShap/EFT payout a licensed partner would make. **Simulated** | `app/src/lib/offramp.ts`, `/api/offramp` |
-| **Program** | Anchor 1.2.2, 54 instructions, 89 LiteSVM tests | `programs/heirloom/src/**`, `programs/heirloom/tests/heirloom.rs` |
+| **Program** | Anchor 1.2.2, 57 instructions, 336 LiteSVM tests | `programs/heirloom/src/**`, `programs/heirloom/tests/` |
 
 ```mermaid
 flowchart TB
@@ -81,7 +81,7 @@ sequenceDiagram
 
   Thabo->>App: Plan builder: "85 USD₮ a month for Lerato's books" (Now)
   App->>Thabo: Review rule (amount, payee, interval, caps)
-  Thabo->>P: add_rule(starts_now, recurring 85, interval, first_due, payee=Bookstore) [WDK-signed]
+  Thabo->>P: add_rule_v2(starts_now, recurring 85, interval, first_due, payee=Bookstore) [WDK-signed]
   P-->>App: Rule PDA (fixed_payee, next_due)
   loop every tick (Cron / run-scheduler.ts / "Pay now")
     Tick->>Tick: runDueSchedules(): isDue(rule, estate status, now)?

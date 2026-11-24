@@ -45,8 +45,8 @@ Done through the live app on 22 November 2026 by a fresh wallet, with no scripts
 |---|---|
 | **App on devnet** | https://heirloom.tumoolo.tech (also https://heirloom-devnet.vercel.app) |
 | **Simulated demo** | https://heirloom-one-iota.vercel.app |
-| **Program** | [`b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY`](https://explorer.solana.com/address/b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY?cluster=devnet): 54 instructions, upgraded 22 Nov 2026 |
-| **Tests** | 89 program tests (LiteSVM) · 965 app tests (Vitest) |
+| **Program** | [`b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY`](https://explorer.solana.com/address/b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY?cluster=devnet): 57 instructions, upgraded 23 Nov 2026 after two independent security reviews |
+| **Tests** | 336 program tests (LiteSVM) · 2,224 app tests (Vitest) |
 | **Why Solana** | The rules and the money must outlive the owner and the company. They live in program-owned accounts anyone can audit |
 | **Android** | A Solana Mobile WebView shell with Mobile Wallet Adapter ([build notes](docs/android-build.md)). Not yet verified with a wallet app on a physical phone |
 | **Video** | [W3Node video, 13 Nov](https://youtu.be/N67LrkpVAmw) (2:58). It predates the 22 Nov changes |
@@ -231,18 +231,18 @@ Deeper diagrams (sequence diagrams for every money path) are in [`docs/architect
 
 Anchor 1.2.2 · [`programs/heirloom/`](programs/heirloom/) · full spec in [`docs/program-spec.md`](docs/program-spec.md)
 
-**54 instructions:**
+**57 instructions:**
 
 | Group | Instructions |
 |---|---|
-| Setup | `create_estate`, `set_will`, `add_beneficiary`, `add_payee`, `add_rule`, `set_yearly_cap`, `deposit`, `withdraw`, `heartbeat`, `register_asset`, `set_asset_media` |
+| Setup | `create_estate`, `set_will`, `add_beneficiary`, `add_payee`, `add_rule_v2`, `set_yearly_cap`, `deposit`, `withdraw`, `heartbeat`, `register_asset`, `set_asset_media` |
 | Death | `submit_death_claim`, `review_death`, `attest_death`, `veto_death`, `finalize_unlock` |
 | Payments | `submit_claim`, `review_claim`, `approve_claim`, `owner_approve_claim`, `execute_claim`, `execute_scheduled` |
-| Asset sale | `list_asset`, `place_offer`, `withdraw_offer`, `submit_hardship`, `review_hardship`, `approve_hardship`, `accept_offer` |
+| Asset sale | `list_asset`, `place_offer`, `withdraw_offer`, `submit_hardship`, `review_hardship`, `approve_hardship`, `accept_offer`, `release_asset` |
 | Guardians | `init_guard`, `init_seat`, `set_seat_backups`, `set_seat_monitors`, `owner_replace_seat`, `report_seat_death`, `review_seat_death`, `confirm_seat_death`, `veto_seat_death`, `finalize_succession` |
-| Fallback | `set_fallback`, `report_fallback_death`, `review_fallback_death`, `start_fallback`, `execute_fallback` |
+| Fallback | `set_fallback`, `report_fallback_death`, `review_fallback_death`, `resolve_fallback_death`, `start_fallback`, `execute_fallback` |
 | Challenges | `raise_objection`, `vote_objection`, `lapse_objection`, `raise_dispute`, `resolve_dispute` |
-| Continuity | `end_rule`, `set_residual`, `sweep_residual`, `set_agent`, `vote_agent` |
+| Continuity | `end_rule`, `set_residual`, `sweep_residual`, `set_agent`, `vote_agent`, `remove_member` |
 
 **What the program enforces:**
 - Only the estate's USD₮ mint is accepted.
@@ -259,14 +259,45 @@ Anchor 1.2.2 · [`programs/heirloom/`](programs/heirloom/) · full spec in [`doc
   be listed again.
 - A lost agent key can be replaced by the owner, or by the trusted people.
 
-**Tests:** 89 LiteSVM tests in [`programs/heirloom/tests/heirloom.rs`](programs/heirloom/tests/heirloom.rs). The last
-section holds regression tests for attacks that worked on the version deployed before 22 November.
+**Tests:** 336 LiteSVM tests in [`programs/heirloom/tests/`](programs/heirloom/tests/). They include a regression
+test for every finding of two independent security reviews (22–23 November): each attack that worked on the earlier
+version is now refused. The deployed binary (sha256 `c5294fe4…`) was rebuilt independently from the source and matches.
+
+## ElevenLabs in Heirloom (side track: Best Solana app built with ElevenLabs)
+
+Heirloom is a voice-first estate planner: many of the people it serves would rather speak than type, and many speak
+more than one language. ElevenLabs does real work at five points, each tied to what the Solana program does.
+
+| ElevenLabs product | Where | What it does | Code |
+|---|---|---|---|
+| **Agents Platform** (voice agent) | The Call tab on every screen | Talk to Heirloom about the plan, a document, a claim or the car sale. A server tool calls our orchestrator, which reads the estate **from the chain** before it answers; client tools open screens and forms. The agent never signs: the person signs with their own wallet | [`useHeirloomVoice.ts`](app/src/lib/voice/useHeirloomVoice.ts), [`api/agent/orchestrate`](app/src/app/api/agent/orchestrate/route.ts), agent as code: [`scripts/elevenlabs-agent.ts`](scripts/elevenlabs-agent.ts) |
+| **Speech to Text** (Scribe v3) | A microphone in the chat, the plan builder and the agent sheet | Say your plan in your own language; the words land in the box to edit before anything is sent. Nothing is signed by voice | [`api/voice/transcribe`](app/src/app/api/voice/transcribe/route.ts), [`useDictation.ts`](app/src/lib/voice/useDictation.ts) |
+| **Text to Speech** (Multilingual v2, Eleven v4) | "Hear it" on every payout | **Spoken receipts for on-chain payments**: "1,500 USD₮ was paid to the university for Lerato's fees". The words come only from the Solana transaction itself (a successful Heirloom payout event, read from devnet), never from text a browser sends | [`api/voice/receipt`](app/src/app/api/voice/receipt/route.ts), [`receipt.ts`](app/src/lib/voice/server/receipt.ts) |
+| **Voice cloning** (Instant Voice Cloning) + TTS | Legacy Voice | A living owner, with recorded consent, clones their voice; after death a child hears the owner's own messages in it. Now also **in the child's language**: the owner approves each translation while alive, so the voice still only says the owner's own words | [`lib/legacy`](app/src/lib/legacy/), [`translations.tsx`](app/src/components/legacy/translations.tsx) |
+| **Sound effects** | Before each spoken receipt | A short chime that marks a confirmed payment, generated once and shipped as a static file | [`scripts/make-chime.ts`](scripts/make-chime.ts) |
+
+**Languages.** One spoken-language setting serves every voice feature ([`languages.ts`](app/src/lib/voice/languages.ts)),
+checked against ElevenLabs' documentation on 24 Nov 2026:
+
+| | English, French, Portuguese, Spanish, Arabic, Hindi, Mandarin | Afrikaans, Swahili | isiZulu | Sesotho |
+|---|---|---|---|---|
+| Voice call | yes | yes (Eleven v4 Turbo) | not yet in the Agents Platform | no |
+| Spoken receipts, Legacy Voice | yes | yes (Eleven v4) | yes (Eleven v4) | no (shown as text) |
+| Voice typing (Scribe) | yes | yes | yes | no |
+
+The screens stay in English, isiZulu, Sesotho or Afrikaans; the spoken language can differ, so a family in Lagos,
+Luanda or Paris can use the same estate. Translations other than English are machine translations, marked as such,
+awaiting native readers.
+
+**Safety.** Keys stay on the server; every voice route is rate-limited and capped per day; audio is sent to
+ElevenLabs only after a tap and Heirloom keeps no recording; without a key the app shows the words instead (never the
+browser's own voice). The privacy policy names ElevenLabs for each use.
 
 ## What's real and what's simulated
 
 | Part | Status |
 |---|---|
-| Heirloom Solana program (54 instructions) | **Real**, deployed to devnet, 89 tests. **Not audited.** |
+| Heirloom Solana program (57 instructions) | **Real**, deployed to devnet, 336 tests, two independent reviews. **Not audited.** |
 | USD₮ transfers signed by Tether WDK wallets (owner, family, verifiers, buyers, agent) | **Real** on devnet (chain mode) |
 | USD₮ token | **Test mint** on devnet (6 decimals, same as USD₮); mainnet mint is a config change |
 | Pay-once payment pipeline, reconnect re-check | **Real** (unit-tested in `payments.test.ts`) |
@@ -345,10 +376,10 @@ All names are in [`app/.env.example`](app/.env.example). Only `NEXT_PUBLIC_*` re
 ## Tests
 
 ```bash
-cd app && npm test                 # 965 Vitest tests: payments (pay-once), WDK errors, PDAs, IDL ↔ client, agent schemas,
+cd app && npm test                 # 2,224 Vitest tests: payments (pay-once), WDK errors, PDAs, IDL ↔ client, agent schemas,
                                    # offers, scheduler, hashing, fee-sponsor policy, QVAC intent parser, chat, legacy voice, i18n, icons
 cd app && npx next typegen && npx tsc --noEmit   # type check (typegen first on a clean clone)
-anchor build && cargo test -p heirloom   # 89 LiteSVM program tests (Linux / WSL, Anchor 1.2.2)
+anchor build && cargo test -p heirloom   # 336 LiteSVM program tests (Linux / WSL, Anchor 1.2.2)
 ```
 `bash scripts/build-program.sh test` does the same inside WSL: it copies the program to the Linux disk for a faster build, then runs the tests.
 
@@ -381,7 +412,19 @@ anchor build && cargo test -p heirloom   # 89 LiteSVM program tests (Linux / WSL
   server-side; `/api/legacy/speak` takes only a milestone id (or the owner's fixed sample line while alive, or Heirloom's
   disclosure) and refuses any free text; the demo's `/api/legacy/demo-voice` speaks only the demo book's fixed lines; each message is introduced in Heirloom's own voice as an AI copy; the child's page has SADAG help lines.
   See [`app/src/lib/legacy/`](app/src/lib/legacy/) and [`supabase/migrations/0002_legacy.sql`](supabase/migrations/0002_legacy.sql).
-- **Known limits:** devnet only; not audited; in-memory rate limits (per instance); no seed-recovery flow yet.
+- **Version gate:** the app is pinned to the deployed program (binary hash, IDL hash, slot) in
+  [`release.json`](app/src/lib/chain/release.json). If the chain and the app ever differ, writes and `/api/health` fail
+  closed instead of sending transactions the program would read differently.
+- **Shared limits:** on devnet, rate limits and single-use signatures live in Supabase, so they hold across server
+  instances (in memory only when Supabase isn't set, as on the simulated demo).
+- **Known limits:** devnet only; not audited; no seed-recovery flow yet. Program trade-offs we accepted and documented:
+  - If a replaced agent is later named again, its earlier votes count again.
+  - A referred claim with only one trusted person left is decided by that person.
+  - Claim and hardship reviews are not reset when the agent changes.
+  - After the recovery timeout, beneficiaries can replace a trusted person who has gone silent.
+  - A lone heir with only a hardship request has no clock to force a decision.
+  - The owner's "no" to a request is kept by Heirloom, not by the contract.
+  - On the simulated demo, the AI's offer ranking has no timing window.
 - **Secrets:** `.env*`, keypairs and demo wallet seeds are gitignored. Report issues privately to the maintainer.
 
 ## Roadmap

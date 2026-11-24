@@ -641,7 +641,7 @@ export function createMockService(opts: MockOptions = {}): MockService {
     e.vaultBalance -= amount;
     credit(to, amount);
     const t = tx();
-    log("ResidualSwept", `${usd(amount)} that no rule needed was paid to ${first(to)}`, t, amount);
+    log("ResidualSwept", `${usd(amount)} that no rule needed was paid to ${first(to)}`, t, amount, { payee: to });
     return t;
   }
 

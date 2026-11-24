@@ -8,6 +8,24 @@ ClaimsGuide, CarBroker, EstateGuide, Compliance). Paste the settings below at
 
 Field names in the ElevenLabs dashboard change from time to time; the values below are what matter.
 
+## 0. As code (plan §20.1, 24 Nov 2026): `scripts/elevenlabs-agent.ts`
+
+The agent below (voice, TTS model, LLM, prompt, first message, languages, the five tools, client events, security and
+overrides) is built by `scripts/elevenlabs-agent.ts`. Run from `app/`:
+
+```
+npx tsx --tsconfig ../scripts/tsconfig.json ../scripts/elevenlabs-agent.ts            # dry run: prints the JSON, reads no key
+npx tsx --tsconfig ../scripts/tsconfig.json ../scripts/elevenlabs-agent.ts --send     # create or update (PATCH) the agent
+#   --url=https://heirloom-devnet.vercel.app   the deployment the webhook calls (default)
+#   --llm=gemini-3.5-flash                     an LLM id from the agent's LLM dropdown (Gemini 2.5 Flash leaves on 30 Nov)
+```
+`--send` reads only the process environment (export the values in the shell; it never reads `.env*` and never prints
+them): `ELEVENLABS_API_KEY` (needs *Agents: write*), `ELEVENLABS_AGENT_ID` (unset = create a new agent and print its
+id), and `ELEVENLABS_TOOL_SECRET_ID`, the **id** of a workspace secret (Agents → Secrets) that holds the value of
+`ELEVENLABS_TOOL_SECRET`, so the webhook header is a secret reference. Tools are matched by name and updated in place.
+Check the dry run's JSON against the API reference before the first `--send`; the API reports any field it rejects.
+The sections below stay as the reference for what the script sets, and for setting it by hand.
+
 ## 1. Agent settings
 
 **Name:** Heirloom
@@ -22,7 +40,12 @@ names already shown in the app), so the webhook can answer about the estate in d
 placeholder: `guest`, `there`, `none`, `/`, `none`. If your dashboard requires every variable used in the first message to be
 declared, either declare `persona_name` with a default of `there`, or use `Hi there,` instead.)
 
-**Language:** English. Enable language detection if available, and add Afrikaans and Zulu as extra languages.
+**Language:** English by default, plus every language with `support.agent` in `app/src/lib/voice/languages.ts`
+(24 Nov 2026: French, Portuguese, Spanish, Arabic, Hindi, Mandarin Chinese, Afrikaans, Swahili), each with its first
+message from `app/src/content/voice-scripts.ts`; enable the **language detection** system tool. isiZulu and Sesotho
+are not in the Agents Platform's language list yet. **TTS model: `eleven_v4_turbo`**: Flash v2.5 and Multilingual v2
+cannot speak Afrikaans or Swahili. The app sends the caller's chosen spoken language as a conversation override and
+as the `lang` / `lang_name` dynamic variables (placeholders `en`, `English`).
 
 **Voice:** search the Voice Library for a warm, calm *South African English* voice (filter accent "South African");
 pick a mid-pace conversational voice. Turn "stability" up a little for reading out amounts. The live agent uses
@@ -30,7 +53,8 @@ pick a mid-pace conversational voice. Turn "stability" up a little for reading o
 
 **LLM:** any fast model in the dropdown (a Gemini Flash model is a good fit). The heavy lifting is done by our orchestrator.
 
-**System prompt**
+**System prompt** (the source of truth is `SYSTEM_PROMPT` in `scripts/elevenlabs-agent.ts`, which adds the
+spoken-language lines: "Speak {{lang_name}} for the whole call"; the copy below is the English-only original)
 ```
 You are the voice of Heirloom, a programmable estate trust for South African families. Money is USD₮ (Tether)
 in a Solana vault; a smart contract enforces caps, floor prices and verifier quorums. You never move money and
@@ -85,12 +109,13 @@ Agent → Tools → Add tool → **Webhook**
 {
   "type": "object",
   "properties": {
-    "message":         { "type": "string", "description": "The caller's request in full, in English." },
+    "message":         { "type": "string", "description": "The caller's request in full, in their own words." },
     "persona":         { "type": "string", "description": "Dynamic variable {{persona}}" },
     "estate":          { "type": "string", "description": "Dynamic variable {{estate}}" },
     "page":            { "type": "string", "description": "Dynamic variable {{page}}" },
     "conversation_id": { "type": "string", "description": "System variable {{system__conversation_id}}" },
-    "facts":           { "type": "string", "description": "Dynamic variable {{facts}}" }
+    "facts":           { "type": "string", "description": "Dynamic variable {{facts}}" },
+    "lang":            { "type": "string", "description": "Dynamic variable {{lang}}: the reply comes back in it" }
   },
   "required": ["message"]
 }
@@ -124,6 +149,9 @@ The app turns these into `heirloom:agent-action` browser events (`lib/agent/acti
 - Enable **authentication** (private agent) so sessions need the signed URL from `GET /api/voice/session`;
   the API key never reaches the browser.
 - Add your deployment domain to the allowlist.
+- **Overrides: allow `Language` and `First message`** (Security tab → Overrides; API
+  `platform_settings.overrides.conversation_config_override.agent.{language,first_message}: true`). A call in a language
+  other than English sends both; without them ElevenLabs refuses the session. English calls send no override.
 - Do not enable call recording storage beyond what the demo needs (POPIA). Transcripts we keep go to the
   `transcripts` table in Supabase.
 
@@ -133,6 +161,7 @@ The app turns these into `heirloom:agent-action` browser events (`lib/agent/acti
 ELEVENLABS_API_KEY=...        # server only
 ELEVENLABS_AGENT_ID=agent_... # server only
 ELEVENLABS_TOOL_SECRET=...    # long random string, same value as the webhook header secret
+ELEVENLABS_TOOL_SECRET_ID=... # only for scripts/elevenlabs-agent.ts --send: the workspace secret's id, not its value
 ```
 Without these the voice hook reports `status: "unavailable"` and the UI falls back to text chat (in demo mode, to a
 labelled simulated call).

@@ -5,7 +5,8 @@
  */
 import { sha256Hex } from "../agent/hash";
 import { AUTH_HEADER, authMessage, encodeAuth, type LegacyAction } from "./auth-message";
-import type { LegacyBook, LegacySpeech, LegacyStatus, LegacyVoiceInfo } from "./schema";
+import type { LegacyBook, LegacySpeech, LegacyStatus, LegacyTranslation, LegacyVoiceInfo, TranslationInput, TranslationKey } from "./schema";
+import type { VoiceLanguage } from "../voice/languages";
 
 export interface LegacySigner {
   estate: string;
@@ -19,8 +20,11 @@ export interface LegacySigner {
 }
 
 export interface LegacyVoiceUpload { ownerName: string; consentText: string; consentAccepted: boolean; consent: Blob; samples: Blob[] }
-/** The only things the voice may say: a milestone message the owner wrote, or the fixed sample line (owner). */
-export type SpeakInput = { milestoneId: string } | { sample: true } | { disclosure: true };
+/**
+ * The only things the voice may say: a milestone message the owner wrote (in `lang` when the owner approved a version
+ * in that language, else the original), or the fixed sample line (owner). Never text.
+ */
+export type SpeakInput = { milestoneId: string; lang?: VoiceLanguage } | { sample: true } | { disclosure: true };
 
 async function header(s: LegacySigner, action: LegacyAction, bodyHash: string): Promise<Record<string, string>> {
   const ts = Date.now();
@@ -69,6 +73,11 @@ export const legacyApi = {
   deleteBook: async (s: LegacySigner) => { await send(s, "book.delete", "DELETE", "/api/legacy/book"); },
   optIn: async (s: LegacySigner, on: boolean) => { await send(s, "optin", "PATCH", "/api/legacy/book", { optIn: on }); },
   deleteVoice: async (s: LegacySigner) => { await send(s, "voice.delete", "DELETE", "/api/legacy/voice"); },
+  /** Owner: approve these exact words for one message in one language (wallet-signed). */
+  saveTranslation: (s: LegacySigner, t: TranslationInput) => send<LegacyTranslation>(s, "translation.write", "POST", "/api/legacy/translation", t),
+  deleteTranslation: async (s: LegacySigner, k: TranslationKey) => { await send(s, "translation.delete", "DELETE", "/api/legacy/translation", k); },
+  /** Owner: a machine suggestion of their own message in `lang`. Nothing is stored. */
+  suggestTranslation: (s: LegacySigner, k: TranslationKey) => send<{ text: string }>(s, "translation.suggest", "POST", "/api/legacy/translation/suggest", k),
 
   async createVoice(s: LegacySigner, u: LegacyVoiceUpload): Promise<LegacyVoiceInfo> {
     const [consentSha, ...sampleShas] = await Promise.all([blobHash(u.consent), ...u.samples.map(blobHash)]);

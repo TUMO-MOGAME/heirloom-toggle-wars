@@ -3,15 +3,18 @@ import "server-only";
  * System prompts, one per specialist. Shared guardrails first: the agent recommends and explains;
  * the Solana program enforces caps, floors and quorums; people approve exceptions.
  */
-import { LOCALE_ENGLISH_NAMES, type Locale } from "../i18n/locales";
+import { isLocale, LOCALE_ENGLISH_NAMES } from "../i18n/locales";
+import { VOICE_LANGUAGES, type VoiceLanguage } from "../voice/languages";
 
 /**
- * Appended to a specialist's system prompt when the visitor chose a language other than English.
+ * Appended to a specialist's system prompt when the visitor chose a language other than English: a UI locale (the
+ * app's language) or a spoken language of a voice call (plan §20; lib/voice/languages.ts). The UI locales keep their
+ * South African names; the other spoken languages use VOICE_LANGUAGES' English names.
  * Names, amounts and fixed terms stay as they are so replies still match what the screens show.
  */
-export function replyLanguage(locale?: Locale): string {
+export function replyLanguage(locale?: VoiceLanguage): string {
   if (!locale || locale === "en") return "";
-  const lang = LOCALE_ENGLISH_NAMES[locale];
+  const lang = isLocale(locale) ? LOCALE_ENGLISH_NAMES[locale] : VOICE_LANGUAGES[locale].english;
   return `
 Language: the user chose ${lang}. Write the user-facing reply in ${lang}, in plain, respectful, everyday words ` +
     `a family would use; common English loanwords (app, wallet) are fine where that is how people speak. If they write in ` +

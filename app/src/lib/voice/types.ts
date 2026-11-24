@@ -10,6 +10,8 @@
  * drive the UI (e.g. navigate, open the claim form prefilled, show a rule).
  * Without ELEVENLABS_* env the hook reports status "unavailable" and the UI falls back to text chat.
  */
+import type { VoiceLanguage } from "./languages";
+
 export type VoiceStatus = "idle" | "requesting-mic" | "connecting" | "connected" | "ended" | "error" | "unavailable";
 
 export interface VoiceTranscriptLine {
@@ -29,6 +31,9 @@ export interface VoiceContext {
   /** JSON of EstateFacts for the screen's estate (no personal data). Sent as a dynamic variable so the agent's
    *  webhook can answer about the estate in mock mode too; in chain mode the server prefers reading the chain. */
   facts?: string;
+  /** The spoken language for the call (plan §20): one the agent can speak (resolveVoiceLanguage("agent", …)).
+   *  Not English → the session sends ElevenLabs overrides for the language and the first message. Default "en". */
+  lang?: VoiceLanguage;
 }
 
 export interface HeirloomVoice {
@@ -43,4 +48,6 @@ export interface HeirloomVoice {
   stop(): Promise<void>;
   setMuted(muted: boolean): void;
   muted: boolean;
+  /** The call's words were machine translated (the simulated call in a language other than English). */
+  translated?: "machine";
 }

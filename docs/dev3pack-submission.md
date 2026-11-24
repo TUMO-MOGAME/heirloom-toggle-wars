@@ -13,7 +13,7 @@ money exists, but it can't reach the school, and a lump sum at the end has no pr
 ## What we built
 - **A living plan.** Rules say who, for what, to which approved payee, up to how much. They work from the day they are
   signed and carry on after death.
-- **An Anchor program that enforces it.** 54 instructions hold the vault and check payees, caps, quorums, waiting
+- **An Anchor program that enforces it.** 57 instructions hold the vault and check payees, caps, quorums, waiting
   periods, objections and disputes. Payouts and the sale of an asset (money for title) settle atomically.
 - **An AI reviewer that cannot approve what it is unsure of.** It reads documents with facts taken from the chain. When
   unsure it refers the item on-chain, and then two trusted people, or the living owner, decide.

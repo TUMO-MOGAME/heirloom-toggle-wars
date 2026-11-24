@@ -3,17 +3,21 @@
  * useHeirloomVoice(): HeirloomVoice (./types.ts) on the ElevenLabs Agents Platform.
  * Uses VoiceConversation from @elevenlabs/react (re-exported @elevenlabs/client) directly, so no provider is
  * needed. Flow: mic permission → GET /api/voice/session (signed URL) → startSession with dynamic variables
- * { persona, estate, page } and client tools that emit UI actions (lib/agent/actions.ts).
+ * { persona, estate, page, facts, lang } and client tools that emit UI actions (lib/agent/actions.ts).
+ * A call in another spoken language (plan §20) also sends ElevenLabs overrides for the language and the first message;
+ * the agent must allow both overrides (Security tab, or scripts/elevenlabs-agent.ts). English sends none, so an agent
+ * without overrides keeps working in English.
  * The ElevenLabs agent calls our orchestrator through its server tool `heirloom_orchestrate`; when
  * the "agent_tool_response_full_payload" client event is enabled, its { specialist, actions } are applied here too.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 // Type only: the SDK itself (~600 KB with LiveKit) is fetched when a call starts, not with every page.
-import type { VoiceConversation } from "@elevenlabs/react";
+import type { Language, VoiceConversation } from "@elevenlabs/react";
 import type { HeirloomVoice, SpecialistName, VoiceContext, VoiceStatus, VoiceTranscriptLine } from "./types";
 import { dispatchAgentAction } from "../agent/action-events";
 import type { UiAction, uiActionSchema as UiActionSchema } from "../agent/actions";
 import { stripVoiceTags } from "./tags";
+import { VOICE_LANGUAGES, type VoiceLanguage } from "./languages";
 
 const SPECIALISTS: SpecialistName[] = ["Orchestrator", "WillWriter", "DocumentReviewer", "ClaimsGuide", "CarBroker", "EstateGuide", "Compliance"];
 
@@ -30,6 +34,28 @@ function clientTools(emit: (a: UiAction) => void, uiActionSchema: typeof UiActio
     open_claim_form: (p: { rule?: string; payee?: string; amount?: number }) => run({ type: "openClaimForm", ...p }),
     show_rule: (p: { rule?: string }) => run({ type: "showRule", rule: p.rule }),
     start_upload: (p: { purpose?: string }) => run({ type: "startUpload", purpose: p.purpose }),
+  };
+}
+
+/**
+ * What startSession gets for `ctx`: dynamic variables (also `lang`, `lang_name`, which the webhook tool forwards so
+ * the specialists answer in that language) and, for a language other than English, the ElevenLabs conversation
+ * overrides for the language and the greeting. A language the agent can't speak falls back to English.
+ */
+export function voiceSessionOptions(ctx: VoiceContext, greet: (lang: VoiceLanguage, name?: string) => string): {
+  dynamicVariables: Record<string, string>;
+  overrides?: { agent: { language: Language; firstMessage: string } };
+} {
+  const lang: VoiceLanguage = ctx.lang && VOICE_LANGUAGES[ctx.lang].support.agent ? ctx.lang : "en";
+  const info = VOICE_LANGUAGES[lang];
+  const name = ctx.persona.split(":")[1]?.split(" ")[0] || undefined;
+  return {
+    dynamicVariables: {
+      persona: ctx.persona, persona_name: name ?? "there", estate: ctx.estate ?? "none", page: ctx.page ?? "/", facts: ctx.facts ?? "none",
+      lang, lang_name: info.english,
+    },
+    // `elevenlabs` codes of agent languages are all in the SDK's Language list (checked in lib/voice/languages.ts).
+    overrides: lang === "en" ? undefined : { agent: { language: info.elevenlabs as Language, firstMessage: greet(lang, name) } },
   };
 }
 
@@ -98,10 +124,12 @@ export function useHeirloomVoice(): HeirloomVoice {
       const signedUrl = data.signedUrl;
 
       // The action schema (zod) loads with the call, not with the agent sheet that every page mounts.
-      const [{ VoiceConversation }, { uiActionSchema }] = await Promise.all([import("@elevenlabs/react"), import("../agent/actions")]);
+      const [{ VoiceConversation }, { uiActionSchema }, { firstMessageFor }] = await Promise.all([import("@elevenlabs/react"), import("../agent/actions"), import("@/content/voice-scripts")]);
+      const { dynamicVariables, overrides } = voiceSessionOptions(ctx, firstMessageFor);
       conv.current = await VoiceConversation.startSession({
         signedUrl,
-        dynamicVariables: { persona: ctx.persona, persona_name: ctx.persona.split(":")[1]?.split(" ")[0] || "there", estate: ctx.estate ?? "none", page: ctx.page ?? "/", facts: ctx.facts ?? "none" },
+        dynamicVariables,
+        ...(overrides ? { overrides } : {}),
         clientTools: clientTools(emit, uiActionSchema),
         onConnect: () => { setStatus("connected"); startMeter(); },
         onDisconnect: () => { stopMeter(); conv.current = null; setSpeaking(false); setStatus((s) => (s === "error" ? s : "ended")); },

@@ -9,7 +9,7 @@ import type { Content, FunctionDeclaration, Part } from "@google/genai";
 import { z } from "zod";
 import type { SpecialistName } from "../voice/types";
 import type { WillChatMessage, WillDraft } from "../types";
-import type { Locale } from "../i18n/locales";
+import type { VoiceLanguage } from "../voice/languages";
 import { generate, geminiVoiceModel, hasGemini, jsonSchemaOf } from "./gemini";
 import { CAR_BROKER, CLAIMS_GUIDE, COMPLIANCE, DOCUMENT_REVIEWER, ESTATE_GUIDE, replyLanguage, storageLine } from "./prompts";
 import { uiActionSchema, type UiAction } from "./actions";
@@ -23,7 +23,7 @@ import { CANNED_PREFIX } from "./canned";
 export interface SpecialistInput {
   history: WillChatMessage[];          // last message is the user's
   facts: EstateFacts | null;
-  context: { persona?: string; role?: string; page?: string; channel?: "text" | "voice"; locale?: Locale };
+  context: { persona?: string; role?: string; page?: string; channel?: "text" | "voice"; locale?: VoiceLanguage };
 }
 
 export interface SpecialistResult {

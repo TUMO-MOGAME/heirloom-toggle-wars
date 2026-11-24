@@ -9,13 +9,17 @@ import { isStandin, pronouns } from "@/lib/legacy/rules";
 import { OwnerStudio } from "./owner-studio";
 import { ChildTalk } from "./child-talk";
 import { useLegacyStatus } from "./use-legacy";
+import { useLocalized } from "@/lib/i18n/client";
 
 /** /legacy: the owner records their voice and Legacy Book; a child (after unlock, by choice) hears the owner's messages. */
 export function LegacyScreen({ copy, safety }: { copy: LegacyCopy; safety: LegacySafetyCopy }) {
   return <Gate roles={["owner", "beneficiary"]}>{({ snap, role }) => <Inner copy={copy} safety={safety} role={role} snap={snap!} />}</Gate>;
 }
 
-function Inner({ copy, safety, role, snap }: { copy: LegacyCopy; safety: LegacySafetyCopy; role: string; snap: EstateSnapshot }) {
+function Inner({ copy: english, safety: safetyEnglish, role, snap }: { copy: LegacyCopy; safety: LegacySafetyCopy; role: string; snap: EstateSnapshot }) {
+  // The screen in the app's language (content/i18n/legacy.ts); English where a line is not translated.
+  const copy = useLocalized(english, (t) => t.legacy.page);
+  const safety = useLocalized(safetyEnglish, (t) => t.legacy.safety);
   const { status, error, reload } = useLegacyStatus();
   const owner = role === "owner";
   const called = status?.book?.calledBy ?? "Dad";

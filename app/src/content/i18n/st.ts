@@ -11,11 +11,19 @@ import { safeguardsSt } from "./safeguards";
 import { askSt } from "./ask";
 import { treeSt } from "./tree";
 import { lettersSt } from "./letters";
+import { listenSt } from "./listen";
+import { voiceSt } from "./voice";
+import { receiptsSt } from "./receipts";
+import { legacySt } from "./legacy";
 
 export const st: Bundle = {
   ask: askSt,
   tree: treeSt,
   letters: lettersSt,
+  listen: listenSt,
+  voice: voiceSt,
+  receipts: receiptsSt,
+  legacy: legacySt,
   legalNote: "Leqephe lena le fumaneha ka Senyesemane feela. Ke mohlala o tlamehang ho hlahlojwa ke moeletsi wa molao.",
 
   site: {
@@ -975,6 +983,12 @@ export const st: Bundle = {
         canWin: "E fihlella theko e tlase",
         blocked: "E thibetswe: ka tlase ho theko e tlase",
         blockedHard: "E thibetswe: ka tlase ho theko e tlase ya mathata",
+        why: {
+          best: "Tlhahiso e phahameng ka ho fetisisa e fihlellang theko e tlase ya {min}.",
+          outbid: "E fihlella theko e tlase ya {min}, empa ho na le tlhahiso e phahameng ho feta.",
+          below: "Ka tlase ho theko e tlase ya {min}. E thibetswe ntle le ha kopo ya mathata e amohelwa.",
+          belowHard: "Ka tlase ho theko e tlase ya mathata ya {min}. Konteraka ha e e amohele le ka mohla.",
+        },
         ranking: "Pono ya agent",
         rankingLoading: "Agent e hlophisa ditlhahiso",
       },

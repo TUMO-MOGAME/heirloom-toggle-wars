@@ -7,7 +7,10 @@ import { useEstate } from "@/lib/hooks/estate";
 import { GUIDANCE_TOPICS, isStandin, milestonesFor, pronouns, type LegacySpeech, type LegacyStatus } from "@/lib/legacy/rules";
 import { Button, ButtonLink, Card, EmptyState, Notice } from "@/components/ui/primitives";
 import { fmt } from "@/components/shell/copy";
-import { DisclosureLabel, PlayButton, SafetyCard } from "./parts";
+import { DisclosureLabel, PlayButton, SafetyCard, SpeechLanguagePicker } from "./parts";
+import { approvedVersion } from "@/lib/legacy/rules";
+import { VOICE_LANGUAGES } from "@/lib/voice/languages";
+import { useVoiceLanguage } from "@/lib/voice/languages-client";
 import { useLegacyPlayer } from "./use-player";
 import { legacyError } from "./use-legacy";
 import { shortName } from "@/lib/names";
@@ -79,6 +82,9 @@ function Messages({ copy, safety, status, snap, reload }: { copy: LegacyCopy; sa
   const ms = milestonesFor(book, status.childId);
   const kid = book.children.find((k) => k.id === status.childId) ?? null;
   const adults = snap.estate.verifierNames.map(shortName).join(", ");
+  // The child's spoken language: the parent's approved version in it plays, otherwise the original words.
+  const { lang } = useVoiceLanguage("speech");
+  const versions = status.translations ?? [];
 
   /**
    * The disclosure is spoken (in Heirloom's own ElevenLabs voice) before the first message plays in the parent's
@@ -94,7 +100,7 @@ function Messages({ copy, safety, status, snap, reload }: { copy: LegacyCopy; sa
 
   const playMilestone = async (id: string) => {
     if (!service) return;
-    try { await say(id, await service.legacySpeak(estate, { milestoneId: id })); }
+    try { await say(id, await service.legacySpeak(estate, { milestoneId: id, lang })); }
     catch (e) { notify("error", legacyError(e, c.error)); }
   };
 
@@ -120,13 +126,14 @@ function Messages({ copy, safety, status, snap, reload }: { copy: LegacyCopy; sa
 
       <Card>
         <h2 className="text-h3">{fmt(c.messages, vars)}</h2>
+        {ms.length > 0 && <SpeechLanguagePicker id="legacy-child-lang" className="mt-3" label={c.language.label} hint={fmt(c.language.hint, vars)} />}
         {ms.length === 0 ? <p className="mt-2 text-ink-2">{fmt(c.noMessages, vars)}</p> : (
           <ul className="mt-3 grid gap-2">
             {ms.map((m) => (
               <li key={m.id} className="flex items-center gap-3 rounded-md border border-line p-3">
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold">{m.title}</span>
-                  <span className="block text-small text-ink-2">{copy.owner.book.kinds[m.kind]}</span>
+                  <span className="block text-small text-ink-2">{copy.owner.book.kinds[m.kind]} · {approvedVersion(versions, m.id, lang) ? fmt(c.language.inLanguage, { language: VOICE_LANGUAGES[lang].name }) : c.language.original}</span>
                 </span>
                 <PlayButton small playing={playing === m.id} onPlay={() => void playMilestone(m.id)} onStop={stop} label={c.play} stopLabel={c.stopPlaying} />
               </li>

@@ -10,6 +10,10 @@ import type { ScreensCopy } from "../screens";
 import type { SiteCopy } from "../site";
 import type { TreeCopy } from "../tree";
 import type { LettersCopy } from "../letters";
+import type { ListenCopy } from "../listen";
+import type { VoiceCopy } from "../voice";
+import type { ReceiptsCopy } from "../receipts";
+import type { LegacyBundleCopy } from "../legacy";
 import type { DeepPartial, Widen } from "@/lib/i18n/merge";
 
 /**
@@ -28,6 +32,14 @@ export interface Bundle {
   tree: Widen<TreeCopy>;
   /** Letters for later (content/i18n/letters.ts). */
   letters: Widen<LettersCopy>;
+  /** Voice typing (content/i18n/listen.ts). */
+  listen: Widen<ListenCopy>;
+  /** The spoken-language choice on a call (content/i18n/voice.ts). */
+  voice: Widen<VoiceCopy>;
+  /** Spoken receipts (content/i18n/receipts.ts). */
+  receipts: Widen<ReceiptsCopy>;
+  /** Legacy Voice (content/i18n/legacy.ts). */
+  legacy: Widen<LegacyBundleCopy>;
   landing: Widen<LandingCopy>;
   common: Widen<CommonCopy>;
   pay: Widen<PayCopy>;

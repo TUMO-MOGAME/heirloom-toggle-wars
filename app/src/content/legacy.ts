@@ -3,6 +3,8 @@
  * can choose to hear the parent's own messages in that voice, always labelled as AI.
  * The rule (18 Nov 2026, plan §16.17): the voice only ever says words its owner wrote or approved while alive.
  * No chat and no calls in a parent's voice. Placeholders in {braces} are filled with fmt().
+ * Translated in content/i18n/legacy.ts. Kept in English on purpose: the consent line the owner reads aloud
+ * (lib/legacy/rules.ts, checked word for word by the server) and the owner's sample line below.
  */
 
 /** The one line the owner can hear in their new voice while alive (the server speaks this, never client text). */
@@ -164,6 +166,36 @@ export const legacy = {
       standinNote: "You can write your messages now. Until you record your voice, a stand-in voice (an ElevenLabs stock voice, labelled as such) reads them to your children.",
       starterNote: "Your Legacy Book is empty. Write what you want your children to read, and messages for the moments you may miss, then save it.",
     },
+    translations: {
+      title: "Your messages in other languages",
+      body: "Your children may one day live in another language. Add your own version of a message in another language, and your voice reads it in that language. Only words you approve are ever played.",
+      rule: "A suggestion is a machine translation of your own words. Nothing is saved or played until you have read it, corrected it and approved it.",
+      needSaved: "Save your Legacy Book first. Then you can add other languages for each message here.",
+      none: "No other languages yet.",
+      original: "Your original words",
+      add: "Add a language",
+      language: "Language",
+      text: "Your message in {language}",
+      textHint: "Type it yourself, or ask for a suggestion and then read and correct every word.",
+      suggest: "Suggest a translation",
+      suggesting: "Translating…",
+      suggested: "This is a machine suggestion of your own words. Read it carefully and change anything that is not how you would say it. Nothing is saved until you approve it.",
+      confirm: "I have read every word, and this says what I mean.",
+      approve: "Approve and save",
+      cancel: "Cancel",
+      needText: "Write the message in {language} first.",
+      needConfirm: "Tick the box to confirm you have read every word.",
+      saved: "Your message in {language} is saved.",
+      approvedOn: "Approved on {date}",
+      stale: "You changed the original after approving this. It won't play until you read it again and approve it.",
+      edit: "Read again and change",
+      remove: "Remove",
+      removed: "Removed.",
+      play: "Play in {language}",
+      stop: "Stop",
+      sealed: "Your estate is no longer active, so versions in other languages can't be added or changed.",
+      allAdded: "This message is in every language the voice can speak.",
+    },
     preview: {
       title: "Hear how it sounds to {name}",
       body: "Pick a message and listen. This is exactly what {name} would hear.",
@@ -208,9 +240,18 @@ export const legacy = {
     guidance: "{called}'s guidance",
     error: "Something went wrong. Please try again.",
     retry: "Try again",
+    language: {
+      label: "Language to hear",
+      hint: "If {called} approved a message in this language, you hear it in this language. Otherwise you hear {possessive} original words.",
+      inLanguage: "In {language}",
+      original: "Original words",
+    },
   },
 } as const;
 
 export type LegacyCopy = typeof legacy;
 export type LegacyEntryCopy = typeof legacyEntry;
 export type LegacySafetyCopy = typeof legacySafety;
+
+/** Everything Legacy Voice shows, as one slice of the translation bundle (content/i18n/legacy.ts). */
+export interface LegacyBundleCopy { page: LegacyCopy; entry: LegacyEntryCopy; safety: LegacySafetyCopy }

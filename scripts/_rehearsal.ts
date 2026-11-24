@@ -34,7 +34,7 @@ export const REHEARSAL_PLAN = [
   "Death to payout: report, review, two confirmations, the wait, the unlock, a claim approved and paid",
   "A co-signed sale of the car's title; R19: another amount is refused, and so is a sale with no co-signer",
   "R20: an approved death report holds the sweep until the recipient says they are alive",
-  "R5: a death claim is replaced only once stale, and the agent's review of the replaced one is refused",
+  "R5: an unreviewed death claim is never replaced; a reviewed one only once stale, and the agent's review of the replaced one is refused",
   "R6: a stranger's seat report is refused, and a stale one gives way",
   "R2: replacing a trusted person clears the claim they attested",
   "R8: one survivor reaches the quorum",
@@ -47,6 +47,10 @@ export const REHEARSAL_PLAN = [
 const USDT = 1_000_000n;
 const WAITING = 60;
 const FALLBACK_WAIT = 45;
+// The program never waits less than 60 s (MIN_WAITING_SECS): a succession after its confirmation (N5), and each step
+// of the fallback countdown, doubled for a referred death (H6).
+const MIN_WAIT = 60;
+const FALLBACK_DELAY = Math.max(FALLBACK_WAIT, MIN_WAIT);
 /** Chain time past a deadline before acting on it. */
 const MARGIN = 3;
 
@@ -308,12 +312,16 @@ export async function rehearse({ conn, payer, explorer, log = () => undefined }:
     const [c1, c2, s1, s2] = await Promise.all(["claim 1", "claim 2", "seat 1", "seat 2"].map(H));
     await does("R5", "a first death claim", [ix.submitDeathClaim(ctx, estate, first.publicKey, c1)], [first]);
     await refuses("R5", "replacing it at once", "BadStatus", [ix.submitDeathClaim(ctx, estate, second.publicKey, c2)], [second]);
+    // N4: an unreviewed death claim never gives way (replacing it would restart the recovery clock). Once the agent
+    // has reviewed it, it holds for the reviewed hold (twice the waiting period), then a stale one may be replaced.
+    await does("R5", "the agent refers the first claim", [ix.reviewDeath(estate, a, "Refer", await H("c1 report"), c1)], [agent]);
     await refuses("R6", "a stranger reports a trusted person dead", "NotParticipant", [ix.reportSeatDeath(ctx, stranger.publicKey, estate, 1, s1)], [stranger]);
     await does("R6", "a family member's seat report", [ix.reportSeatDeath(ctx, first.publicKey, estate, 1, s1, { beneficiary: true })], [first]);
     await refuses("R6", "replacing that at once", "SuccessionPending", [ix.reportSeatDeath(ctx, second.publicKey, estate, 1, s2, { beneficiary: true })], [second]);
 
-    await until(num(await must("Seat", seatPda(programId, estate, 1)), "death_pending_since") + WAITING + MARGIN);
-    await does("R5", "a stale claim is replaced", [ix.submitDeathClaim(ctx, estate, second.publicKey, c2)], [second]);
+    const seatSince = num(await must("Seat", seatPda(programId, estate, 1)), "death_pending_since");
+    await until(Math.max(seatSince + WAITING, num(await must("Estate", estate), "death_pending_since") + 2 * WAITING) + MARGIN);
+    await does("R5", "a stale reviewed claim is replaced", [ix.submitDeathClaim(ctx, estate, second.publicKey, c2)], [second]);
     await refuses("R5", "the agent's review of the replaced claim", "ReportChanged", [ix.reviewDeath(estate, a, "Approve", await H("c1 report"), c1)], [agent]);
     await does("R6", "a stale seat report gives way", [ix.reportSeatDeath(ctx, second.publicKey, estate, 1, s2, { beneficiary: true })], [second]);
     await refuses("R6", "the agent's review of the replaced report", "ReportChanged", [ix.reviewSeatDeath(estate, a, 1, true, await H("s1 report"), s1, trusted[1].publicKey)], [agent]);
@@ -346,6 +354,7 @@ export async function rehearse({ conn, payer, explorer, log = () => undefined }:
       await does("setup", `seat ${i}: reported`, [ix.reportSeatDeath(ctx, first.publicKey, estate, i, cert, { beneficiary: true })], [first]);
       await does("setup", `seat ${i}: reviewed`, [ix.reviewSeatDeath(estate, a, i, true, await H(`seat ${i} report`), cert, trusted[i].publicKey)], [agent]);
       await does("setup", `seat ${i}: confirmed`, [ix.confirmSeatDeath(ctx, confirmer.publicKey, estate, i)], [confirmer]);
+      await until(num(await must("Seat", seatPda(programId, estate, i)), "death_pending_since") + MIN_WAIT + MARGIN);
       await does("setup", `seat ${i}: vacant`, [ix.finalizeSuccession(ctx, estate, i, payer.publicKey)]);
     }
 
@@ -362,6 +371,7 @@ export async function rehearse({ conn, payer, explorer, log = () => undefined }:
     await refuses("R18", "the reporter confirms", "NotConfirmer", [ix.confirmSeatDeath(ctx, first.publicKey, estate, 2, { beneficiary: true })], [first]);
     await does("R18", "another beneficiary confirms", [ix.confirmSeatDeath(ctx, second.publicKey, estate, 2, { beneficiary: true })], [second]);
     await does("R18", "the owner checks in after it", [ix.heartbeat(ctx, o)], [owner]);
+    await until(num(await must("Seat", seatPda(programId, estate, 2)), "death_pending_since") + MIN_WAIT + MARGIN);
     // The program reads no remaining account any more: the beneficiary's confirmation stands on its own.
     await does("R18", "the confirmation stands", [ix.finalizeSuccession(ctx, estate, 2, payer.publicKey)]);
     const last = await must("Seat", seatPda(programId, estate, 2));
@@ -396,10 +406,10 @@ export async function rehearse({ conn, payer, explorer, log = () => undefined }:
     await refuses("R9", "and votes from the second seat", "AlreadyApproved", [vote()], [monitor]);
 
     const pay = () => ix.executeFallback(ctx, { payer: payer.publicKey, estate, recipient: next.publicKey, recipientIndex: 0 });
-    await until(started + FALLBACK_WAIT + 1);
+    await until(started + FALLBACK_DELAY + 1);
     await refuses("R7", "paying after one wait", "WaitingPeriodNotOver", [pay()]);
     // Also past the objection's lapse: it was raised within the countdown's first wait.
-    await until(started + 2 * FALLBACK_WAIT + MARGIN);
+    await until(started + 2 * FALLBACK_DELAY + MARGIN);
     await does("R7", "paying after two", [pay()]);
     proven("R7", "the next recipient holds the vault", (await balance(ata(usdt.publicKey, next.publicKey))) === 7n * USDT);
   }

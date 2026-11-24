@@ -1,7 +1,9 @@
 /**
  * Legacy voice in mock mode. Same rules as the server (owner-only writes while the estate is active, consent
- * required, children only after unlock + opt-in, the voice speaks only the owner's own messages), with a SIMULATED voice:
- * the browser's speech synthesis stands in and the UI labels it "Simulated voice: the real voice needs ElevenLabs".
+ * required, children only after unlock + opt-in, the voice speaks only the owner's own messages, translations only by
+ * the living owner), with no cloned voice: the demo's prepared lines play in an ElevenLabs stock voice through
+ * /api/legacy/demo-voice (labelled a stand-in), and anything else shows the words instead. The browser's own speech
+ * voice is never used.
  *
  * On a demo deployment with ELEVENLABS_API_KEY and LEGACY_DEMO_WRITES=1, the same calls go to the real
  * /api/legacy/* routes (demo auth: role taken from the demo persona), so the real cloned voice can be heard.
@@ -9,15 +11,20 @@
 import type { Base58, Estate, Role } from "../types";
 import type { EstateSnapshot } from "./types";
 import { legacyVoiceSample } from "@/content/legacy";
-import { demoLegacyBook } from "../legacy/demo-book";
+import { DEMO_TRANSLATIONS, demoLegacyBook, demoTranslations } from "../legacy/demo-book";
 import { legacyApi, type LegacySigner } from "../legacy/client";
-import { demoVoiceText, demoVoiceUrl } from "../legacy/demo-voice";
-import { consentLine, disclosureLine, matchChild, validateVoiceInput, type LegacyStatus, type LegacyVoiceInfo } from "../legacy/rules";
+import { demoVersionLine, demoVoiceText, demoVoiceUrl } from "../legacy/demo-voice";
+import {
+  approvedVersion, consentLine, currentVersions, disclosureLine, matchChild, validateVoiceInput,
+  type LegacyStatus, type LegacyTranslation, type LegacyVoiceInfo,
+} from "../legacy/rules";
 import type { LegacyBook } from "../legacy/schema";
+import { sha256Hex } from "../agent/hash";
 import type { HeirloomService } from "./types";
 
 type LegacyMethods = Pick<HeirloomService,
-  "legacyStatus" | "createLegacyVoice" | "deleteLegacyVoice" | "saveLegacyBook" | "deleteLegacyBook" | "setLegacyOptIn" | "legacySpeak">;
+  "legacyStatus" | "createLegacyVoice" | "deleteLegacyVoice" | "saveLegacyBook" | "deleteLegacyBook" | "setLegacyOptIn" | "legacySpeak"
+  | "saveLegacyTranslation" | "deleteLegacyTranslation" | "suggestLegacyTranslation">;
 
 interface Deps {
   actor(): { address: Base58; role: Role; label: string } | null;
@@ -27,7 +34,8 @@ interface Deps {
   wallets: Record<"lerato" | "sipho" | "naledi", Base58>;
 }
 
-interface LocalState { v: 1; voice: LegacyVoiceInfo | null; book: LegacyBook | null; optIns: Record<string, boolean> }
+/** `translations` is absent in state saved before translations existed: the demo's are seeded on first use. */
+interface LocalState { v: 1; voice: LegacyVoiceInfo | null; book: LegacyBook | null; optIns: Record<string, boolean>; translations?: LegacyTranslation[] }
 
 const KEY = "heirloom.mock.legacy.v1";
 /** The demo voice was "recorded" by Thabo on 2 October 2026. */
@@ -68,6 +76,13 @@ export function createMockLegacy(d: Deps): LegacyMethods & { resetLegacy(): void
   const unlocked = () => d.created() && d.estate().status === "Unlocked";
   const needOwner = () => { if (!isOwner()) fail("NotOwner", "Only the estate owner can do this."); };
   const needAlive = () => { if (d.created() && d.estate().status !== "Active") fail("BadStatus", "A legacy voice can only be created by the owner while the estate is active."); };
+  const needOpenBook = () => { if (d.created() && d.estate().status !== "Active") fail("BadStatus", "The Legacy Book is sealed once a passing is reported."); };
+  const versions = async () => (st.translations ??= await demoTranslations());
+  /** Translations are the owner's, while alive, for a message in their saved book (same rules as the server). */
+  const ownerMessage = (milestoneId: string) => {
+    needOwner(); needOpenBook();
+    return st.book?.milestones.find((m) => m.id === milestoneId) ?? fail("NotFound", "Save the message in your Legacy Book first.");
+  };
   const child = () => (st.book ? matchChild(st.book, me().address, me().label) : null);
   const needTalk = () => {
     if (isOwner()) return;
@@ -101,10 +116,12 @@ export function createMockLegacy(d: Deps): LegacyMethods & { resetLegacy(): void
       const owner = isOwner();
       const optedIn = owner || Boolean(st.optIns[me().address]);
       const open = owner || (unlocked() && optedIn);
+      const current = st.book && open ? await currentVersions(st.book, await versions()) : [];
       const out: LegacyStatus = {
         voice: st.voice, optedIn, viewer: owner ? "owner" : isChild() ? "child" : "other",
         book: st.book ? (open ? structuredClone(st.book) : { ...st.book, values: [], lessons: [], phrases: [], children: [], milestones: [], guidance: { study: "", money: "", faith: "", family: "", other: "" } }) : null,
         childId: child()?.id ?? null, unlocked: unlocked(),
+        translations: owner ? current : current.filter((t) => !t.stale),
       };
       return out;
     },
@@ -139,7 +156,9 @@ export function createMockLegacy(d: Deps): LegacyMethods & { resetLegacy(): void
       const parsed = legacyBookSchema.parse(book);
       if (await isRemote()) { const b = await legacyApi.saveBook(signer("owner"), parsed); st.book = b; save(); return b; }
       await sleep(500);
-      st.book = parsed; save();
+      st.book = parsed;
+      st.translations = (await versions()).filter((t) => parsed.milestones.some((m) => m.id === t.milestoneId));
+      save();
       return parsed;
     },
 
@@ -147,7 +166,7 @@ export function createMockLegacy(d: Deps): LegacyMethods & { resetLegacy(): void
       needOwner();
       if (await isRemote()) await legacyApi.deleteBook(signer("owner"));
       await sleep(400);
-      st.book = null; save();
+      st.book = null; st.translations = []; save();
     },
 
     async setLegacyOptIn(_e, on) {
@@ -168,6 +187,9 @@ export function createMockLegacy(d: Deps): LegacyMethods & { resetLegacy(): void
         const m = st.book?.milestones.find((x) => x.id === input.milestoneId);
         if (!m) fail("NotFound", "That message was not found.");
         text = m!.text; line = m!.id;
+        // The owner's approved version in the chosen language, if current; otherwise the original words.
+        const version = approvedVersion(await currentVersions(st.book!, await versions()), m!.id, input.lang);
+        if (version) { text = version.text; line = demoVersionLine(m!.id, version.lang); }
       } else if ("disclosure" in input) {
         // The demo never clones a voice: the stand-in disclosure.
         return demoSpeech("disclosure", disclosureLine(st.book ?? demoLegacyBook(), true), "heirloom");
@@ -178,6 +200,37 @@ export function createMockLegacy(d: Deps): LegacyMethods & { resetLegacy(): void
         text = legacyVoiceSample; line = "sample";
       }
       return demoSpeech(line, text, "parent");
+    },
+
+    async saveLegacyTranslation(_e, input) {
+      const { translationInputSchema } = await import("../legacy/schema");
+      const t = translationInputSchema.parse(input);
+      const m = ownerMessage(t.milestoneId);
+      if (await isRemote()) return legacyApi.saveTranslation(signer("owner"), t);
+      await sleep(400);
+      const saved: LegacyTranslation = { ...t, sha256: await sha256Hex(t.text), sourceSha256: await sha256Hex(m.text), approvedAt: Date.now(), stale: false };
+      st.translations = [...(await versions()).filter((x) => !(x.milestoneId === t.milestoneId && x.lang === t.lang)), saved];
+      save();
+      return saved;
+    },
+
+    async deleteLegacyTranslation(_e, key) {
+      ownerMessage(key.milestoneId);
+      if (await isRemote()) { await legacyApi.deleteTranslation(signer("owner"), key); return; }
+      await sleep(250);
+      st.translations = (await versions()).filter((x) => !(x.milestoneId === key.milestoneId && x.lang === key.lang));
+      save();
+    },
+
+    async suggestLegacyTranslation(_e, key) {
+      const m = ownerMessage(key.milestoneId);
+      if (await isRemote()) return legacyApi.suggestTranslation(signer("owner"), key);
+      await sleep(700);
+      // No model in the demo: only the prepared suggestion, and only while the owner's words still match the demo's.
+      const original = demoLegacyBook().milestones.find((x) => x.id === m.id);
+      const ready = DEMO_TRANSLATIONS.find((x) => x.milestoneId === m.id && x.lang === key.lang);
+      if (!ready || original?.text !== m.text) fail("NoSuggestion", "In the demo, a suggestion is ready only for the graduation message in French. Type your own words in that language here.");
+      return { text: ready!.text };
     },
 
   };

@@ -13,6 +13,7 @@ import { usePay } from "@/components/pay/payment";
 import { LogoMark } from "@/components/ui/primitives";
 import { Typewriter } from "@/components/ui/client";
 import { fmt } from "@/components/shell/copy";
+import { appendTranscript, useMicButton } from "./mic-button";
 
 /** Small chip naming which specialist answered. */
 export function SpecialistChip({ name, copy }: { name: SpecialistName; copy: AssistantCopy }) {
@@ -98,6 +99,13 @@ export function Composer({ onSend, disabled, copy, autoFocus }: { onSend: (text:
   const [value, setValue] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
   const fieldId = useId();
+  // Voice typing: the words are added to the box to check and send; never sent by voice.
+  const heard = useCallback((text: string) => {
+    setValue((v) => appendTranscript(v, text));
+    const el = ref.current;
+    if (el) { el.focus(); window.requestAnimationFrame(() => el.setSelectionRange(el.value.length, el.value.length)); }
+  }, []);
+  const mic = useMicButton({ onText: heard, statusClassName: "px-4 pt-1.5" });
   const submit = (e?: FormEvent) => {
     e?.preventDefault();
     if (!value.trim() || disabled) return;
@@ -106,19 +114,23 @@ export function Composer({ onSend, disabled, copy, autoFocus }: { onSend: (text:
     ref.current?.focus();
   };
   return (
-    <form onSubmit={submit} className="flex items-end gap-2 rounded-[1.5rem] border border-line-strong bg-surface p-1.5 pl-4 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--focus)]">
-      <label htmlFor={fieldId} className="sr-only">{copy.inputLabel}</label>
-      <textarea
-        id={fieldId} ref={ref} rows={1} value={value} autoFocus={autoFocus}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
-        placeholder={copy.placeholder}
-        className="max-h-32 min-h-11 flex-1 resize-none bg-transparent py-2.5 text-body outline-none placeholder:text-ink-2 [field-sizing:content]"
-      />
-      <button type="submit" disabled={disabled || !value.trim()} aria-label={copy.send} className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-bg transition-opacity disabled:opacity-40">
-        <ArrowUp className="size-5" aria-hidden="true" />
-      </button>
-    </form>
+    <div className="min-w-0">
+      <form onSubmit={submit} className="flex items-end gap-2 rounded-[1.5rem] border border-line-strong bg-surface p-1.5 pl-4 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--focus)]">
+        <label htmlFor={fieldId} className="sr-only">{copy.inputLabel}</label>
+        <textarea
+          id={fieldId} ref={ref} rows={1} value={value} autoFocus={autoFocus}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
+          placeholder={copy.placeholder}
+          className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-body outline-none placeholder:text-ink-2 [field-sizing:content]"
+        />
+        {mic.button}
+        <button type="submit" disabled={disabled || !value.trim()} aria-label={copy.send} className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-bg transition-opacity disabled:opacity-40">
+          <ArrowUp className="size-5" aria-hidden="true" />
+        </button>
+      </form>
+      {mic.status}
+    </div>
   );
 }
 

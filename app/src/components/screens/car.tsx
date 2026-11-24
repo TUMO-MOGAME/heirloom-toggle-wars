@@ -168,7 +168,15 @@ function Listing({ copy, a, snap, car, media, session, role, canEdit, headingLev
       return `${left}${wait.why === "hardship" ? sale.whyHardship : sale.whyOffer}`;
     }
     if (wait?.kind === "tooOld") return guardians.rules.errors.OfferTooOld;
-    return ranking?.eligible.find((x) => x.offer === o.address)?.reason ?? ranking?.ineligible.find((x) => x.offer === o.address)?.reason;
+    // Said from the numbers on screen, in the reader's language; the ranker's own reason (English) only for the rare rest.
+    const hardship = !!car.hardshipBeneficiary;
+    const min = hardship ? car.hardshipFloor : car.floorPrice;
+    const money = { min: formatUsdt(min, { decimals: 0 }) };
+    if (ranking?.bestOffer === o.address) return fmt(copy.offers.why.best, money);
+    if (ranking?.eligible.some((x) => x.offer === o.address)) return fmt(copy.offers.why.outbid, money);
+    const amount = ranking?.ineligible.find((x) => x.offer === o.address)?.amount;
+    if (amount !== undefined && amount > BigInt(0) && amount < min) return fmt(hardship ? copy.offers.why.belowHard : copy.offers.why.below, money);
+    return ranking?.ineligible.find((x) => x.offer === o.address)?.reason;
   };
   const remaining = car.status === "Listed" && car.listingEnds && now !== null ? car.listingEnds - now : null;
 

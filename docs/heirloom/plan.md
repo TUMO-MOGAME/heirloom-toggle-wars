@@ -988,7 +988,9 @@ no live call in a parent's voice after death. This answers §16.13 "Legacy Voice
   guidance; never voiced), help lines one tap away (SADAG, a trusted adult), switch off. No input box.
 - **Copy:** "Hear {called}'s messages in {possessive} own words, in {possessive} voice." Consent line now reads "...a copy
   of my voice to read my own messages to my family after I'm gone." Privacy policy §13 states the rule; ElevenLabs
-  stays the operator for the voice copy; Gemini is no longer used for Legacy Voice.
+  stays the operator for the voice copy; Gemini is no longer used for Legacy Voice, except (plan §20, 24 Nov) to *suggest*
+  a faithful translation of one of the owner's own messages when the owner taps "Suggest a translation": nothing is
+  stored until the living owner reads, edits and approves it, so the voice still only says the owner's approved words.
 - **Not changed:** the future rule in §16.16 also says "the voice copy is deleted at death"; today the copy is kept so
   the messages can play. Tumo to decide whether to pre-render the messages while the owner is alive and delete the
   copy at death instead.
@@ -1238,3 +1240,46 @@ README (setup and how Flagsmith is used), short demo video. Prework is allowed. 
 ### 19.4 Open (ask at the 23 Nov webinar or in Discord)
 - Does the free Cloud plan include Experimentation with the managed warehouse? (Docs: beta; own warehouse needs Scale-Up.)
 - Data region of the managed warehouse (for the privacy policy).
+
+## 20. ElevenLabs side track: "Best Solana app built with ElevenLabs" (planned 23 Nov 2026; build on Tumo's "build")
+Dev3pack side prize (3 months Scale tier per member). Judges reward ElevenLabs doing real work in a Solana app. Today
+the app uses three ElevenLabs products: the voice agent (Agents Platform), Instant Voice Cloning and text to speech.
+Gaps (inventory 23 Nov): voice ignores the chosen language; no speech-to-text; Legacy Voice and the simulated call are
+English-only; the agent is configured by hand in the dashboard.
+
+### 20.1 What we build (in order of value)
+1. **One agent, many languages.** The voice call follows the app's language. Add widely used international languages
+   for growth beyond South Africa: French, Portuguese, Spanish and Arabic (West, Central, Lusophone, North Africa and
+   beyond), plus Swahili and Hindi if ElevenLabs' current models support them (checked at build time, not assumed).
+   South African languages stay where they are. The agent gets the locale, answers in it, and its config becomes code:
+   `scripts/elevenlabs-agent.ts` creates or updates the agent through the API (voice, languages, tools, prompt), so
+   the set-up is reproducible.
+2. **Speak instead of type (Scribe speech to text).** A microphone in the chat composer and the plan builder. Scribe
+   also understands isiZulu, Sesotho and Afrikaans, so a parent can say their plan in their own language. The words
+   are shown for editing before anything is sent. Nothing is signed by voice.
+3. **Spoken receipts for on-chain payments.** When the program pays a school, a bookstore or a family member, the
+   family can hear it in their language: "R1,500 was paid to Van Schaik for Lerato's books", with the Solana
+   transaction and an Explorer link on screen. The words come only from the chain event; a short chime (ElevenLabs
+   sound effects, made once and shipped as a static file) marks a confirmed payment.
+4. **A parent's message in the child's language.** The owner can have a Legacy Voice message read in another language
+   in their own cloned voice. Only the owner, while alive, can create and approve each translation, so the rule "the
+   voice only ever says the parent's own words" still holds. The screen and copy of Legacy Voice get translated.
+5. **The simulated call in every language** on the demo site, so judges without a key still hear the idea.
+
+### 20.2 Rules
+- The agent never signs. Voice can draft and explain; the person signs with their own wallet, as today.
+- Audio and transcripts: sent to ElevenLabs only after a tap; the privacy policy names speech-to-text and the regions.
+- Keys stay server-side; every new route is rate-limited and capped per day, like `voice/session`.
+- New languages are labelled by how they were translated (machine translated, awaiting a native read).
+- Both sites move together: the mock service plays recorded or stand-in audio; the chain service uses live ElevenLabs.
+
+### 20.3 How (agents, one worktree each, merged by the lead)
+- **el/agent:** the locale in the voice context and webhook, the agent-as-code script, the language list.
+- **el/listen:** Scribe route (`/api/voice/transcribe`), the microphone in chat and the plan builder, tests.
+- **el/receipts:** spoken receipts and the chime, from chain events in both services.
+- **el/legacy:** translated legacy messages with owner approval, Legacy Voice i18n.
+- Lead: review each, gate (tests, types, lint, both builds), deploy both sites, README "ElevenLabs" section, video beat.
+
+### 20.4 Done when
+The voice call, voice input and receipts work in English plus at least four international languages on devnet; the
+README shows each ElevenLabs product used, where, and why; the demo video has a 30-second ElevenLabs beat.

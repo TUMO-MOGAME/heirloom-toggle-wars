@@ -3,15 +3,42 @@
 > Read this first in any new session. The design is in [plan.md](plan.md); the on-chain contract is in [docs/program-spec.md](docs/program-spec.md).
 > Update this file at the end of every work session.
 
-**Last updated:** 2026-11-22 (judge-review fixes P1-P9, S1-S7, A1-A3 shipped: devnet program upgraded, both sites deployed, newcomer flow proven live)
+**Last updated:** 2026-11-25 (spoken French call works on the demo; ElevenLabs side track done)
 **Phase:** preparing for Dev3pack Global (27-29 Nov 2026; prework allowed and disclosed). Submitted to W3Node 13 Nov. Both sites deploy from `main`. The repo goes public on 27 Nov (Tumo).
 
+
+## RELEASE (23 Nov 2026): plan §18 is live
+### Done
+- Devnet program upgraded to the reviewed build: slot 525556644, sha256 c5294fe4... (899,296 bytes), the live copy
+  matches the independent rebuild; all 148 devnet accounts decode. Deployed with Solana CLI 4.3.2 (3.1.10 can't read
+  sBPF v3), writes sent straight to validators (no --use-rpc: the public RPC rate-limits the IP). A stuck first attempt's
+  buffer was closed and its SOL returned; no buffers left. Deployer 10.43 SOL.
+- release.json pinned (c0dfc94); Supabase URL and secret key set on heirloom-devnet production (sensitive, never printed).
+- Gate: vitest 2224/2224, tsc app and scripts, eslint, audit 0, mock and chain builds. main fast-forwarded to b50b4ca
+  and pushed (the GitHub repo is now TUMO-MOGAME/dev3pack-Hackathon; the old URL redirects).
+- Both sites live on b50b4ca: /api/health ok on heirloom-devnet, heirloom.tumoolo.tech and the demo; devnet shows
+  programCurrent, supabase, gemini, elevenlabs and sponsor all true. 360 px and 1280 px walk of both sites: no
+  sideways scroll, no console errors (403s on family-only records for a public visitor are by design).
+- Newcomer proof run on devnet (scripts/rehearse-second-review.ts --send, deployer as payer): 92 steps ok, 20 attacks
+  refused, all 14 scenarios. The script was updated to the re-review's rules (N4: an unreviewed death claim never gives
+  way; N5: a succession waits at least 60 s; H6: each fallback step waits at least 60 s, twice when referred).
+- isiZulu car screen: the reason under each offer is now said in the reader's language (all four).
+- README, architecture, Dev3pack submission and spec: 57 instructions, 336 + 2,224 tests, the version gate, the
+  documented trade-offs.
+### Next up
+- 24 Nov: plan §20 ElevenLabs side track MERGED (ad8f209 listen, 39f282b agent, ad05133 receipts, d4d36d7 legacy) and gated: vitest 2319/2319, tsc app+scripts, eslint, audit 0, mock and chain builds. Migration 0011 (legacy_translations) applied: RLS on, no policies, no anon/authenticated rights. Privacy §13 + plan §16.17: Gemini may suggest a translation, stored only once the living owner approves. Verified (ElevenLabs docs 24 Nov): scribe_v3; eleven_v4 speaks af/sw/zu; agent af+sw via eleven_v4_turbo, zu not in the Agents API enum; Sesotho nowhere. Deployed to both sites (6247c5d). Live-tested 24 Nov: devnet spoken receipt of a real payout (en, fr, zu) with real ElevenLabs audio; voice typing available on both sites; the spoken-language picker at 360 px. Chime made by Tumo with ElevenLabs Sound Effects and live (3405aa0). STILL TO DO: the live ElevenLabs agent's settings (add languages fr pt es ar hi zh af sw; TTS model Eleven v4 Turbo; Security → overrides Language + First message ON; tool heirloom_orchestrate body param `lang` from dynamic variable `lang`). Until then the live call answers in English only and non-English calls are refused. Tumo added .mcp.json (ElevenLabs hosted MCP, https://api.elevenlabs.io/v1/mcp, git-excluded) so the next session can make these changes via MCP after `/mcp` sign-in; then test a French call on the demo.
+- 24 Nov, later: live ElevenLabs agent updated via the ElevenLabs MCP (agent_1601m77rrhfse7pb04ct3wztkew8, used by all three sites). Rollback point: version agtvrsn_0101m78bfbmmfzn8m65652tjzxqh. Changed: languages fr pt es ar hi zh af sw (first messages from voice-scripts); overrides Language + First message ON; heirloom_orchestrate body param `lang` from dynamic variable `lang`; placeholders lang=en, lang_name=English; prompt = SYSTEM_PROMPT from scripts/elevenlabs-agent.ts (speak {{lang_name}}); LLM gemini-2.5-flash -> gemini-3.5-flash (2.5 leaves 30 Nov). TTS was already eleven_v4_turbo. Tested on the demo's signed URL, text-only: French call greets and answers in French via the tool; English unchanged. NOT yet tested: a spoken call in the browser. OPEN (pre-existing, not changed): the webhook URL points at the demo (heirloom-one-iota), so devnet calls get the mock orchestrator; the auth allowlist is only heirloom-one-iota + localhost, so devnet and heirloom.tumoolo.tech may be refused.
+- 24 Nov, devnet agent DONE: devnet + heirloom.tumoolo.tech now use their own agent agent_1501m87f8q2eea1vafdqmmyn1r7n ("Heirloom devnet", tool tool_0401m87f928de06bqe3vjbzst257 -> heirloom-devnet /api/agent/orchestrate); the demo keeps agent_1601m77rrhfse7pb04ct3wztkew8 (tool -> heirloom-one-iota). Tool secret rotated by Tumo with scripts/rotate-tool-secret.ps1 (ElevenLabs workspace secret + both Vercel projects; ELEVENLABS_AGENT_ID on devnet). Both sites redeployed. Tested text-only French on all three sites: tool ok, French answers from each site's own orchestrator. Allowlist does not block signed calls. Tumo: local .env.local still has the old tool secret. Any change to the agent now goes to BOTH agents.
+- 25 Nov: Tumo made a spoken call in the browser on the demo (/chat → phone icon → Spoken language: Français): greeted and answered in French. ElevenLabs side track done. Optional: the same spoken test on devnet.
+- Toggle Wars (Flagsmith) is PARKED (Tumo, 23 Nov): Dev3pack only.
+### Blockers
+- Legal details (both sites still show [Legal name], [Phone number], [Email address]); "mint it" for the starter wallet.
 
 ## SECOND REVIEW, DRY RUN (22 Nov 2026): review only, nothing fixed
 ### Done
 - Reviewed fc693c3. Clean clone: 89 program tests, 965 app tests (one timeout under load, clean on re-run), build matches devnet. No code, chain or site changes.
 ### Next up
-- 23 Nov (Tumo): Heirloom also enters Toggle Wars (WeMakeDevs x Flagsmith, Track 01, 26-29 Nov): one A/B test on the plan builder, examples vs blank (plan §19). Waiting for Tumo: register, Flagsmith account, client-side environment key in root .env.local; ask at the webinar whether the free plan includes Experimentation. Build after the release.
+- 23 Nov (Tumo): Heirloom also enters Toggle Wars (WeMakeDevs x Flagsmith, Track 01, 26-29 Nov): one A/B test on the plan builder, examples vs blank (plan §19), built in its own public repo TUMO-MOGAME/heirloom-toggle-wars (copy of a202bc0, fresh history), not here. Waiting for Tumo: register, Flagsmith account, client-side environment key in root .env.local; ask at the webinar whether the free plan includes Experimentation. Build after the release.
 - IN PROGRESS (Tumo, 22 Nov: fix everything from critical to low, update all docs, production fully up to date): plan §18, branch fix/second-review. Do not push this branch or main before the devnet upgrade is ready.
 - Merged on the branch (not deployed): R18-R22 (r2/program 56ebb47). Lead rebuild from an archive: 840,072 bytes, sha256 242b161e..., 240 tests, IDL matches. Interface notes: finalize_succession takes the confirmer Beneficiary PDA as a remaining account; nobody changes asset photos after the unlock.
 - Merged from r2/chain (not deployed): plan §18.3-18.4 chain side. Builders for all 57 instructions, the changed meanings, every service method of the wave 2 contract, the co-signed sale route, reviews bound to the file read, sponsor and scheduler, shared replay stores and limits, seeds, `scripts/rehearse-second-review.ts`. Exercised on a local surfnet with the 242b161e build: all 57 instructions landed and the rehearsal passed; NOT exercised on devnet, with a phone wallet, with Supabase or with the real model. Next: merge with r2/product (tsc needs its mock), review, then after the upgrade the lead runs the rehearsal with `--send`.

@@ -2,7 +2,7 @@ import "server-only";
 /** WillWriter specialist: multi-turn chat → reply + WillDraft (structured output, zod-validated). */
 import type { Content } from "@google/genai";
 import type { WillChatMessage, WillDraft } from "../types";
-import type { Locale } from "../i18n/locales";
+import type { VoiceLanguage } from "../voice/languages";
 import { generateJson, hasGemini } from "./gemini";
 import { replyLanguage, WILL_WRITER } from "./prompts";
 import { willDraftChecked, willTurnSchema } from "./schemas";
@@ -13,7 +13,7 @@ export function toContents(history: WillChatMessage[]): Content[] {
   return history.map((m) => ({ role: m.role === "agent" ? "model" : "user", parts: [{ text: m.text }] }));
 }
 
-export async function willChat(history: WillChatMessage[], locale?: Locale): Promise<{ reply: string; draft: WillDraft | null; draftIssues?: string[] }> {
+export async function willChat(history: WillChatMessage[], locale?: VoiceLanguage): Promise<{ reply: string; draft: WillDraft | null; draftIssues?: string[] }> {
   if (!hasGemini()) return cannedWillTurn(history.filter((m) => m.role === "user").length);
   const fx = await getUsdtZar();
   const turn = await generateJson(willTurnSchema, {

@@ -3,6 +3,9 @@
  * plain, specific, a little repetitive. The "lerato-uct-fees" message is tied to the UCT fee payment.
  */
 import type { LegacyBook } from "./schema";
+import type { LegacyTranslation } from "./rules";
+import type { VoiceLanguage } from "../voice/languages";
+import { sha256Hex } from "../agent/hash";
 
 export const DEMO_MILESTONE_UCT = "lerato-uct-fees";
 
@@ -89,4 +92,27 @@ export function demoLegacyBook(wallets: Partial<Record<"lerato" | "sipho" | "nal
       },
     ],
   };
+}
+
+export const DEMO_MILESTONE_GRADUATION = "all-graduation";
+
+/**
+ * Thabo approved his graduation message in French as well as the English he wrote (a fictional approval on
+ * 2 October 2026, the day he recorded his voice). The demo can play exactly these lines (lib/legacy/demo-voice.ts).
+ */
+export const DEMO_TRANSLATIONS: readonly { milestoneId: string; lang: VoiceLanguage; text: string }[] = [
+  {
+    milestoneId: DEMO_MILESTONE_GRADUATION, lang: "fr",
+    text: "Tu l'as fait. Mets cette toge et traverse cette scène comme si elle t'appartenait. Élève-toi en élevant les autres : maintenant, aide quelqu'un d'autre à y arriver aussi.",
+  },
+];
+const DEMO_APPROVED_AT = Date.UTC(2026, 9, 2, 9, 45);
+
+/** The demo's approved versions, with their hashes (the original is the demo book's message). */
+export async function demoTranslations(): Promise<LegacyTranslation[]> {
+  const book = demoLegacyBook();
+  return Promise.all(DEMO_TRANSLATIONS.map(async (t) => ({
+    ...t, sha256: await sha256Hex(t.text), approvedAt: DEMO_APPROVED_AT,
+    sourceSha256: await sha256Hex(book.milestones.find((m) => m.id === t.milestoneId)!.text),
+  })));
 }

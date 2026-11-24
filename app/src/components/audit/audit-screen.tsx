@@ -210,7 +210,7 @@ function Record({ copy, snap, isMock }: { copy: Copy; snap: EstateSnapshot; isMo
       </Section>
 
       <Section id="audit-payments" title={copy.payments.title} body={copy.payments.body} icon={<FileCheck2 className="size-5 text-amber" aria-hidden="true" />}>
-        {payments.length === 0 ? <p className="text-ink-2">{copy.payments.empty}</p> : <ActivityList items={payments} now={now} book={book} />}
+        {payments.length === 0 ? <p className="text-ink-2">{copy.payments.empty}</p> : <ActivityList items={payments} now={now} book={book} receipts={{ estate: snap.estate.address, rules: snap.rules, assets: snap.assets }} />}
       </Section>
 
       <Section id="audit-decisions" title={copy.decisions.title} body={copy.decisions.body} icon={<UsersRound className="size-5 text-amber" aria-hidden="true" />}>

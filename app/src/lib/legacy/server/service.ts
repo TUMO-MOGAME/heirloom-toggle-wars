@@ -11,9 +11,11 @@ import { HttpError } from "@/lib/api/http";
 import { sha256Hex } from "@/lib/agent/hash";
 import { legacyVoiceSample } from "@/content/legacy";
 import {
-  baseMime, consentLine, disclosureLine, isStandin, matchChild, sniffAudio, validateVoiceInput,
-  type LegacyBook, type LegacyChild, type LegacyStatus, type LegacyVoiceInfo,
+  approvedVersion, baseMime, consentLine, currentVersions, disclosureLine, isStandin, matchChild, sniffAudio, validateVoiceInput,
+  type LegacyBook, type LegacyChild, type LegacyStatus, type LegacyTranslation, type LegacyVoiceInfo, type TranslationInput, type TranslationKey,
 } from "../schema";
+import type { VoiceLanguage } from "@/lib/voice/languages";
+import { suggestTranslation as geminiTranslate } from "./translate";
 import type { Viewer } from "./auth";
 import * as el from "./elevenlabs";
 import { heirloomVoice, standinVoice } from "./standin";
@@ -59,12 +61,20 @@ export async function status(v: Viewer): Promise<LegacyStatus> {
   if (voice) await retireAgent(voice);
   const unlocked = isUnlocked(v);
   const optedIn = v.role === "owner" ? true : Boolean(row?.optIns[v.wallet]);
-  const book = row ? (v.role === "owner" || (unlocked && optedIn) ? row.book : redact(row.book)) : null;
+  const open = v.role === "owner" || (unlocked && optedIn);
+  const book = row ? (open ? row.book : redact(row.book)) : null;
+  // The owner sees every version (stale ones flagged, to approve again); a child only the current ones.
+  const versions = row && open ? await currentVersions(row.book, await store.getTranslations(v.estate)) : [];
   return {
     voice: voice ? voiceInfo(voice) : null, book, optedIn, viewer: v.role,
     childId: row ? childFor(v, row.book)?.id ?? null : null, unlocked,
+    translations: (v.role === "owner" ? versions : versions.filter((t) => !t.stale)).map(publicVersion),
   };
 }
+
+const publicVersion = (t: LegacyTranslation): LegacyTranslation => ({
+  milestoneId: t.milestoneId, lang: t.lang, text: t.text, sha256: t.sha256, sourceSha256: t.sourceSha256, approvedAt: t.approvedAt, stale: t.stale,
+});
 
 /* ---------- voice ---------- */
 
@@ -155,7 +165,45 @@ export async function putBook(v: Viewer, book: LegacyBook): Promise<LegacyBook> 
     children: book.children.map((c) => c.wallet ? c : { ...c, wallet: kids.find((b) => b.label.split(/[ (]/)[0].toLowerCase() === c.name.split(" ")[0].toLowerCase())?.wallet }),
   };
   await store.saveBook(v.estate, v.wallet, linked);
+  await store.pruneTranslations(v.estate, linked.milestones.map((m) => m.id));
   return linked;
+}
+
+/* ---------- the owner's own words in other languages (plan §20.1 item 4) ---------- */
+
+/**
+ * Only the estate's owner (wallet-signed, checked on-chain by ./auth), only while the estate is Active, and only for
+ * a message in their saved book. Same rule as writing the book: once a passing is reported, nothing can be added.
+ */
+async function ownerMessage(v: Viewer, key: TranslationKey, what: string) {
+  if (v.role !== "owner") throw new HttpError(403, `Only the estate owner can ${what}.`, "forbidden");
+  if (v.snap && v.snap.estate.status !== "Active") throw new HttpError(409, "The Legacy Book is sealed once a passing is reported.", "bad_status");
+  const row = await store.getBook(v.estate);
+  const m = row?.book.milestones.find((x) => x.id === key.milestoneId);
+  if (!m) throw new HttpError(404, "Save the message in your Legacy Book first.", "not_found");
+  return m;
+}
+
+/** Stores the owner's approved words for one message in one language (replacing an earlier version). */
+export async function saveTranslation(v: Viewer, input: TranslationInput): Promise<LegacyTranslation> {
+  const m = await ownerMessage(v, input, "approve a translation");
+  const row: store.TranslationRow = {
+    estate: v.estate, ownerWallet: v.wallet, milestoneId: m.id, lang: input.lang, text: input.text,
+    sha256: await sha256Hex(input.text), sourceSha256: await sha256Hex(m.text), approvedAt: Date.now(),
+  };
+  await store.saveTranslation(row);
+  return publicVersion({ ...row, stale: false });
+}
+
+export async function removeTranslation(v: Viewer, key: TranslationKey): Promise<void> {
+  await ownerMessage(v, key, "remove a translation");
+  await store.deleteTranslation(v.estate, key.milestoneId, key.lang);
+}
+
+/** A machine suggestion of the owner's own message in `lang`. Not stored: the owner must read, edit and approve it. */
+export async function suggestTranslation(v: Viewer, key: TranslationKey): Promise<{ text: string }> {
+  const m = await ownerMessage(v, key, "ask for a translation");
+  return { text: await geminiTranslate(m.text, key.lang) };
 }
 
 export async function removeBook(v: Viewer): Promise<void> {
@@ -197,24 +245,30 @@ export async function countSpeak(estate: string): Promise<void> {
   if (taken && !taken.ok) throw tooMuch();
 }
 
-/** What may be spoken: a milestone the owner wrote, the fixed sample line (owner, while alive), or Heirloom's
- * disclosure line (app copy, in Heirloom's own voice). Never free text. */
-export type SpeakRequest = { milestoneId: string } | { sample: true } | { disclosure: true };
+/** What may be spoken: a milestone the owner wrote (in a language they approved, else the original), the fixed
+ * sample line (owner, while alive), or Heirloom's disclosure line (app copy, in Heirloom's own voice). Never free text. */
+export type SpeakRequest = { milestoneId: string; lang?: VoiceLanguage } | { sample: true } | { disclosure: true };
 
 /**
  * Returns MP3 bytes, or null when ElevenLabs is not configured (the app then shows the words; it never falls back
  * to the browser's voice). The parent's cloned voice when there is one; otherwise an ElevenLabs stock voice stands
  * in (labelled as such in the app). The disclosure is always in Heirloom's own stock voice.
  */
-export async function speak(v: Viewer, req: SpeakRequest): Promise<{ text: string; audio: Uint8Array | null; voice: "parent" | "heirloom" }> {
+export async function speak(v: Viewer, req: SpeakRequest): Promise<{ text: string; audio: Uint8Array | null; voice: "parent" | "heirloom"; lang: VoiceLanguage | null }> {
   const ctx = await speakContext(v);
   let text: string;
   let milestoneId: string | null = null;
+  let lang: VoiceLanguage | null = null;
   const voice = "disclosure" in req ? "heirloom" : "parent";
   if ("milestoneId" in req) {
     const m = ctx.book.milestones.find((x) => x.id === req.milestoneId && (v.role === "owner" || x.childId === "all" || x.childId === ctx.child?.id));
     if (!m) throw new HttpError(404, "That message was not found.", "not_found");
     text = m.text; milestoneId = m.id;
+    // The owner's approved version in the chosen language, if there is a current one; otherwise the original words.
+    if (req.lang) {
+      const version = approvedVersion(await currentVersions(ctx.book, await store.getTranslations(v.estate)), m.id, req.lang);
+      if (version) { text = version.text; lang = version.lang; }
+    }
   } else if ("disclosure" in req) {
     text = disclosureLine(ctx.book, isStandin(ctx.voice ? voiceInfo(ctx.voice) : null));
   } else {
@@ -223,19 +277,21 @@ export async function speak(v: Viewer, req: SpeakRequest): Promise<{ text: strin
     if (v.snap && v.snap.estate.status !== "Active") throw new HttpError(409, "The sample plays only while the estate is active.", "bad_status");
     text = legacyVoiceSample;
   }
-  if (!el.hasElevenLabs()) return { text, audio: null, voice };
+  if (!el.hasElevenLabs()) return { text, audio: null, voice, lang };
   const cloned = voice === "parent" ? ctx.voice?.voiceId ?? null : null;
   if (cloned && ctx.voice?.requiresVerification) throw new HttpError(409, "This voice still needs verification in the ElevenLabs dashboard.", "needs_verification");
   const voiceId = voice === "heirloom" ? heirloomVoice() : cloned ?? standinVoice(ctx.book.pronoun);
-  const sha = await sha256Hex(`${voiceId}\n${text}`);
+  // The model is part of the cache key: the same words in another model are another recording.
+  const model = el.ttsModelFor(lang);
+  const sha = await sha256Hex(`${voiceId}\n${model}\n${text}`);
   const hit = await store.cachedMessage(v.estate, sha);
-  if (hit) return { text, audio: hit, voice };
+  if (hit) return { text, audio: hit, voice, lang };
   await countSpeak(v.estate);
-  const audio = await el.textToSpeech(voiceId, text).catch((e: unknown) => {
+  const audio = await el.textToSpeech(voiceId, text, model).catch((e: unknown) => {
     // Log ElevenLabs' detail on the server; the family sees a plain message (the app then shows the words).
     console.error("[legacy] speak failed:", e instanceof Error ? e.message : e);
     throw new HttpError(503, "The voice is not available right now.", "unavailable");
   });
   await store.cacheMessage(v.estate, sha, milestoneId, audio).catch((e) => console.warn("[legacy] cache failed:", e instanceof Error ? e.message : e));
-  return { text, audio, voice };
+  return { text, audio, voice, lang };
 }

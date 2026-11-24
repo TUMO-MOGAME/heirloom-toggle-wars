@@ -407,6 +407,13 @@ export const screens = {
       canWin: "Meets the minimum",
       blocked: "Blocked: below the minimum",
       blockedHard: "Blocked: below the hardship floor",
+      /** Why, under each offer: from the numbers on screen, in the reader's language (the ranker's own reason is English). */
+      why: {
+        best: "The highest offer at or above the minimum of {min}.",
+        outbid: "Meets the minimum of {min}, but a higher offer exists.",
+        below: "Below the minimum price of {min}. Blocked unless a hardship request is approved.",
+        belowHard: "Below the hardship floor of {min}. The contract never accepts it.",
+      },
       ranking: "The agent's view",
       rankingLoading: "The agent is ranking the offers",
     },

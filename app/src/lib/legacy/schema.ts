@@ -8,7 +8,8 @@
  *  - voice_id never appears in any type the browser receives (LegacyVoiceInfo has no id)
  */
 import { z } from "zod";
-import { MILESTONE_KINDS } from "./rules";
+import { MAX_TRANSLATION_CHARS, MILESTONE_KINDS } from "./rules";
+import { VOICE_LANGUAGES, VOICE_LANGUAGE_CODES, type VoiceLanguage } from "../voice/languages";
 
 // The zod-free part (types the browser shares, consent rules, helpers) lives in ./rules, so the demo and the
 // screens can use it without loading zod. Re-exported here, so server code keeps one import.
@@ -71,3 +72,18 @@ export const legacyBookSchema = z.object({
 });
 export type LegacyBook = z.infer<typeof legacyBookSchema>;
 
+
+/* ---------- the owner's approved versions in other languages ---------- */
+
+export const milestoneIdSchema = z.string().regex(/^[a-z0-9-]{1,40}$/);
+/** A language the voice can speak (ElevenLabs text to speech); anything else is refused. */
+export const speechLanguageSchema = z.enum(VOICE_LANGUAGE_CODES as [VoiceLanguage, ...VoiceLanguage[]])
+  .refine((l) => VOICE_LANGUAGES[l].support.speech, "The voice can't speak that language.");
+
+/** Which version: a message and a language. Strict: nothing else rides along. */
+export const translationKeySchema = z.object({ milestoneId: milestoneIdSchema, lang: speechLanguageSchema }).strict();
+export type TranslationKey = z.infer<typeof translationKeySchema>;
+
+/** The owner approves these exact words for this message in this language. */
+export const translationInputSchema = translationKeySchema.extend({ text: line(MAX_TRANSLATION_CHARS).min(1) }).strict();
+export type TranslationInput = z.infer<typeof translationInputSchema>;
