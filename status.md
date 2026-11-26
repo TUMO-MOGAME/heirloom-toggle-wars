@@ -26,6 +26,17 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
   - Checks: vitest 2452/2452; `next build`, tsc and eslint clean; simulator smoke run on localhost passed end to end
     (fixed: consent is clicked, not `check()`ed, because ticking replaces the box with the composer).
 
+- 26 Nov 22:40, Phase 2 started:
+  - Tumo: Flagsmith project Heirloom (org 42345, project 56686) with Development, Simulation and Production, the
+    managed warehouse enabled in each; keys in `.env.local`; Flagsmith CLI v2 logged in; Vercel CLI logged in.
+    Experimentation is on the free plan.
+  - `setup.sh dev` run for real: experiments_enabled 306250, plan_builder_examples 306251 (variation blank 37487),
+    metrics 782–785, experiment 768. Fixed for Windows (temp paths) and expected direction `decrease` for blank.
+  - Development experiment 768 **started** (20:34 UTC) as the wiring check. Local site with the Development key,
+    4 fresh visitors: 2 blank (no chips) and 2 control (chips); each sent `$flag_exposure` (value = variant,
+    experiment_id 768) plus plan_first_message and plan_message, accepted with 202, flushed on hide. Payloads hold
+    only the random UUID, event names and the variant: no text or personal data.
+
 ## Next up
 - Tumo: decide the prereg fixes (Blockers), then T4–T7: Flagsmith project + 3 environments + the managed warehouse in
   each; keys in `.env.local` (`FLAGSMITH_ENV_KEY_DEV/SIM/PROD` for the scripts; each deployment gets its own key as
