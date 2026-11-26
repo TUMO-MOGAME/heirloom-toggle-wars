@@ -44,6 +44,10 @@ Who uses it: anyone planning what happens to their money and family after they'r
 ```
 
 ### Which parts of Flagsmith did you use?
+The form shows checkboxes, not a text box. Tick: **Feature flags, Experimentation (A/B tests), Remote config,
+Flagsmith CLI, Flagsmith API, Flagsmith Cloud.** Leave Segments, MCP server and Self-hosted unticked (tick
+Self-hosted only if we move off Cloud). Untick CLI or API if they end up unused. The text below is for the README
+and the description, if wanted:
 ```
 - Multivariate flag plan_builder_examples: control (worked examples) and a keyed variation "blank" (no examples), 50/50, bucketed on an anonymous identity.
 - Boolean flag experiments_enabled as a kill switch: when off, everyone sees control and nothing is sent.

@@ -31,7 +31,7 @@ EXP_CONTROL_VALUE="control"
 EXP_VARIANT_VALUE="blank"
 EXP_VARIANT_KEY="blank"
 EXP_NAME="Worked examples in the plan builder"
-EXP_HYPOTHESIS="People don't know how to describe an estate plan. Seeing worked examples makes the first step easy, so with examples at least 15% more visitors send a first message, and more reach 'review my plan'."  # plan §2, verbatim
+EXP_HYPOTHESIS="People don't know how to describe an estate plan. Seeing worked examples makes the first step easy, so with examples at least 10% more visitors send a first message, and more reach 'review my plan'. Pre-registered: docs/preregistration.md (tag prereg)."  # docs/preregistration.md, the frozen version
 
 AA_FLAG="aa_check"
 AA_CONTROL_VALUE="same"
