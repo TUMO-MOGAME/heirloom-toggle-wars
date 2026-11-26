@@ -64,13 +64,17 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
   - The same bug would have hit the Simulation experiment; it is fixed before that starts.
 
 ## Next up
-- Tumo: decide the prereg fixes (Blockers), then T4–T7: Flagsmith project + 3 environments + the managed warehouse in
-  each; keys in `.env.local` (`FLAGSMITH_ENV_KEY_DEV/SIM/PROD` for the scripts; each deployment gets its own key as
-  `NEXT_PUBLIC_FLAGSMITH_ENVIRONMENT_KEY`); Flagsmith CLI v2 + `flagsmith login`; the Vercel project. Still T1–T3, T8, T9.
-- Claude, Phase 2 (needs keys): commit Phase 1 and tag `prereg`; `setup.sh dev --dry-run` then for real; C9 deploy
-  (prod + `simulation` branch; its hostname must contain "simulation"); C10 launch checks; C11 A/A (the app must also
-  send exposures for `aa_check`).
-- Then: start Production, wiring checks (§5a), start Simulation and the simulator.
+- Phase 2 is done (C7–C11 ✅; A/A passed on run 2, `docs/results/aa-check.md`).
+- Phase 3 (Fri 27 Nov):
+  - Start the Production experiment 780 (record the exact start time here), then the wiring checks (§5a) on
+    Production about 1 hour later.
+  - Tumo: share `https://heirloom-toggle-wars.vercel.app/try` (plan §7); Claude writes the posts.
+  - Start the Simulation experiment 778 and run the simulator against the simulation site (2,000 visitors spread over
+    the day; `--env sim --base-url https://heirloom-toggle-wars-simulation.vercel.app`).
+  - Every 12 hours: `results.ts prod` and `results.ts sim` snapshots, wiring checks; fix only real bugs and log them.
+  - Tumo: screenshot the A/A experiment page in Flagsmith (Development → Experiments → "A/A check (run 2)").
+  - Still open for Tumo: T1–T3, T8, T9.
+- Never redeploy either site while Production runs (one change only); deploys are by CLI, not on push.
 
 ## Decisions log
 - 23 Nov: separate repo, not Heirloom's (keeps the Dev3pack repo stable, shows what was built for this event).
