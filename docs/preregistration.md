@@ -22,17 +22,24 @@ All times are SAST (UTC+2).
 ## Hypothesis
 
 People don't know how to describe an estate plan. Seeing worked examples makes the first step easy, so with examples
-at least 15% more visitors send a first message, and more reach "review my plan".
+at least 10% more visitors send a first message (relative lift), and more reach "review my plan".
+
+Flagsmith compares `blank` against `control`. So if the hypothesis is right, `blank` comes out at least 10% lower
+than `control` on the primary metric.
 
 ## Metrics
 
-- **Primary:** `plan_first_message`, the visitor sends their first message (typed or tapped). Occurrence, expected
-  to increase. It fires early in a visit, as the organisers advise.
+"Higher is better" below means the metric's direction in Flagsmith: a version that raises it is doing better.
+
+- **Primary:** `plan_first_message`, the visitor sends their first message (typed or tapped). Occurrence (share of
+  exposed visitors), higher is better. It fires early in a visit, as the organisers advise.
 - **Secondary:**
-  - `plan_reviewed`: reached "review my plan". Occurrence, expected to increase.
-  - `plan_signed`: signed the plan. Occurrence, expected to increase.
-- **Guardrail:** `plan_message` (every message sent). Mean per visitor, should not increase. If `blank` wins only
-  because people type far more to get the same plan, that is not a win.
+  - `plan_reviewed`: reached "review my plan". Occurrence, higher is better.
+  - `plan_signed`: signed the plan. Occurrence, higher is better.
+- **Guardrail:** `plan_message` (every message sent), counted per visitor. In Flagsmith this is a `count` metric,
+  compared as the mean number of messages per exposed visitor (Flagsmith's `mean` aggregation averages event values,
+  which we don't send). It must not rise: the guardrail fails if `blank`'s messages per visitor are more than 10%
+  higher than `control`'s. If `blank` wins only because people type far more to get the same plan, that is not a win.
 
 ## Exposure, split and identity
 
@@ -65,7 +72,7 @@ A relative lift of at least 10% on the primary metric. A smaller "certain" lift 
 Fixed now:
 
 - Ship `blank` only if its chance to beat control on the primary metric is at least 95%, its lift is at least 10%,
-  and the guardrail doesn't get worse.
+  and the guardrail holds (messages per visitor no more than 10% higher than control's).
 - Keep `control` if control's chance to be best is at least 95%.
 - Otherwise call it inconclusive (the 95% credible interval crosses zero). Keep `control` as the safer default and
   say so honestly.
@@ -91,5 +98,11 @@ The plan said this pre-registration would be committed before Thu 26 Nov 04:30 a
 start on Thu 26 Nov at 06:00. That slipped. This pre-registration was committed on the evening of Thu 26 Nov, before
 any experiment started and before any data existed. Only the start time changed: the experiment now starts when it is
 started in Flagsmith (target Fri 27 Nov, morning), and the stop stays at Sat 28 Nov 14:00. Nothing else in plan §2
-changed. The run is shorter than the planned 56 hours, so it may end inconclusive more easily; the decision rule
-already allows for that.
+changed in substance. The run is shorter than the planned 56 hours, so it may end inconclusive more easily; the
+decision rule already allows for that.
+
+Three wording fixes were made before the tag, also before any data existed:
+- The hypothesis now says 10%, the same bar as "worth shipping". The plan said 15%, which no rule ever tested.
+- The guardrail now has a number: no more than 10% more messages per visitor than control.
+- The metrics now say "higher is better" instead of "expected to increase", because the hypothesis expects `control`
+  to do better. The guardrail is named as Flagsmith's `count` metric, which is what "mean per visitor" means there.

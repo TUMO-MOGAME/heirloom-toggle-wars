@@ -54,7 +54,9 @@ explain. Most entries will test a button colour on a toy app. Ours stands out in
     ("R1,500 a month for Lerato's books…").
   - `blank` (variation key `blank`): the same greeting and the same composer, with no suggested replies.
 - **Hypothesis:** people don't know how to describe an estate plan. Seeing worked examples makes the first step easy,
-  so with examples at least 15% more visitors send a first message, and more reach "review my plan".
+  so with examples at least 10% more visitors send a first message, and more reach "review my plan".
+  (Changed from 15% on 26 Nov, before the `prereg` tag; [docs/preregistration.md](docs/preregistration.md) is the
+  frozen version and wins over this section.)
 - **Primary metric:** `plan_first_message`, the visitor sends their first message (typed or tapped).
   Occurrence, expected to increase. It fires early in a visit, as the organisers advise.
 - **Secondary metrics:**

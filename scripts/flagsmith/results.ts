@@ -57,6 +57,8 @@ const DRAWS = 200_000;
 // Decision rule, fixed in plan §2 (read here, decided only at the stop: Sat 28 Nov 14:00 SAST).
 const SHIP_CHANCE = 0.95;
 const SHIP_MIN_LIFT = 0.1;
+/** The guardrail: messages per visitor may rise by at most 10% (preregistration.md). */
+const GUARDRAIL_MAX_RISE = 0.1;
 
 // ---------- Flagsmith result shapes (from its source: experimentation/dataclasses.py, stats.py, serializers.py) ----------
 export interface VariantStats { n: number; sum: number; sum_squares: number }
@@ -358,9 +360,9 @@ async function main() {
   if (primary && treatment) {
     const ours = primary.comparisons[treatment].ours;
     const collecting = Object.values(primary.versions).some((v) => v.collecting_data);
-    // The guardrail "gets worse" if the treatment is more likely than not to raise messages per visitor at 95%.
+    // The guardrail fails (preregistration.md) if the treatment's messages per visitor are more than 10% higher than control's.
     const gOurs = guard?.comparisons[treatment]?.ours;
-    const guardrailWorse = gOurs ? 1 - gOurs.chance_to_beat_control >= SHIP_CHANCE : false;
+    const guardrailWorse = gOurs ? gOurs.lift > GUARDRAIL_MAX_RISE : false;
     if (collecting || !ours) reading = "collecting data: below Flagsmith's floor (50 identities and 5 conversions per version)";
     else if (args.mode === "aa") reading = ours.chance_to_beat_control >= SHIP_CHANCE || ours.chance_to_beat_control <= 1 - SHIP_CHANCE ? `A/A FAIL: a false winner (${pct(ours.chance_to_beat_control)} chance to beat control)` : "A/A pass on the primary metric: no winner";
     else if (ours.chance_to_beat_control >= SHIP_CHANCE && ours.lift >= SHIP_MIN_LIFT && !guardrailWorse) reading = `ship ${treatment}: ${pct(ours.chance_to_beat_control)} chance to beat control, lift ${pct(ours.lift)}, guardrail not worse`;

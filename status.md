@@ -45,9 +45,11 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
 - 26 Nov: `results.ts` computes expected loss and its own SRM test (Flagsmith's SRM p-value is likely null here).
 - 26 Nov: real simulator runs are committed as evidence; `*-smoke.json` runs are git-ignored.
 
+- 26 Nov 22:30: Tumo decided the prereg: hypothesis 10% (was 15%, matching the ship bar); guardrail fails if
+  messages per visitor rise more than 10%; start when Production starts, stop Sat 28 Nov 14:00. `results.ts` applies
+  the 10% guardrail. Phase 1 committed (2786741); prereg committed and tagged `prereg`.
+
 ## Blockers
-- Prereg not frozen until Tumo decides: (1) the hypothesis says 15% but the ship bar is 10%; (2) a numeric guardrail
-  margin; (3) the later start. `docs/toggle-wars.md` must also stop saying every later commit is Toggle Wars work.
 - Flagsmith keys, CLI login and Vercel (T4–T7).
 - Unknown whether the free Flagsmith Cloud plan includes Experimentation (the API answers 403 if not).
 - Flagsmith's terms conflict on where event data is hosted; confirm with Flagsmith or the legal adviser.
