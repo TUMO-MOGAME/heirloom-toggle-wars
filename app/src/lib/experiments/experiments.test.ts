@@ -15,6 +15,8 @@ interface FakeFlags {
   enabled?: boolean;
   variant?: string;
   experiment?: { id: number; name: string; inExperiment: boolean };
+  /** The A/A check's flag; absent unless given. */
+  aa?: { enabled?: boolean; variant?: string; experiment?: { id: number; name: string; inExperiment: boolean } };
 }
 
 /** A stand-in for the Flagsmith SDK: records every call, answers with the flags given. */
@@ -22,6 +24,7 @@ function fakeSdk(f: FakeFlags = {}, initDelayMs = 0) {
   const flags: Record<string, { enabled: boolean; value: unknown; variant?: string; experiment?: FakeFlags["experiment"] }> = {
     [experiments.killSwitch]: { enabled: f.killSwitch ?? true, value: null },
     [experiments.flag]: { enabled: f.enabled ?? true, value: "value" in f ? f.value : "blank", variant: f.variant, experiment: f.experiment },
+    ...(f.aa ? { [experiments.aaFlag]: { enabled: f.aa.enabled ?? true, value: "same", variant: f.aa.variant, experiment: f.aa.experiment } } : {}),
   };
   const sdk = {
     init: vi.fn<(config: Record<string, unknown>) => Promise<void>>(() => new Promise<void>((r) => setTimeout(r, initDelayMs))),
@@ -209,6 +212,67 @@ describe("exposure", () => {
     expect(exp.current()).toBe("control");
     expect(sdk.trackExposureEvent).not.toHaveBeenCalled();
     expect(exp.track("plan_message")).toBe(false);
+  });
+});
+
+describe("A/A check exposure (plan C11)", () => {
+  const AA = { variant: "twin", experiment: { id: 11, name: "A/A check", inExperiment: true } };
+  const PLAN = { value: "blank", variant: "blank", experiment: { id: 7, name: "Examples", inExperiment: true } };
+  const aaCalls = (sdk: ReturnType<typeof fakeSdk>) => sdk.trackExposureEvent.mock.calls.filter((c) => c[0] === experiments.aaFlag);
+
+  it("is sent once, with the plan exposure, when the flag exists and is in an experiment", async () => {
+    const { exp, sdk } = setup({ ...PLAN, aa: AA });
+    exp.start();
+    await settle();
+    expect(aaCalls(sdk)).toHaveLength(0); // not on load
+    exp.markShown(exp.current());
+    exp.markShown(exp.current());
+    exp.markShown("control");
+    expect(sdk.trackExposureEvent.mock.calls).toEqual([
+      [experiments.flag, { value: "blank", metadata: { experiment_id: 7 } }],
+      [experiments.aaFlag, { value: "twin", metadata: { experiment_id: 11 } }],
+    ]);
+    // Only the flag name, the variant key and the experiment id: no personal data.
+    expect(JSON.stringify(aaCalls(sdk))).not.toMatch(new RegExp(ID));
+  });
+
+  it("is not sent when the flag is absent (Production, Simulation)", async () => {
+    const { exp, sdk } = setup(PLAN);
+    exp.start();
+    await settle();
+    exp.markShown(exp.current());
+    expect(sdk.trackExposureEvent).toHaveBeenCalledTimes(1);
+    expect(aaCalls(sdk)).toHaveLength(0);
+  });
+
+  it("is not sent when the flag exists with no experiment, or the experiment left this identity out", async () => {
+    for (const aa of [{ variant: "twin" }, { ...AA, experiment: { ...AA.experiment, inExperiment: false } }, { ...AA, enabled: false }]) {
+      const { exp, sdk } = setup({ ...PLAN, aa });
+      exp.start();
+      await settle();
+      exp.markShown(exp.current());
+      expect(aaCalls(sdk)).toHaveLength(0);
+    }
+  });
+
+  it("is not sent with the kill switch off", async () => {
+    const { exp, sdk } = setup({ ...PLAN, killSwitch: false, aa: AA });
+    exp.start();
+    await settle();
+    exp.markShown(exp.current());
+    expect(allSent(sdk)).toBe(0);
+  });
+
+  it("never changes the plan_builder_examples version", async () => {
+    for (const value of ["control", "blank"]) {
+      for (const aa of [undefined, AA]) {
+        const { exp } = setup({ ...PLAN, value, ...(aa ? { aa } : {}) });
+        exp.start();
+        await settle();
+        expect(exp.current()).toBe(value);
+        expect(exp.markShown(exp.current())).toBe(value);
+      }
+    }
   });
 });
 

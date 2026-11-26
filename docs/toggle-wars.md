@@ -50,8 +50,13 @@ Their tip: with four days of data, pick a metric that fires early in a visit, li
 ## What was here before the hackathon
 
 Heirloom, a family inheritance planner on Solana, was built before this event, for W3Node (submitted 13 Nov) and
-Dev3pack (27–29 Nov). The first commit of this repo, `Starting point: Heirloom as of a202bc0`, is that earlier work.
-Every commit after it is work for Toggle Wars.
+Dev3pack (27–29 Nov, run in its own repo). None of it is Toggle Wars work:
+- `3461429` Starting point: Heirloom as of `a202bc0`.
+- `eaa5ba6` and `c6d6725` "Bring in Heirloom up to …": Heirloom's own later work, copied in from its repo.
+
+The Toggle Wars work is everything else: the brief and plan, the pre-registration, the experiment layer in
+`app/src/lib/experiments/` and its wiring in the plan builder, `/try`, the Flagsmith scripts, the simulator and the
+results.
 
 ## The experiment
 

@@ -208,14 +208,14 @@ builder. Real visitors from a shared link land on the screen under test, instead
 | Thu 26, 07:00 | Claude | Wiring checks (§5a) on Production |
 | Thu 26, 08:00 | Claude | Start the **Simulation** experiment and run the simulator: 2,000 visitors over the day, not all at once |
 | Thu 26 – Sat 28, every 12 h | Claude | Refresh results, save a snapshot to `docs/results/`, run the wiring checks, fix only real bugs (each fix is logged; the experiment is never restarted) |
-| Fri 27 | Claude | Draft the README results section, `docs/submission.md` and the video script with the numbers so far |
+| Fri 27 | Claude | Draft the README results section, `docs/toggle-wars-submission.md` and the video script with the numbers so far |
 | Fri 27, evening | Tumo | A second share push. Read the video script |
 | **Sat 28, 14:00** | Claude | **Stop:** final refresh, final snapshots and screenshots of both experiments |
 | Sat 28, 14:30 | Claude + Tumo | Apply the decision rule, end both experiments, **ship the winner** through the flag on Production, and check the live site shows it |
 | Sat 28, 16:00 | Tumo | **Record the video** (section 8). Claude edits captions and checks it against the scorecard |
-| Sat 28, 19:00 | Claude | Final README, `docs/results.md`, `docs/submission.md`; a fresh-clone test of the README |
+| Sat 28, 19:00 | Claude | Final README, `docs/results.md`, `docs/toggle-wars-submission.md`; a fresh-clone test of the README |
 | Sat 28, 20:00 | Tumo | Upload the video (YouTube) and paste the link into the README; Claude tags `submission` |
-| **Sun 29, 09:00–12:00** | Tumo | **Submit** on the WeMakeDevs page from `docs/submission.md`. Screenshot the confirmation. Sunday is otherwise a buffer |
+| **Sun 29, 09:00–12:00** | Tumo | **Submit** on the WeMakeDevs page from `docs/toggle-wars-submission.md`. Screenshot the confirmation. Sunday is otherwise a buffer |
 | Sun 29, 16:30 | — | Official deadline |
 
 ---
@@ -300,8 +300,8 @@ We check these on Development before the start, on Production 1 hour after the s
 | Privacy policy update | Live site `/privacy` | Flagsmith listed as an operator |
 | Live site | heirloom-toggle-wars.vercel.app (`/try`) | Shows the winner after the experiment ends |
 | Demo video | YouTube link in the README and the form | Under 3:00, covers all four scorecard items |
-| Submission form | WeMakeDevs page | Submitted by Sun 12:00 SAST (aim for 09:00); confirmation screenshot in `docs/submission.md` |
-| Submission text | `docs/submission.md` | Title, one-liner, description, track, links, team; drafted Fri, final Sun |
+| Submission form | WeMakeDevs page | Submitted by Sun 12:00 SAST (aim for 09:00); confirmation screenshot in `docs/toggle-wars-submission.md` |
+| Submission text | `docs/toggle-wars-submission.md` | Title, one-liner, description, track, links, team; drafted Fri, final Sun |
 
 ---
 
@@ -349,7 +349,7 @@ We check these on Development before the start, on Production 1 hour after the s
 - [ ] Both experiments have ended, and the final results with screenshots are committed.
 - [ ] The README covers: result first, setup, how Flagsmith is used, results, prior work, privacy.
 - [ ] The video link works logged out, and the video is under 3:00.
-- [ ] The submission form is filled in from `docs/submission.md`, and the confirmation is screenshotted.
+- [ ] The submission form is filled in from `docs/toggle-wars-submission.md`, and the confirmation is screenshotted.
 
 ---
 

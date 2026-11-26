@@ -6,6 +6,11 @@
 export const experiments = {
   /** The multivariate (string) flag under test. */
   flag: "plan_builder_examples",
+  /**
+   * The A/A check's flag (plan C11, Development only): two identical versions. It never changes the screen; the app
+   * only sends its exposure alongside the real one, so Flagsmith can count the A/A experiment.
+   */
+  aaFlag: "aa_check",
   /** The boolean kill switch: off (or missing) means everyone sees `control` and nothing is sent. */
   killSwitch: "experiments_enabled",
   /** The versions the screen knows. Anything else Flagsmith returns is shown as `control`. */

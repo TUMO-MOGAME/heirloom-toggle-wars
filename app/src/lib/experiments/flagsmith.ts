@@ -11,6 +11,9 @@ import { anonId } from "./identity";
  * - The version is locked the first time the screen shows it, and never changes in that visit.
  * - Exposure is sent once, when the screen shows Flagsmith's value; events are sent only after that exposure, only
  *   with the names in events.ts, and carry nothing but the anonymous id (set at init) and an optional number.
+ * - The A/A check (plan C11): when Flagsmith reports an experiment on `aa_check` that includes this identity (Development
+ *   only), its exposure is sent with the real one, once. It never changes the screen. Flags belong to the project,
+ *   so `aa_check` can exist elsewhere too; with no experiment on it there, nothing is sent for it.
  */
 
 export type Sdk = Pick<IFlagsmith, "init" | "getValue" | "hasFeature" | "getAllFlags" | "trackEvent" | "trackExposureEvent" | "flushEvents">;
@@ -57,6 +60,8 @@ export function createExperiment(opts: ExperimentOptions) {
   let exposureValue: string | null = null;
   let experimentId: number | null = null;
   let exposed = false;
+  // The A/A check's exposure, captured at ready; null unless this identity is in an A/A experiment.
+  let aaExposure: { value: string | null; experimentId: number } | null = null;
   const sent = new Set<ExperimentEvent>();
   const listeners = new Set<() => void>();
 
@@ -91,12 +96,15 @@ export function createExperiment(opts: ExperimentOptions) {
       });
       if (snap.status !== "loading") return; // timed out meanwhile: control for this visit
       if (!client.hasFeature(experiments.killSwitch, { skipAnalytics: true })) { set({ status: "off" }); return; }
-      const flag = client.getAllFlags()[experiments.flag];
+      const all = client.getAllFlags();
+      const flag = all[experiments.flag];
       const variant = flag?.enabled ? toVariant(client.getValue(experiments.flag, { skipAnalytics: true })) : "control";
       // As the SDK's own getExperimentFlag: no exposure for an identity a running experiment left out.
       enrolled = !!flag?.enabled && (!flag.experiment || flag.experiment.inExperiment);
       exposureValue = flag?.variant ?? null;
       experimentId = flag?.experiment?.id ?? null;
+      const aa = all[experiments.aaFlag];
+      aaExposure = aa?.enabled && aa.experiment?.inExperiment ? { value: aa.variant ?? null, experimentId: aa.experiment.id } : null;
       sdk = client;
       watchLeave();
       set({ status: "ready", variant });
@@ -134,6 +142,7 @@ export function createExperiment(opts: ExperimentOptions) {
           value: exposureValue,
           ...(experimentId !== null ? { metadata: { experiment_id: experimentId } } : {}),
         });
+        if (aaExposure) sdk.trackExposureEvent(experiments.aaFlag, { value: aaExposure.value, metadata: { experiment_id: aaExposure.experimentId } });
         exposed = true;
       }
       set({ locked: rendered });
