@@ -1,0 +1,10 @@
+{
+  "//": "The simulator's own tsconfig: the scripts' settings (packages from app/node_modules), with Node's types. Run from app/: npx tsx --tsconfig ../scripts/simulate/tsconfig.json ../scripts/simulate/simulate.ts …",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "typeRoots": ["../../app/node_modules/@types"]
+  },
+  "include": ["*.ts"]
+}

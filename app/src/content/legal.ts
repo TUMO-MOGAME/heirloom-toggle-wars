@@ -11,7 +11,7 @@ export const privacy = {
   title: "*Privacy* policy",
   templateNotice:
     "Template for legal review. This policy was drafted for a hackathon prototype and must be reviewed by the responsible party's legal adviser before Heirloom is offered to the public.",
-  updated: "Last updated: 24 November 2026",
+  updated: "Last updated: 26 November 2026",
   intro:
     "Heirloom helps a person record estate instructions and helps their family act on them. That involves sensitive personal information, so we collect as little as we can, keep documents off the public ledger and explain every use below. This policy follows the Protection of Personal Information Act 4 of 2013 (POPIA).",
   sections: [
@@ -41,7 +41,8 @@ export const privacy = {
         "Your IP address and basic request details: for spam and abuse checks and rate limiting on forms and agent requests.",
         "On the test network, a request for starter funds (your wallet address and IP address): to give test money once per wallet and to limit abuse. The transfer is public and permanent on the ledger, with a note (memo) that holds the time, the cost, a short hash of your wallet address and a code that proves Heirloom sent it. The memo never holds your IP address or anything made from it.",
         "On your device: the owner's browser keeps a copy of the names in their estate, so they can be put back if the server loses them, and a copy of the plan they signed (its people, rules and assets), so an interrupted signing can be finished; devices that named a backup, monitor or payee keep those names. Each copy stays after you sign out. Clearing this site's data in the browser removes them (it also removes any wallet kept there, so save the recovery phrase first).",
-        "We set no tracking cookies and this build has no visitor-statistics tool. If statistics are added, they will be cookie-free and this policy will say so first.",
+        "A test of the plan builder (the demo site only, while the test runs): we are testing which version of the plan builder's first screen helps people start their plan. The app keeps a random, anonymous id in this browser's local storage and sends it to Flagsmith (section 7) with which version of the plan builder you were shown and the names of four steps when you take them (first message, message, reviewed, signed), with numbers only as values. It never sends your name, wallet address, email address or anything you type in the chat. Clearing this site's data in the browser removes the id; the next visit gets a new one.",
+        "We set no cookies for tracking, and the test above uses none. Apart from it, this build has no visitor-statistics tool. If statistics are added, they will be cookie-free and this policy will say so first.",
       ],
     },
     {
@@ -69,6 +70,7 @@ export const privacy = {
         "Voice typing recordings: not kept. The recording is passed straight to the speech-to-text operator (section 7) and dropped when the text comes back; the text only goes where you send it.",
         "Dispute and objection reasons: with the estate's other records, as above.",
         "Letters for later: while the estate's records are kept. The owner can delete any letter while alive and its text is erased at once; see section 15.",
+        "The plan-builder test (section 3): the random id in your browser stays until you clear this site's data. Flagsmith keeps the id, the version shown and the four step names under its own terms for as long as the test and its results need them. [Placeholder: the responsible party must set this period with its legal adviser and Flagsmith.]",
         "IP addresses used for spam checks: in the server's temporary memory for the length of each limit (up to a day), or in the shared limit store for that time where it is switched on.",
         "On-chain records: permanent, by the nature of a public ledger (they contain no personal documents).",
         "The copies on your device: until you clear this site's data in that browser.",
@@ -83,6 +85,7 @@ export const privacy = {
         "AI document review and drafting: Google LLC (Gemini API). Documents are sent for analysis and are not used by us to train models. A letter for later is sent only when its owner taps \"Check my letter\" or \"Help me write it\".",
         "Voice calls with the agent: ElevenLabs Inc. (speech recognition and speech synthesis for calls you start).",
         "Voice typing: ElevenLabs Inc. (Speech to Text) turns a recording you make with the microphone in a chat box into text. Heirloom does not store the recording; ElevenLabs processes it under its own retention terms, in the United States and the European Union (section 8).",
+        "Testing the plan builder, on the demo site only: Bullet Train Limited, trading as Flagsmith (a company registered in England and Wales, number 12353266). It receives a random anonymous id, which version of the plan builder was shown and the names of four steps (first message, message, reviewed, signed) with numbers only as values, and uses them to tell us which version helps people start a plan. It never receives names, wallet addresses, email addresses or chat text, and it sets no cookies. Flagsmith runs on Amazon Web Services: under its terms the data is processed in the United Kingdom, and its feature-flag service answers each request from the nearest of its regions (in the United States, the European Union, the United Kingdom, Australia, Brazil, India, Singapore and South Korea).",
         "Exchange rate: a South African exchange's public price feed. No personal information is sent.",
         "Solana public ledger: stores hashes, addresses and amounts only, as described in section 5.",
       ],
@@ -90,7 +93,7 @@ export const privacy = {
     {
       heading: "8. Transfers outside South Africa",
       paragraphs: [
-        "Our operators store and process information on servers outside South Africa, including in the United States and the European Union. Where Supabase storage is switched on, the stored names, documents, reports and letters are transferred to and kept in Ireland. The public ledger is copied worldwide. We rely on your consent and on operator agreements that require protection substantially similar to POPIA, as section 72 requires.",
+        "Our operators store and process information on servers outside South Africa, including in the United States and the European Union. Where Supabase storage is switched on, the stored names, documents, reports and letters are transferred to and kept in Ireland. On the demo site, the plan-builder test's anonymous id, version and step names go to Flagsmith in the United Kingdom, and its requests may be answered from another of its regions (section 7). The public ledger is copied worldwide. We rely on your consent and on operator agreements that require protection substantially similar to POPIA, as section 72 requires.",
       ],
     },
     {

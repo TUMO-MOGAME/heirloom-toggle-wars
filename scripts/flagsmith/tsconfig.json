@@ -1,0 +1,6 @@
+{
+  "//": "The scripts tsconfig, extended to this folder. Run from app/: npx tsx --tsconfig ../scripts/flagsmith/tsconfig.json ../scripts/flagsmith/results.ts <dev|sim|prod|aa>. Type-check: npx tsc --noEmit -p ../scripts/flagsmith/tsconfig.json",
+  "extends": "../tsconfig.json",
+  "compilerOptions": { "noEmit": true, "typeRoots": ["../../app/node_modules/@types"], "types": ["node"] },
+  "include": ["*.ts"]
+}

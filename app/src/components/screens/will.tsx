@@ -30,6 +30,7 @@ import { checkTrusted, missingPayees, missingPeople, paidOnRequest, withWallets 
 import { SetupChecks } from "@/components/continuity/setup-checks";
 import { useWho } from "@/components/guardians/decision";
 import { DEMO_PAYEES } from "@/lib/service/mock-payees";
+import { trackPlanEvent, usePlanVariant } from "@/lib/experiments/use-variant";
 
 type Copy = ScreensCopy["will"];
 type BillsCopy = ScreensCopy["bills"];
@@ -271,11 +272,21 @@ function Writer({ copy, bills, session, onSigned, firstVisit = false }: { copy: 
   const turns = messages.filter((m) => m.role === "user").length;
   // An asset is optional: most families have no car to put in a plan.
   const complete = !!draft && draft.beneficiaries.length > 0 && draft.verifiers.length >= 3 && draft.rules.length > 0;
+  // The experiment (plan §2): `blank` hides only the suggested replies. The exposure is sent when this conversation
+  // screen renders with Flagsmith's settled value (before consent); a reply area revealed before that locks control.
+  const variant = usePlanVariant(view === "chat", consent || turns > 0);
+  const reviewing = view === "review" && !!draft;
+  useEffect(() => { if (reviewing) trackPlanEvent("plan_reviewed"); }, [reviewing]);
 
   // `base` lets a retry resend from the history *without* the failed message (state updates aren't visible yet).
   const send = async (text: string, base: Msg[] = messages) => {
     const trimmed = text.trim();
     if (!trimmed || !service || pending) return;
+    // A retry resends a message already counted.
+    if (base === messages) {
+      if (!base.some((m) => m.role === "user")) trackPlanEvent("plan_first_message");
+      trackPlanEvent("plan_message");
+    }
     setFailed(null);
     const history: WillChatMessage[] = [...base.map((m) => ({ role: m.role, text: textOf(m) })), { role: "user", text: trimmed }];
     setMessages([...base.map((x) => ({ ...x, fresh: false })), { id: ++id.current, role: "user", text: trimmed }]);
@@ -296,7 +307,7 @@ function Writer({ copy, bills, session, onSigned, firstVisit = false }: { copy: 
     const signed = isMock ? draft : withWallets(draft, wallets);
     setPayeeRefused(false);
     const res = await run("sign", (s) => s.createEstateFromWill(signed, { practice, residualLabel: residualLabel || draft.beneficiaries[0]?.label }));
-    if (res.ok) onSigned(res.value);
+    if (res.ok) { trackPlanEvent("plan_signed"); onSigned(res.value); }
     else if (res.code === "recurring_payee") setPayeeRefused(true);
   };
 
@@ -375,7 +386,7 @@ function Writer({ copy, bills, session, onSigned, firstVisit = false }: { copy: 
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {!pending && !failed && <Chips items={chips} onPick={(s) => (s === copy.suggestions[copy.suggestions.length - 1]?.[1] && complete ? setView("review") : void send(s))} label={copy.suggestionsLabel} />}
+                {!pending && !failed && variant !== "blank" && <Chips items={chips} onPick={(s) => (s === copy.suggestions[copy.suggestions.length - 1]?.[1] && complete ? setView("review") : void send(s))} label={copy.suggestionsLabel} />}
                 <Composer onSend={send} disabled={pending} copy={copy.composer} />
               </div>
             )}
