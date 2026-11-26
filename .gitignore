@@ -45,6 +45,3 @@ supabase/.temp/
 
 # Simulator smoke runs (real runs are committed as evidence)
 scripts/simulate/runs/*-smoke.json
-
-# Simulator smoke runs (real runs are committed as evidence)
-scripts/simulate/runs/*-smoke.json

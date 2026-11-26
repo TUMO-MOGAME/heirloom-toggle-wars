@@ -1,0 +1,13 @@
+# Uploaded by `vercel deploy` from the repo root (the project's Root Directory is app/).
+# The build needs app/ plus scripts/ (two app tests import from it); nothing else.
+app/.next
+app/node_modules
+app/.env*.local
+.env*.local
+target
+programs
+docs
+design
+supabase
+scripts/simulate/runs
+*.pdf
