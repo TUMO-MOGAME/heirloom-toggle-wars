@@ -86,7 +86,7 @@ export function Chips({ items, onPick, label, disabled }: { items: readonly stri
       {items.map((s) => (
         <button
           key={s} type="button" disabled={disabled} onClick={() => onPick(s)}
-          className="min-h-11 rounded-full border border-ink bg-surface px-4 text-left text-small font-medium text-ink transition-colors hover:bg-surface-2 disabled:opacity-50"
+          className="min-h-11 rounded-[1.375rem] border border-ink bg-surface px-4 py-2.5 text-left text-small font-medium text-ink transition-colors hover:bg-surface-2 disabled:opacity-50"
         >
           {s}
         </button>

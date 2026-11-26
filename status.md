@@ -37,6 +37,19 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
     experiment_id 768) plus plan_first_message and plan_message, accepted with 202, flushed on hide. Payloads hold
     only the random UUID, event names and the variant: no text or personal data.
 
+- 26 Nov ~23:00, Phase 2 continued:
+  - Pushed `main` and tag `prereg` to GitHub (secret scan clean: none of the three keys in any commit).
+  - Vercel (CLI, no Git auto-deploy, so no push can change the site mid-experiment): project `heirloom-toggle-wars`
+    → https://heirloom-toggle-wars.vercel.app (Production key) and `heirloom-toggle-wars-simulation` →
+    https://heirloom-toggle-wars-simulation.vercel.app (Simulation key). Both: Root Directory `app`, deployed from
+    the repo root (`.vercelignore`), mock mode, demo clock 60 s. Checked live: each site uses the right key; CSP
+    allows Flagsmith; HSTS on. Heirloom's own projects (`heirloom`, `heirloom-devnet`) untouched.
+  - Flagsmith drafts: Simulation experiment 778 (metrics 796–799), Production experiment 780 (metrics 801–804),
+    A/A experiment 781 on Development (flag aa_check 306265, variation twin 37500). Simulation's warehouse showed
+    `pending_connection`: recheck before starting 778.
+  - A/A experiment 781 started (20:48 UTC); 400 simulated visitors running against the local site (Development key).
+  - C10 launch checks running on the live site.
+
 ## Next up
 - Tumo: decide the prereg fixes (Blockers), then T4–T7: Flagsmith project + 3 environments + the managed warehouse in
   each; keys in `.env.local` (`FLAGSMITH_ENV_KEY_DEV/SIM/PROD` for the scripts; each deployment gets its own key as
