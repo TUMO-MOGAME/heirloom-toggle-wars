@@ -22,7 +22,7 @@ import { loadPhoneDriver } from "./phone";
 import type { PhoneSigner } from "./phone-signer";
 import { isValidSeed, newSeedPhrase, openAccount, wdkPartialSign, wdkSign, wdkSignAndSend, type WdkAccount } from "./wdk";
 import { mockSignature, personaSessions } from "./personas";
-import { setActiveSigner } from "./signer";
+import { setActiveSigner, withActiveSigner, type ActiveSigner } from "./signer";
 import { ensureReadPass } from "../access/client";
 
 export type PinReason = "create" | "unlock";
@@ -256,22 +256,30 @@ export function WalletProvider({ children, requestPin = defaultRequestPin }: { c
     return signAndSendAs(activeAddr, base64Tx);
   }, [activeAddr, signAndSendAs]);
 
+  const signerFor = useCallback((address: Base58): ActiveSigner => ({
+    address,
+    signAndSend: (tx) => signAndSendAs(address, tx),
+    signOnly: (tx) => signOnlyAs(address, tx),
+    signPartial: (tx) => signPartialAs(address, tx),
+    signMessage: (m) => signMessageAs(address, m),
+    canSignQuietly: () => isMock || unlocked.current.has(address),
+  }), [isMock, signAndSendAs, signOnlyAs, signPartialAs, signMessageAs]);
+
   // Keep the non-React signer (used by service/chain.ts) in step with the active wallet.
   useEffect(() => {
-    setActiveSigner(activeAddr ? {
-      address: activeAddr,
-      signAndSend: (tx) => signAndSendAs(activeAddr, tx),
-      signOnly: (tx) => signOnlyAs(activeAddr, tx),
-      signPartial: (tx) => signPartialAs(activeAddr, tx),
-      signMessage: (m) => signMessageAs(activeAddr, m),
-      canSignQuietly: () => isMock || unlocked.current.has(activeAddr),
-    } : null);
-  }, [activeAddr, isMock, signAndSendAs, signOnlyAs, signPartialAs, signMessageAs]);
+    setActiveSigner(activeAddr ? signerFor(activeAddr) : null);
+  }, [activeAddr, signerFor]);
+
+  /** The guided run: a wallet stored on this device signs `work` in the background; the active wallet stays. */
+  const actAs = useCallback(<T,>(address: Base58, work: () => Promise<T>): Promise<T> => {
+    if (!isMock && !stored.current.some((w) => w.address === address)) return Promise.reject(new Error("This wallet is not stored on this device."));
+    return withActiveSigner(signerFor(address), work);
+  }, [isMock, signerFor]);
 
   const session = sessions.find((s) => s.address === activeAddr) ?? null;
   const api = useMemo<WalletApi>(() => ({
-    ready, session, sessions, create, createPractice, importSeed, connectPhone, switchTo, setRole, remove, lockAll, refreshBalances, signAndSend,
-  }), [ready, session, sessions, create, createPractice, importSeed, connectPhone, switchTo, setRole, remove, lockAll, refreshBalances, signAndSend]);
+    ready, session, sessions, create, createPractice, importSeed, connectPhone, switchTo, setRole, remove, lockAll, refreshBalances, signAndSend, actAs,
+  }), [ready, session, sessions, create, createPractice, importSeed, connectPhone, switchTo, setRole, remove, lockAll, refreshBalances, signAndSend, actAs]);
 
   return <WalletContext.Provider value={api}>{children}</WalletContext.Provider>;
 }

@@ -83,7 +83,7 @@ Third: Dad's UCT message ready to play (Lerato's **Legacy voice** page after unl
 on stage. The public site needs no wallet or devnet, so a slow network is the only risk; use a phone hotspot as backup.
 
 ### 3:30–4:25 Market, model, go-to-market (Slide 2)
-> "About 170,000 estates go to the Master every year. 7.8 million South Africans already hold crypto on
+> "About 150,000 estates go to the Master every year. 7.8 million South Africans already hold crypto on
 > local exchanges, and stablecoin trading went from under R4 billion to almost R80 billion in three years.
 > 310 crypto providers are now FSCA-licensed, so rand settlement over PayShap and EFT is a partner away.
 > Because the plan runs while you're alive, families use Heirloom **every month**, not once at death. That's why
@@ -110,7 +110,7 @@ on stage. The public site needs no wallet or devnet, so a slow network is the on
 - Heirloom: a living plan in USD₮, paid straight to the institution, now and after
 
 **Slide 2: Market and model**
-- ~170,000 estates a year · 7.8m SA crypto users · R80bn stablecoin trading
+- ~150,000 estates a year · 7.8m SA crypto users · R80bn stablecoin trading
 - R99/month (used monthly: allowances, fees, family sends) + 1% per payout (vs. 3.5% + VAT)
 - Channels we will approach: exchanges (Luno), executors, burial societies and stokvels, diaspora parents
 - Rand settlement via FSCA-licensed off-ramps over PayShap/EFT (next step)

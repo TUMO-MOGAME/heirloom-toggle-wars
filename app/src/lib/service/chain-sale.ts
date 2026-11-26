@@ -62,9 +62,11 @@ export async function acceptBestOffer(d: ChainSaleDeps, estate: Base58, assetAdd
     "The offer or who gets the money changed after you read it. Check the new one before you sign.");
   const signer = getActiveSigner();
   const me = signer.address;
-  const seats = eligibleSeats(verifiers);
-  let tx: string | undefined; // none only when no seat has a holder: the agent then signs alone, after the listing
+  // The hardship beneficiary the sale pays never co-signs it (P4): their seat doesn't count here.
+  const seats = eligibleSeats(verifiers, asset.hardshipBeneficiary);
+  let tx: string | undefined; // none only when no other seat has a holder: the agent then signs alone, after the listing
   if (seats.length) {
+    must(me !== asset.hardshipBeneficiary, "CoSignerRequired", "You can't co-sign a sale that pays you. Ask another trusted person.");
     must(seats.some((i) => verifiers[i] === me), "NotVerifier", "Only a trusted person can co-sign the sale.");
     must(best.buyer !== me, "CoSignerRequired", "You can't co-sign a sale to yourself. Ask another trusted person.");
     must(signer.signPartial, "CoSignerRequired", "This wallet can't co-sign. Use your Heirloom wallet for this.");

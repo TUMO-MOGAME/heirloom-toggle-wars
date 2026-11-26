@@ -61,6 +61,7 @@ pub fn create_estate_handler(
         (MIN_WAITING_SECS..=MAX_WAITING_SECS).contains(&waiting_period_secs),
         HeirloomError::TimeOutOfRange
     );
+    Estate::check_death_settings(death_threshold, waiting_period_secs)?;
 
     for i in 0..VERIFIER_COUNT {
         require!(verifiers[i] != Pubkey::default(), HeirloomError::InvalidWallet);
@@ -435,7 +436,9 @@ pub fn deposit_handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
 pub struct Withdraw<'info> {
     pub owner: Signer<'info>,
 
+    /// Writable: a withdrawal is proof of life (P2).
     #[account(
+        mut,
         seeds = [ESTATE_SEED, owner.key().as_ref()],
         bump = estate.bump,
         has_one = owner @ HeirloomError::NotOwner
@@ -463,10 +466,16 @@ pub struct Withdraw<'info> {
     pub token_program: Program<'info, Token>,
 }
 
+/// Owner, estate Active or DeathPending: takes USD₮ back. Only the living owner can sign it, so like heartbeat it is
+/// proof of life: it records the check-in and voids a pending death claim (P2).
 pub fn withdraw_handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     require!(amount > 0, HeirloomError::InvalidAmount);
-    let estate = &ctx.accounts.estate;
-    require!(estate.status == EstateStatus::Active, HeirloomError::BadStatus);
+    let estate = &mut ctx.accounts.estate;
+    require!(
+        estate.status == EstateStatus::Active || estate.status == EstateStatus::DeathPending,
+        HeirloomError::BadStatus
+    );
+    record_proof_of_life(estate.key(), estate, now()?);
 
     let owner = estate.owner;
     let bump = [estate.bump];

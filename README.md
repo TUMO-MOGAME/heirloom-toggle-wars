@@ -8,6 +8,16 @@ you're gone, under rules a program enforces.**
 > The app itself was built before this event (first commit of this repo); everything after that commit is Toggle Wars work.
 > Work in progress: the experiment, results and setup steps land here during the hackathon.
 
+### In 30 seconds
+- **What:** a parent puts USD₮ in a Solana vault. Rules pay the child's school or university, never cash, up to a cap,
+  from today. The same rules keep paying after the parent dies.
+- **The new part: an unlock nobody can fake.** An AI agent reads the death notice and signs its verdict on-chain. When
+  it isn't sure, it refers to people. Two of three trusted people must confirm, and the living owner can stop it during
+  the wait. The program enforces every step, so neither the AI, one trusted person nor Heirloom can open the vault alone.
+- **See it:** [the guided run](https://heirloom.tumoolo.tech/start/guided) does the whole story in one tab on devnet:
+  wallet, plan, fund, the child's claim, the AI review, approval, the program paying the university, and the program
+  refusing a claim over the cap. Every step links to its transaction.
+
 **The problem.** 66% of South Africans have no will ([Sanlam Legacy Wills Survey 2025, via TimesLIVE](https://www.timeslive.co.za/news/south-africa/2025-09-19-66-of-south-africans-risk-family-feuds-by-dying-without-wills-sanlam-survey/)).
 When a parent dies, the estate freezes: a simple estate used to take 6–9 months to wind up and now takes about
 twice as long ([Moneyweb / The Citizen, Dec 2024](https://www.citizen.co.za/business/winding-up-of-estates-in-sa-in-shambles)).
@@ -15,6 +25,11 @@ The money for next term's fees exists. It just can't reach the school, and when 
 nothing makes sure it is spent on the children.
 
 ## Try it in three minutes (real devnet, no faucet, no scripts)
+
+**Fastest:** open **https://heirloom.tumoolo.tech/start/guided**, enter a first name and a PIN, tick the box, then tap
+**Start the run** and **Use this plan**. The eleven steps run in one tab with no persona switching.
+
+**By hand**, to see each screen:
 
 1. Open **https://heirloom.tumoolo.tech/start**, create a wallet and tap **Get test money** (500 test USD₮ and SOL for rent).
 2. Open **Plan** and describe a family in your own words, for example: *"Pay my daughter Zanele's university fees from
@@ -29,6 +44,20 @@ To see the whole story, death and asset sale included, without waiting, use the 
 **https://heirloom-one-iota.vercel.app**. Its money movements are labelled "Simulated".
 
 ## Proof: one newcomer, start to payout
+
+**Guided run, 25 November 2026, on the hardened program (slot 526117721):** a fresh browser at 360 px on the live
+devnet site did all 11 steps in **1 min 38 s**, with 3 taps after the name and PIN:
+[test money](https://explorer.solana.com/tx/5m7SpwL8DqqAWjG8QYoNz1SsDFGCtrbS67YATFg89HoipZYCd4ys65a1UMkLXHf3SXnEttN2m9wK397BGozFvHzJ?cluster=devnet) ·
+[plan signed (1 of 2)](https://explorer.solana.com/tx/AtnJ8cJ1rjYWmnBimJDJmeXT3auV6vy9A3uuGyRNGDcb5KYTDT4WVK6zUgnkuUgoy1GTdzoDcE7tC5tqKKQndb7?cluster=devnet) ·
+[(2 of 2)](https://explorer.solana.com/tx/39Qx8LZZSWjnFK6kqXc7fMvDH86a6EWQpHf73JjqyyttfWyXyhw12TNVLm6RTsUtfjdviKvaJArBFZMivTPw7jvL?cluster=devnet) ·
+[vault funded](https://explorer.solana.com/tx/2V2Yzoj55qD13vX5mJMxjMusQ8Sp9Ba7qkEfsrUXahGVSXxCqukpQ19PLnhyxp5iMM536hHVshtE6Ud2YCGErv7W?cluster=devnet) ·
+[child's claim](https://explorer.solana.com/tx/4umsqHjD699fuUok8171YnN6ZHuVDPVwJmUXtpLQfTsAsQPu7XiqtYi4BgHDfZNPLgrQeGmxTtAHfGzfXc3KsFEh?cluster=devnet) ·
+[agent's review](https://explorer.solana.com/tx/jGsiaNyHPmTHtiXyB8UoSHcoWngFrfWzK7fPREUctcHHpX1KDNFVsxMDD5VNrnD5ucyFUA2GuyuHv3gfqjW4reu?cluster=devnet) ·
+[owner approves](https://explorer.solana.com/tx/5R34AbGSqpQ2M1B1eziNhRkVnm63bN13Qu7BHtvLSJM1jYJkSNdSJEZZsum74HGEZ8dpSydwMbsCCKJJUNFcUfpT?cluster=devnet) ·
+[program pays the university](https://explorer.solana.com/tx/pHRa6cxophThfx8NxHztbvp6cK3h4XAqpFMHmaXwaUGGMqZQYqqJELZRGTTc4HtyJLExWKdjMHWHohSWiCCWrKr?cluster=devnet).
+The claim over the cap was refused by the program in simulation (`ExceedsPerClaimCap`), so it has no transaction.
+
+**By hand, 22 November 2026:**
 
 Done through the live app on 22 November 2026 by a fresh wallet, with no scripts.
 
@@ -45,9 +74,12 @@ Done through the live app on 22 November 2026 by a fresh wallet, with no scripts
 |---|---|
 | **App on devnet** | https://heirloom.tumoolo.tech (also https://heirloom-devnet.vercel.app) |
 | **Simulated demo** | https://heirloom-one-iota.vercel.app |
-| **Program** | [`b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY`](https://explorer.solana.com/address/b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY?cluster=devnet): 57 instructions, upgraded 23 Nov 2026 after two independent security reviews |
-| **Tests** | 336 program tests (LiteSVM) · 2,224 app tests (Vitest) |
-| **Why Solana** | The rules and the money must outlive the owner and the company. They live in program-owned accounts anyone can audit |
+| **Program** | [`b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY`](https://explorer.solana.com/address/b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY?cluster=devnet): 58 instructions, a [verifiable build](docs/security-audit.md#4c-verifiable-build) (anyone can rebuild the exact bytes), deployed 25 Nov 2026 |
+| **Tests** | 348 program tests (LiteSVM) · 2,405 app tests (Vitest) |
+| **Security** | [Audit report](docs/security-audit.md): threat model, 62 findings fixed with regression tests, clippy and `cargo audit` triaged. Internal, not a firm's audit |
+| **Research** | [Problem evidence, law, competitors, our weaknesses, user-testing plan](docs/research.md), every number sourced |
+| **Why Solana** | The rules and the money must outlive the owner and the company. They live in program-owned accounts anyone can audit, and no single key can change the program: upgrades need 2 of 3 members of a [Squads multisig](docs/security-audit.md#4d-upgrade-authority-squads-multisig) and wait out a time lock |
+| **Chip in (Solana Pay + Blink)** | A grandparent anywhere adds USD₮ to the child's vault from Phantom, Solflare or any Solana Pay wallet: a QR code, a link or a Blink, no Heirloom account. It is a standard transaction request into the vault's token account, so the program's rules then govern that money too. [Devnet chip-in](https://explorer.solana.com/tx/2fzoFmGwotpg44LnKipLsVtns6edP3GSnxGyoqw1xTU7ZGwpsXRgK8vJpPRcz7DEgxrAK4wA9Nm9UFEFWM5EPNn?cluster=devnet) |
 | **Android** | A Solana Mobile WebView shell with Mobile Wallet Adapter ([build notes](docs/android-build.md)). Not yet verified with a wallet app on a physical phone |
 | **Video** | [W3Node video, 13 Nov](https://youtu.be/N67LrkpVAmw) (2:58). It predates the 22 Nov changes |
 
@@ -130,6 +162,7 @@ Every USD₮ movement in Heirloom is a **USD₮ SPL token transfer on Solana, si
 | **Agent's own WDK wallet** | Server-side WDK wallet that may sign only an allow-list: `review_*`, `list_asset`, `accept_offer`, `execute_scheduled` | [`app/src/lib/agent/agent-wallet.ts`](app/src/lib/agent/agent-wallet.ts) | Agent [`261pQudaK…`](https://explorer.solana.com/address/261pQudaK5J4v1WCtcGjWidWU9ww3KyYC4TiU8jDsjNg?cluster=devnet) |
 | **P2P "Send to family"** | Saved recipient → review → approve → WDK sends USD₮ (`transfer_checked`, creates the recipient's account if needed) | [`app/src/components/screens/send.tsx`](app/src/components/screens/send.tsx), `chain.ts` (`confirmSend`) | [50 USD₮ Dad → Lerato, sent through the app UI](https://explorer.solana.com/tx/25PK65L8bLSCM6d1jJMBTAAaW9UeyDjk8HBdCp5pBmk8MDGAwu8JpNzKXUYxhLnzPsZeGJNqQpjBxC2Q62ofJYvT?cluster=devnet) |
 | **Families never need SOL** | The agent's WDK wallet sponsors network fees: the user's WDK wallet partially signs, `/api/sponsor` validates against a strict policy (USD₮ `transferChecked` + Heirloom instructions only), simulates, co-signs. Tether's gasless module needs a Kora paymaster server, so we sponsor ourselves | [`app/src/lib/sponsor/policy.ts`](app/src/lib/sponsor/policy.ts), [`app/src/app/api/sponsor/route.ts`](app/src/app/api/sponsor/route.ts) | [Sponsored transfer: Lerato's SOL unchanged](https://explorer.solana.com/tx/5NfaB421n92RHKJgcEiczMbDadP9zNo9yDZwgbXVFZyVZBxgYvQtWMdTt7GZWjt4GYpYZAx1pP97xJUY7HULkqVn?cluster=devnet) |
+| **Chip in from any wallet** | Solana Pay transaction request and Solana Action (Blink) at `/api/chipin/<estate>`: one `transfer_checked` of USD₮ from the sender's wallet into the vault, tagged so the owner sees it arrive. Checks the estate is Active, the mint is the configured 6-decimal USD₮ and the vault belongs to the estate; the sender pays their own fee | [`app/src/lib/chipin/`](app/src/lib/chipin/), [`api/chipin/[estate]/route.ts`](app/src/app/api/chipin/%5Bestate%5D/route.ts) | [5 USD₮ chip-in](https://explorer.solana.com/tx/2fzoFmGwotpg44LnKipLsVtns6edP3GSnxGyoqw1xTU7ZGwpsXRgK8vJpPRcz7DEgxrAK4wA9Nm9UFEFWM5EPNn?cluster=devnet) |
 | **Tether QVAC: on-device AI** | "Ask your wallet": QVAC (`@qvac/sdk`, Qwen3 0.6B, JSON-schema output) turns "Send R500 to Lerato for books" into a checked payment intent on the user's own machine, with no cloud AI. The app matches the recipient, converts rand at the live VALR rate and opens the review sheet; money moves only after approval and a WDK signature. The hosted demo and offline phones use a deterministic parser with the same schema, and a badge says which engine answered | [`app/src/lib/assistant/`](app/src/lib/assistant/), [`docs/qvac.md`](docs/qvac.md) | Run locally: `npm run qvac:install`, then `npm run qvac:local -- "send R500 to Lerato"` |
 | **Devnet setup** | 13 persona wallets created and funded with WDK `transfer` (SOL and USD₮) | [`scripts/devnet-setup.ts`](scripts/devnet-setup.ts) | Test USD₮ mint [`8qp8uFHe…`](https://explorer.solana.com/address/8qp8uFHeJMgwQPWCYAKh9mpYw6FgU4iwu6psKiKViKK5?cluster=devnet) |
 | **Rand view** | Every USD₮ amount also shown in ZAR at the live VALR USDT/ZAR price | [`app/src/lib/fx.ts`](app/src/lib/fx.ts) | — |
@@ -231,7 +264,7 @@ Deeper diagrams (sequence diagrams for every money path) are in [`docs/architect
 
 Anchor 1.2.2 · [`programs/heirloom/`](programs/heirloom/) · full spec in [`docs/program-spec.md`](docs/program-spec.md)
 
-**57 instructions:**
+**58 instructions:**
 
 | Group | Instructions |
 |---|---|
@@ -242,7 +275,7 @@ Anchor 1.2.2 · [`programs/heirloom/`](programs/heirloom/) · full spec in [`doc
 | Guardians | `init_guard`, `init_seat`, `set_seat_backups`, `set_seat_monitors`, `owner_replace_seat`, `report_seat_death`, `review_seat_death`, `confirm_seat_death`, `veto_seat_death`, `finalize_succession` |
 | Fallback | `set_fallback`, `report_fallback_death`, `review_fallback_death`, `resolve_fallback_death`, `start_fallback`, `execute_fallback` |
 | Challenges | `raise_objection`, `vote_objection`, `lapse_objection`, `raise_dispute`, `resolve_dispute` |
-| Continuity | `end_rule`, `set_residual`, `sweep_residual`, `set_agent`, `vote_agent`, `remove_member` |
+| Continuity | `end_rule`, `end_orphan_rule`, `set_residual`, `sweep_residual`, `set_agent`, `vote_agent`, `remove_member` |
 
 **What the program enforces:**
 - Only the estate's USD₮ mint is accepted.
@@ -259,7 +292,7 @@ Anchor 1.2.2 · [`programs/heirloom/`](programs/heirloom/) · full spec in [`doc
   be listed again.
 - A lost agent key can be replaced by the owner, or by the trusted people.
 
-**Tests:** 336 LiteSVM tests in [`programs/heirloom/tests/`](programs/heirloom/tests/). They include a regression
+**Tests:** 348 LiteSVM tests in [`programs/heirloom/tests/`](programs/heirloom/tests/). They include a regression
 test for every finding of two independent security reviews (22–23 November): each attack that worked on the earlier
 version is now refused. The deployed binary (sha256 `c5294fe4…`) was rebuilt independently from the source and matches.
 
@@ -297,7 +330,7 @@ browser's own voice). The privacy policy names ElevenLabs for each use.
 
 | Part | Status |
 |---|---|
-| Heirloom Solana program (57 instructions) | **Real**, deployed to devnet, 336 tests, two independent reviews. **Not audited.** |
+| Heirloom Solana program (58 instructions) | **Real**, deployed to devnet as a verifiable build, 348 tests, [internal audit](docs/security-audit.md). **No third-party audit yet.** |
 | USD₮ transfers signed by Tether WDK wallets (owner, family, verifiers, buyers, agent) | **Real** on devnet (chain mode) |
 | USD₮ token | **Test mint** on devnet (6 decimals, same as USD₮); mainnet mint is a config change |
 | Pay-once payment pipeline, reconnect re-check | **Real** (unit-tested in `payments.test.ts`) |
@@ -320,8 +353,8 @@ browser's own voice). The privacy policy names ElevenLabs for each use.
 Needs Node.js 20.9+.
 
 ```bash
-git clone https://github.com/TUMO-MOGAME/W3Node-Hackathon.git
-cd W3Node-Hackathon/app && npm install
+git clone https://github.com/TUMO-MOGAME/dev3pack-Hackathon.git
+cd dev3pack-Hackathon/app && npm install
 npm run dev
 ```
 Open <http://localhost:3000> → **Try the demo** → **Start as Thabo**. You land on the chat home; the demo guide bar
@@ -376,10 +409,10 @@ All names are in [`app/.env.example`](app/.env.example). Only `NEXT_PUBLIC_*` re
 ## Tests
 
 ```bash
-cd app && npm test                 # 2,224 Vitest tests: payments (pay-once), WDK errors, PDAs, IDL ↔ client, agent schemas,
+cd app && npm test                 # 2,405 Vitest tests: payments (pay-once), WDK errors, PDAs, IDL ↔ client, agent schemas,
                                    # offers, scheduler, hashing, fee-sponsor policy, QVAC intent parser, chat, legacy voice, i18n, icons
 cd app && npx next typegen && npx tsc --noEmit   # type check (typegen first on a clean clone)
-anchor build && cargo test -p heirloom   # 336 LiteSVM program tests (Linux / WSL, Anchor 1.2.2)
+anchor build && cargo test -p heirloom   # 348 LiteSVM program tests (Linux / WSL, Anchor 1.2.2)
 ```
 `bash scripts/build-program.sh test` does the same inside WSL: it copies the program to the Linux disk for a faster build, then runs the tests.
 

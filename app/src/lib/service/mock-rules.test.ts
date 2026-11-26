@@ -1540,3 +1540,112 @@ describe("the agent's recovery route (H7, re-review)", () => {
     expect((await t.snap()).estate.agent).not.toBe(NEW_AGENT); // every held seat still has to vote
   });
 });
+
+describe("finalist hardening (plan §22.1): the mock as the program", () => {
+  it("P1: a plan signed now needs two trusted people and at least 5 minutes to confirm a passing", async () => {
+    const svc = createMockService({ instant: true });
+    svc.resetDemo("fresh");
+    const thabo = P("thabo");
+    svc.setActor({ address: thabo.address, role: thabo.role, label: thabo.label });
+    const { draft } = await svc.willChat(["a", "b", "c"].map((text) => ({ role: "user" as const, text })), "en");
+    await svc.createEstateFromWill({ ...draft!, waitingPeriodDays: 0 });
+    const [{ estate }] = await svc.listEstatesFor(thabo.address);
+    const e = (await svc.getEstate(estate)).estate;
+    expect([e.deathThreshold, e.waitingPeriodSecs]).toEqual([2, 300]);
+  });
+
+  it("P1: the demo story's estate keeps the stored wait of one signed before", async () => {
+    const t = await start();
+    expect((await t.snap()).estate.waitingPeriodSecs).toBe(60);
+  });
+
+  it("P2: a withdrawal is proof of life: it clears a confirmed passing, which can then never unlock", async () => {
+    const t = await start();
+    await t.death(); await t.attest("nomsa", "david");
+    expect((await t.snap()).estate.status).toBe("DeathPending");
+    advance(5);
+    t.act("thabo"); await t.svc.withdraw(t.estate, 10);
+    const e = (await t.snap()).estate;
+    expect(e).toMatchObject({ status: "Active", lastHeartbeat: now() });
+    expect(e.death.certHash).toBeNull();
+    expect((await t.snap()).activity.map((a) => a.kind)).toContain("DeathVetoed");
+    advance(120);
+    await expect(t.svc.finalizeUnlock(t.estate)).rejects.toThrow(/^BadStatus/);
+    await t.unlock();
+    t.act("thabo");
+    await expect(t.svc.withdraw(t.estate, 1)).rejects.toThrow(/^BadStatus/);
+  });
+
+  it("P3: after the unlock the sweep ends a removed beneficiary's live rule first, so its reserve is paid too", async () => {
+    const saved = storage();
+    const first = await start();
+    first.svc.makeDue();
+    // Removed by another client that left their rules running; the vault holds exactly what the live rules keep back.
+    saved.edit((s) => {
+      s.snap.beneficiaries.find((b: { wallet: string }) => b.wallet === who("sipho")).active = false;
+      const t0 = Math.floor(Date.now() / 1000);
+      const kept = s.snap.rules.filter((r: { validUntil: number }) => r.validUntil >= t0 + 3_600)
+        .reduce((n: bigint, r: { lifetimeCap: { $n: string }; spentTotal: { $n: string } }) => n + BigInt(r.lifetimeCap.$n) - BigInt(r.spentTotal.$n), 0n);
+      s.snap.estate.vaultBalance = { $n: String(kept) };
+    });
+    const t = await open(createMockService({ instant: true }));
+    await t.unlock();
+    const before = await t.snap();
+    const theirs = before.rules.filter((r) => r.beneficiary === who("sipho") && r.validUntil >= now());
+    expect(theirs.length).toBeGreaterThan(0);
+    t.act("lerato"); await t.svc.sweepResidual(t.estate);
+    const after = await t.snap();
+    for (const r of after.rules) {
+      if (r.beneficiary === who("sipho")) expect(r.validUntil).toBeLessThan(now());
+      else if (before.rules.find((x) => x.address === r.address)!.validUntil >= now()) expect(r.validUntil).toBeGreaterThanOrEqual(now());
+    }
+    const kept = after.rules.filter((r) => r.validUntil >= now()).reduce((n, r) => n + (r.lifetimeCap - r.spentTotal), 0n);
+    expect(after.estate.vaultBalance).toBe(kept);
+    expect(after.estate.vaultBalance).toBeLessThan(before.estate.vaultBalance);
+  });
+
+  it("P4: the hardship beneficiary never co-signs the sale that pays them", async () => {
+    const t = await start("funded", { guarded: true });
+    await t.svc.ownerReplaceSeat(t.estate, 2, { wallet: who("lerato"), name: "Lerato" });
+    await t.unlock();
+    const car = (await t.snap()).assets[0].address;
+    t.act("nomsa"); await t.svc.listAsset(t.estate, car, 7 * 86_400);
+    t.act("lerato"); await t.svc.submitHardship(t.estate, { asset: car, evidence: pdf("affidavit.pdf") });
+    const h = (await t.snap()).hardships[0].address;
+    for (const k of ["nomsa", "david"]) { t.act(k); await t.svc.approveHardship(t.estate, h); }
+    expect((await t.snap()).assets[0].hardshipBeneficiary).toBe(who("lerato"));
+    t.act("zanele"); await t.svc.placeOffer(t.estate, car, 13_400);
+    advance(61);
+    t.act("lerato");
+    await expect(t.svc.acceptBestOffer(t.estate, car)).rejects.toThrow(/^CoSignerRequired/);
+    t.act("david"); await t.svc.acceptBestOffer(t.estate, car);
+    expect((await t.snap()).assets[0].status).toBe("Sold");
+  });
+
+  it("P5: an objection raised again after an upheld one keeps its cut-off when it is dismissed", async () => {
+    const t = await start("guardians");
+    const car = (await t.snap()).assets[0].address;
+    t.act("nomsa"); await t.svc.listAsset(t.estate, car, 7 * 86_400);
+    const old = (await t.snap()).offers.map((o) => o.address);
+    expect(old.length).toBeGreaterThan(0);
+    const decide = async (uphold: boolean) => {
+      const o = (await t.snap()).guardians!.objections.find((x) => x.target === car)!;
+      for (const k of ["nomsa", "david"]) { t.act(k); await t.svc.voteObjection(t.estate, o.address, uphold).catch(() => undefined); }
+    };
+    advance(10);
+    t.act("zodwa"); await t.svc.raiseObjection(t.estate, { kind: "Sale", target: car, seatIndex: 2, reason: "Too cheap." });
+    await decide(true);
+    advance(1);
+    t.act("nomsa"); await t.svc.listAsset(t.estate, car, 7 * 86_400);
+    advance(1);
+    t.act("zodwa"); await t.svc.raiseObjection(t.estate, { kind: "Sale", target: car, seatIndex: 2, reason: "Still too cheap." });
+    expect((await t.snap()).guardians!.objections.find((x) => x.target === car)?.keepsSaleCutoff).toBe(true);
+    await decide(false);
+    expect((await t.snap()).guardians!.objections.find((x) => x.target === car)?.status).toBe("Dismissed");
+    advance(60);
+    t.act("david");
+    const r = await t.svc.rankOffers(car);
+    for (const o of old) expect(r.ineligible.find((x) => x.offer === o)?.reason).toMatch(/objection to the sale was upheld/);
+    expect(old).not.toContain(r.bestOffer);
+  });
+});

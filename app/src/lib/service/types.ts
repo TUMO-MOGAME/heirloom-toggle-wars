@@ -21,6 +21,7 @@ import type { AskNote, AskService } from "../ask/types";
 import type { TreeService } from "../tree/types";
 import type { LettersService } from "../letters/types";
 import type { AgentVoteInfo, ContinuityService, CreateEstateOptions } from "../continuity/types";
+import type { ChipInService } from "../chipin/types";
 
 export interface TxResult { signature: string; explorerUrl: string }
 
@@ -60,7 +61,7 @@ export interface EstateSnapshot {
   plannedAssets?: WillDraft["assets"];
 }
 
-export interface HeirloomService extends GuardiansService, DisputesService, AskService, TreeService, LettersService, ContinuityService {
+export interface HeirloomService extends GuardiansService, DisputesService, AskService, TreeService, LettersService, ContinuityService, ChipInService {
   mode: "mock" | "chain";
 
   // Reads
@@ -102,7 +103,8 @@ export interface HeirloomService extends GuardiansService, DisputesService, AskS
 
   // Family
   submitDeathClaim(estate: Base58, certificate: File): Promise<{ tx: TxResult; report: AgentReport }>;
-  submitClaim(estate: Base58, input: { rule: Base58; payee: Base58; amountUsdt: number; evidence: File }): Promise<{ tx: TxResult; claim: Base58; report: AgentReport }>;
+  /** `reviewTx`: the agent's review_claim, when its review finished and went on-chain. */
+  submitClaim(estate: Base58, input: { rule: Base58; payee: Base58; amountUsdt: number; evidence: File }): Promise<{ tx: TxResult; claim: Base58; report: AgentReport; reviewTx?: TxResult | null }>;
   submitHardship(estate: Base58, input: { asset: Base58; evidence: File }): Promise<{ tx: TxResult; report: AgentReport }>;
   /**
    * The person who submitted a claim or hardship request asks for the agent's review again, after it did not finish

@@ -9,7 +9,7 @@ import { useWallet } from "@/lib/hooks/wallet-source";
 import { useNow } from "@/lib/hooks/use-now";
 import { formatUsdt, shortAddress } from "@/lib/format";
 import { residualName } from "@/lib/continuity/names";
-import { surplusOf } from "@/lib/continuity/logic";
+import { sweepableSurplus } from "@/lib/continuity/logic";
 import { personKey, type MissingPerson } from "@/lib/continuity/practice";
 import { FAUCET_URL, starterRefusalText, type RefusalText } from "@/lib/starter/refusal";
 import type { EstateSnapshot } from "@/lib/service/types";
@@ -167,7 +167,7 @@ export function ResidualCard({ snap, className }: { snap: EstateSnapshot; classN
   const canSet = e.status === "Active" && session?.address === e.owner && people.length > 0;
   const chosen = pick || to || people[0]?.wallet || "";
   const heldUntil = sweepHeldUntil(snap, now);
-  const surplus = e.status === "Unlocked" && now ? surplusOf(e.vaultBalance, snap.rules, now) : BigInt(0);
+  const surplus = e.status === "Unlocked" && now ? sweepableSurplus(e.vaultBalance, snap.rules, snap.beneficiaries, now) : BigInt(0);
 
   return (
     <Card className={className}>

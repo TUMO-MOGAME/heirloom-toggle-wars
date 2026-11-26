@@ -22,13 +22,14 @@ export const PROGRAM_ERRORS = [
   "NothingToSweep", "ObjectionCooldown",
   "NotParticipant", "OwnApproval", "CoSignerRequired", "ListingStillOpen", "InvalidWallet", "ReportChanged",
   "DeathReportOpen", "ClaimFromEndedRule", "OfferChanged", "DeathDisproved", "OfferTooOld",
+  "DeathQuorumTooLow", "DeathWaitTooShort", "BeneficiaryStillActive",
 ] as const;
 
 /** Where the program's own message would not tell a family what to do. */
 export const PLAIN: Record<string, string> = {
   NotParticipant: "Only the trusted people, their monitors, the family in this plan and the people on the fallback list can do this; only the person who was reported can say they are alive",
   OwnApproval: "You can't approve or dismiss something you would gain from. Someone else has to decide",
-  CoSignerRequired: "A trusted person who is neither the buyer nor the agent has to co-sign this sale",
+  CoSignerRequired: "A trusted person who is not the buyer, the agent or the family member the sale pays has to co-sign this sale",
   ListingStillOpen: "With no trusted people left, the sale has to wait until the listing ends",
   InvalidWallet: "A real wallet address is needed here",
   ReportChanged: "Another report replaced this one while it was being checked, so nothing was decided. Ask for a review of the report that stands now",
@@ -37,6 +38,9 @@ export const PLAIN: Record<string, string> = {
   OfferChanged: "The offer changed after it was agreed. Look at the offers again before anyone signs",
   DeathDisproved: "The owner showed they are alive after this passing was reported, so the report no longer counts. If it is true, report it again",
   OfferTooOld: "This offer was made before an objection to the sale was upheld, so it can't be accepted. The buyer has to make a new offer",
+  DeathQuorumTooLow: "A passing has to be confirmed by at least two trusted people, so one person and the agent can never unlock the plan",
+  DeathWaitTooShort: "The wait after a passing is confirmed has to be at least 5 minutes, so the owner always has time to say they are alive",
+  BeneficiaryStillActive: "This rule's family member is still in the plan, so the rule stays. Only a rule for someone the owner removed can be ended now",
 };
 
 /** Anchor 3012 says only that an account is missing: what that means here, by the account's name. */

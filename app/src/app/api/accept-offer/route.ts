@@ -40,7 +40,6 @@ export const POST = handler(async (req) => {
   invalidateProgramAccounts(); // a higher or withdrawn offer of a second ago must count
   const snap = await loadPublicSnapshot(b.estate);
   const { verifiers } = snap.estate;
-  const seats = eligibleSeats(verifiers);
   if (!mayAskForSale(verifiers, snap.beneficiaries, wallet)) {
     throw new HttpError(403, "Only the estate's trusted people can settle a sale.", "forbidden");
   }
@@ -61,6 +60,11 @@ export const POST = handler(async (req) => {
   }
 
   if (best.buyer === wallet) throw new HttpError(403, "You cannot settle a sale to yourself. Ask another trusted person.", "own_offer");
+  // The hardship beneficiary the sale pays never co-signs it (P4): only the other seats can.
+  const seats = eligibleSeats(verifiers, asset.hardshipBeneficiary);
+  if (seats.length && asset.hardshipBeneficiary === wallet) {
+    throw new HttpError(403, "CoSignerRequired: you can't co-sign a sale that pays you. Ask another trusted person.", "CoSignerRequired");
+  }
   const agentKey = await agentAddress();
   assertServedEstate(snap.estate, agentKey);
   const ctx = chainCtx();

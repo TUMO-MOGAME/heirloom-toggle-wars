@@ -104,11 +104,17 @@ function estateAccounts(ctx: Ctx, owner: PublicKey) {
 
 // ---------- builders (spec §Instructions, numbered as in the spec) ----------
 
-/** 1 */
+/** A new estate's death quorum and death wait (plan §22.1 P1; mirrors MIN_DEATH_THRESHOLD and MIN_DEATH_WAITING_SECS). */
+export const MIN_DEATH_THRESHOLD = 2;
+export const MIN_DEATH_WAITING_SECS = 300;
+
+/** 1. Refuses, before anything is signed, what the program refuses: a death quorum of 1 or a death wait under 5 minutes. */
 export function createEstate(ctx: Ctx, p: {
   owner: PublicKey; agent: PublicKey; verifiers: [PublicKey, PublicKey, PublicKey];
   deathThreshold: number; claimThreshold: number; hardshipThreshold: number; waitingPeriodSecs: number;
 }) {
+  if (!(p.deathThreshold >= MIN_DEATH_THRESHOLD)) throw new Error("DeathQuorumTooLow: a death must be confirmed by at least two trusted people.");
+  if (!(p.waitingPeriodSecs >= MIN_DEATH_WAITING_SECS)) throw new Error("DeathWaitTooShort: the wait after a death is confirmed must be at least 5 minutes.");
   return buildIx("create_estate",
     [p.agent, p.verifiers, p.deathThreshold, p.claimThreshold, p.hardshipThreshold, i64(p.waitingPeriodSecs)],
     { owner: p.owner, ...estateAccounts(ctx, p.owner) });
@@ -643,6 +649,20 @@ export function setYearlyCap(ctx: Ctx, p: { owner: PublicKey; rule: PublicKey; c
 export function endRule(ctx: Ctx, owner: PublicKey, rule: PublicKey) {
   const { estate } = estateAccounts(ctx, owner);
   return buildIx("end_rule", [], { owner, estate, rule });
+}
+
+/** The bundled IDL has this instruction (a program older than the build has not: gate on it, as add_rule_v2). */
+export const hasInstruction = (name: string): boolean => getIdl().instructions.some((i) => i.name === name);
+
+/**
+ * Anyone, estate Unlocked: ends a live rule whose beneficiary the owner removed (plan §22.1 P3), so sweep_residual no
+ * longer keeps its reserve. No money moves. `beneficiaryWallet` is the rule's own beneficiary.
+ */
+export function endOrphanRule(ctx: Ctx, p: { caller: PublicKey; estate: PublicKey; rule: PublicKey; beneficiaryWallet: PublicKey }) {
+  return buildIx("end_orphan_rule", [], {
+    caller: p.caller, estate: p.estate, rule: p.rule,
+    beneficiary_account: beneficiaryPda(ctx.programId, p.estate, p.beneficiaryWallet),
+  });
 }
 
 /** Owner, estate Active: who receives what is left. */

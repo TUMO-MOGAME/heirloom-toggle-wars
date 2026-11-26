@@ -77,6 +77,8 @@ interface MockObjection {
   status: ObjectionStatus;
   votesUphold: number;  // bitmap of seats (Fallback: of monitors, bit = seat * 2 + slot)
   votesDismiss: number;
+  /** Sale: raised again after an upheld one, whose cut-off it keeps (the program's SALE_CUTOFF_KEPT, P5). */
+  keepsSaleCutoff?: boolean;
 }
 
 export interface MockGuardState {
@@ -390,7 +392,8 @@ export function createMockGuardians(d: GuardDeps) {
 
   /** What accept_offer checks against the clock (lib/agent/offers.ts SaleTiming), from this estate's state. */
   function saleTiming(asset: Asset): SaleTiming {
-    const upheld = g().objections.find((o) => o.kind === "Sale" && o.target === asset.address && o.status === "Upheld");
+    // Objection::sale_cutoff: upheld, or raised again after one was upheld (P5).
+    const upheld = g().objections.find((o) => o.kind === "Sale" && o.target === asset.address && (o.status === "Upheld" || o.keepsSaleCutoff));
     const hardship = asset.hardshipBeneficiary
       ? d.snap().hardships.find((h) => h.asset === asset.address && h.beneficiary === asset.hardshipBeneficiary)
       : undefined;
@@ -630,6 +633,8 @@ export function createMockGuardians(d: GuardDeps) {
     // One objection per target at a time; a decided one may be raised again, except a dismissed one on a claim or
     // hardship. A dispute raised since took its place, and a finished dispute never uses the objection up.
     const prev = g().objections.find((o) => o.target === input.target);
+    // An upheld sale objection keeps cutting off older offers after this one (P5).
+    const keepsSaleCutoff = input.kind === "Sale" && !!prev && (prev.status === "Upheld" || !!prev.keepsSaleCutoff);
     if (prev) {
       need(!binding(prev), "ObjectionOpen", "An objection is already open on this.");
       const dispute = d.dispute(input.target);
@@ -652,6 +657,7 @@ export function createMockGuardians(d: GuardDeps) {
     g().objections.unshift({
       address: fakeAddr(), kind: input.kind, target: input.target, monitor: me, seatIndex: seatSpecific ? input.seatIndex : null,
       reason, reasonHash, raisedAt: nowSecs(), status: "Open", votesUphold: 0, votesDismiss: 0,
+      ...(keepsSaleCutoff ? { keepsSaleCutoff } : {}),
     });
     remember([{ wallet: me, name: name(me) }]);
     const t = d.tx();
@@ -948,6 +954,7 @@ export function createMockGuardians(d: GuardDeps) {
         address: o.address, kind: o.kind, target: o.target, monitor: o.monitor, monitorName: name(o.monitor), seatIndex: o.seatIndex,
         reason: o.reason, reasonHash: o.reasonHash, raisedAt: o.raisedAt, status: o.status,
         votesUphold: bitCount(countedVotes(o, o.votesUphold)), votesDismiss: bitCount(countedVotes(o, o.votesDismiss)), lapsesAt: lapsesAt(o),
+        ...(o.keepsSaleCutoff ? { keepsSaleCutoff: true } : {}),
       })),
       fallback: {
         recipients: gs.fallback.map((r, i) => {

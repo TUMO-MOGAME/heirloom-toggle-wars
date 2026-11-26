@@ -522,8 +522,8 @@ pub struct AcceptOffer<'info> {
     /// any account, e.g. the system program.
     pub hardship_objection: UncheckedAccount<'info>,
 
-    /// A living trusted person other than the buyer and the agent. None only when no seat has a holder, and
-    /// then the sale waits for the listing to end.
+    /// A living trusted person other than the buyer, the agent and the hardship beneficiary. None only when no
+    /// such seat holder is left, and then the sale waits for the listing to end.
     pub co_signer: Option<Signer<'info>>,
 
     /// CHECK: the ["guard", estate] PDA; may not exist. With a Guard an offer, and a hardship's quorum, wait out
@@ -557,12 +557,13 @@ pub fn accept_offer_handler(ctx: Context<AcceptOffer>, expected_amount: u64) -> 
         require!(!objection_is_open(&info, &ctx.accounts.estate)?, HeirloomError::ObjectionOpen);
         hardship_pda = Some(hardship);
     }
-    // An offer made before an objection to the sale was upheld belongs to the cancelled listing (M8).
+    // An offer made before an objection to the sale was upheld belongs to the cancelled listing (M8), also after a
+    // later objection was dismissed or lapsed (P5).
     let sale_objection = ctx.accounts.objection.to_account_info();
     if account_exists(&sale_objection) {
         let o: Objection = read_account(&sale_objection)?;
         require!(
-            !(o.status == ObjectionStatus::Upheld && ctx.accounts.offer.created_at <= o.raised_at),
+            !o.sale_cutoff().is_some_and(|cutoff| ctx.accounts.offer.created_at <= cutoff),
             HeirloomError::OfferTooOld
         );
     }
@@ -571,10 +572,13 @@ pub fn accept_offer_handler(ctx: Context<AcceptOffer>, expected_amount: u64) -> 
     let (estate, agent, buyer) = (&ctx.accounts.estate, ctx.accounts.agent.key(), ctx.accounts.buyer.key());
     require!(buyer != agent, HeirloomError::BadAgent);
     let ts = now()?;
-    if estate.has_living_seat() {
+    // Nor does whoever the sale pays: the hardship beneficiary never co-signs their own sale (P4). With nobody else
+    // holding a seat, the sale waits for the listing to end, as with no seats at all.
+    let gainer = asset.hardship_beneficiary.unwrap_or_default();
+    if estate.living_seats_except(&gainer) != 0 {
         let allowed = ctx.accounts.co_signer.as_ref().is_some_and(|c| {
             let key = c.key();
-            key != buyer && key != agent && estate.verifier_index(&key).is_some()
+            key != buyer && key != agent && key != gainer && estate.verifier_index(&key).is_some()
         });
         require!(allowed, HeirloomError::CoSignerRequired);
     } else {

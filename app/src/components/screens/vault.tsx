@@ -17,6 +17,7 @@ import { Gate, HeaderFrame } from "@/components/shell/gate";
 import { usePay } from "@/components/pay/payment";
 import { ResidualCard } from "@/components/continuity/continuity";
 import { useStillHere } from "@/components/guardians/decision";
+import { ChipInCard } from "@/components/chipin/chip-in-card";
 
 type Copy = ScreensCopy["vault"];
 
@@ -142,6 +143,8 @@ function Vault({ copy, snap }: { copy: Copy; snap: EstateSnapshot }) {
           </div>
         </Card>
       )}
+
+      {active && <ChipInCard estate={e.address} className="mt-4" />}
 
       <ResidualCard snap={snap} className="mt-4" />
 

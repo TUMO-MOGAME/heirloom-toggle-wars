@@ -56,8 +56,8 @@ const voteAccounts = (target: PublicKey, passed: PublicKey | null, forAsset: Pub
 
 const CASES: Record<string, Case[]> = {
   create_estate: [{
-    build: () => ix.createEstate(ctx, { owner, agent, verifiers: v, deathThreshold: 2, claimThreshold: 1, hardshipThreshold: 3, waitingPeriodSecs: 120 }),
-    accounts: { owner }, args: [agent, v, 2, 1, 3, "120"],
+    build: () => ix.createEstate(ctx, { owner, agent, verifiers: v, deathThreshold: 2, claimThreshold: 1, hardshipThreshold: 3, waitingPeriodSecs: 300 }),
+    accounts: { owner }, args: [agent, v, 2, 1, 3, "300"],
   }],
   set_will: [{ build: () => ix.setWill(ctx, owner, H, "heirloom:will:x"), accounts: { owner }, args: [H, "heirloom:will:x"] }],
   add_beneficiary: [{ build: () => ix.addBeneficiary(ctx, owner, heir, "Family member 1"), accounts: { owner, wallet: heir, beneficiary: ben(heir) }, args: ["Family member 1"] }],
@@ -221,6 +221,10 @@ const CASES: Record<string, Case[]> = {
   ],
   set_yearly_cap: [{ build: () => ix.setYearlyCap(ctx, { owner, rule, cap: 30n, periodStart: 0 }), accounts: { owner, rule, year_cap: yearCapPda(P, rule) }, args: ["30", "0"] }],
   end_rule: [{ build: () => ix.endRule(ctx, owner, rule), accounts: { owner, rule } }],
+  end_orphan_rule: [{
+    build: () => ix.endOrphanRule(ctx, { caller: payer, estate: E, rule, beneficiaryWallet: heir }),
+    accounts: { caller: payer, rule, beneficiary_account: ben(heir) },
+  }],
   set_residual: [{ build: () => ix.setResidual(ctx, owner, recipient), accounts: { owner, residual: residualPda(P, E) }, args: [recipient] }],
   sweep_residual: [1, 255].map((index) => ({
     build: () => ix.sweepResidual(ctx, { payer, estate: E, recipient, reportIndex: index, rules: [rulePda(P, E, 0), rulePda(P, E, 1)] }),
@@ -254,6 +258,21 @@ function plain(x: unknown): unknown {
   if ("toArrayLike" in x) return String(x); // BN
   return Object.keys(x)[0].toLowerCase(); // an enum
 }
+
+describe("create_estate refuses what a new estate may not have (plan §22.1 P1)", () => {
+  const build = (deathThreshold: number, waitingPeriodSecs: number) => () =>
+    ix.createEstate(ctx, { owner, agent, verifiers: v, deathThreshold, claimThreshold: 1, hardshipThreshold: 1, waitingPeriodSecs });
+  it("a death quorum of one", () => expect(build(1, 300)).toThrow(/^DeathQuorumTooLow/));
+  it("a death wait under five minutes", () => { expect(build(2, 299)).toThrow(/^DeathWaitTooShort/); expect(build(2, 60)).toThrow(/^DeathWaitTooShort/); });
+  it("two people and five minutes are enough", () => expect(build(2, 300)).not.toThrow());
+});
+
+describe("withdraw is proof of life (plan §22.1 P2)", () => {
+  it("writes the estate", () => {
+    const t = ix.withdraw(ctx, owner, 1n);
+    expect(t.keys.find((k) => k.pubkey.equals(E))?.isWritable).toBe(true);
+  });
+});
 
 describe("every builder is the IDL's instruction", () => {
   it("every instruction of the IDL has a case, and nothing else", () => {

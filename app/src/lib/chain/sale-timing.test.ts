@@ -1,6 +1,6 @@
 /** accept_offer's clock checks as the chain stores them: the Guard's window, an upheld sale objection, a hardship's stamp. */
 import { describe, expect, it } from "vitest";
-import { saleTimingFrom } from "./sale-timing";
+import { SALE_CUTOFF_KEPT, saleTimingFrom } from "./sale-timing";
 
 const none = { guard: null, saleObjection: null, hardshipStamp: null };
 
@@ -18,6 +18,12 @@ describe("saleTimingFrom", () => {
   it("only an upheld sale objection refuses older offers; its raised_at is when it was decided", () => {
     const at = (status: string) => saleTimingFrom({ ...none, saleObjection: { status: { [status]: {} }, raised_at: 77 } }, 0).saleObjectionUpheldAt;
     expect([at("Upheld"), at("Dismissed"), at("Open")]).toEqual([77, null, null]);
+  });
+
+  it("P5: raised again after an upheld one, the cut-off stays once it is dismissed or open (SALE_CUTOFF_KEPT)", () => {
+    const at = (status: string, votes: number) =>
+      saleTimingFrom({ ...none, saleObjection: { status: { [status]: {} }, raised_at: 88, votes_uphold: votes } }, 0).saleObjectionUpheldAt;
+    expect([at("Dismissed", SALE_CUTOFF_KEPT), at("Open", SALE_CUTOFF_KEPT | 0b001), at("Dismissed", 0b011)]).toEqual([88, 88, null]);
   });
 
   it("a hardship stamp counts once its quorum was reached", () => {

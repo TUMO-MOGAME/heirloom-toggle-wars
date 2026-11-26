@@ -15,6 +15,8 @@ import { listenSt } from "./listen";
 import { voiceSt } from "./voice";
 import { receiptsSt } from "./receipts";
 import { legacySt } from "./legacy";
+import { chipinSt } from "./chipin";
+import { guidedSt } from "./guided";
 
 export const st: Bundle = {
   ask: askSt,
@@ -24,6 +26,8 @@ export const st: Bundle = {
   voice: voiceSt,
   receipts: receiptsSt,
   legacy: legacySt,
+  chipin: chipinSt,
+  guided: guidedSt,
   legalNote: "Leqephe lena le fumaneha ka Senyesemane feela. Ke mohlala o tlamehang ho hlahlojwa ke moeletsi wa molao.",
 
   site: {

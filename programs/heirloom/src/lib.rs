@@ -359,4 +359,10 @@ pub mod heirloom {
     pub fn remove_member(ctx: Context<RemoveMember>) -> Result<()> {
         instructions::setup::remove_member_handler(ctx)
     }
+
+    // ------------------------------------------------------------------ finalist hardening (25 Nov 2026)
+
+    pub fn end_orphan_rule(ctx: Context<EndOrphanRule>) -> Result<()> {
+        instructions::continuity::end_orphan_rule_handler(ctx)
+    }
 }

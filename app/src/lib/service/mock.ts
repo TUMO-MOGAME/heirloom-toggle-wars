@@ -24,12 +24,15 @@ import type { MockTreeState } from "./mock-tree";
 import type { TreeService } from "../tree/types";
 import type { MockLettersState } from "./mock-letters";
 import type { LettersService } from "../letters/types";
+import type { ChipIn } from "../chipin/types";
+import { checkChipInAmount, newReference } from "../chipin/link";
+import { CHIP_IN_ERRORS } from "../chipin/errors";
 import type { AskNote } from "../ask/types";
 import { sha256Hex } from "../agent/hash";
 import { cleanSpec, mediaRootHex } from "../assets/spec";
 import { DEMO_ASSETS } from "./demo-asset-photos";
 import { fullName, shortName } from "../names";
-import { waitingSecsFor } from "../will-summary";
+import { DEMO_SECONDS_PER_DAY, waitingSecsFor } from "../will-summary";
 import { DEMO_FX, estimateValuation } from "./mock-valuation";
 import { checkInPlan, heartbeatFor } from "../checkin";
 import type { BillDetails, BillPayee } from "../bills/types";
@@ -46,6 +49,11 @@ export type DemoStage = (typeof DEMO_STAGES)[number];
 export interface MockService extends HeirloomService {
   mode: "mock";
   setActor(actor: MockActor | null): void;
+  /**
+   * The guided run (plan §22.2): `work` runs as `actor` (the demo child signing her claim in the background), then
+   * whoever the app has signed in acts again. setActor calls meanwhile (the app's refresh) wait until it is done.
+   */
+  withActor<T>(actor: MockActor, work: () => Promise<T>): Promise<T>;
   resetDemo(stage: DemoStage): void;
   balanceOf(address: Base58): bigint | null;
   /** Demo shortcuts (mock only): play the "passing reported and confirmed" steps, end the wait, or bring schedules due. */
@@ -70,13 +78,18 @@ export interface MockService extends HeirloomService {
   simulateAllSeatsVacant(): void;
   /** Check-in demo: move Thabo's last check-in back so `daysLeft` plan days remain (negative = overdue). Moves the clock only. */
   setCheckInDaysLeft(daysLeft: number): void;
+  /**
+   * Chip in demo (plan §21): a relative's wallet scans the QR code and pays `amountUsdt` into the vault. The same
+   * checks as /api/chipin (strict amount, the limit, an Active estate); the entry is marked simulated.
+   */
+  simulateChipIn(amountUsdt: string | number): Promise<ChipIn>;
 }
 
 export { isMockService } from "./is-mock";
 import { MOCK_STORE_KEY } from "./is-mock";
-import { MAX_RULES, MIN_LISTING_SECS, listingEnded, nextDueAfter, ruleEnded, surplusOf } from "../continuity/logic";
+import { MAX_RULES, MIN_DEATH_THRESHOLD, MIN_LISTING_SECS, clampDeathWaiting, listingEnded, nextDueAfter, orphanRules, ruleEnded, surplusOf } from "../continuity/logic";
 import { openToPeople, outcomeOf } from "../verdict";
-import { MIN_WAIT_SECS, decidesAlone, isCurrentClaim, replaceableAt, reviewedHold, unlockWaitSecs } from "../death-rules";
+import { MIN_WAIT_SECS, decidesAlone, eligibleSeats, isCurrentClaim, replaceableAt, reviewedHold, unlockWaitSecs } from "../death-rules";
 import { claimTally, deathDisproved, deathTally, hardshipTally, hasLivingSeat, isHeld, mayList } from "../guardians/decisions";
 import { clearDeath, proofOfLife } from "./mock-rules";
 import { createMockContinuity, type MockAgentVotes } from "./mock-continuity";
@@ -157,6 +170,8 @@ interface State {
   signing?: { draft: WillDraft; options: import("../continuity/types").CreateEstateOptions };
   /** The assets the signed plan describes (M4). */
   planned?: WillDraft["assets"];
+  /** Chip-ins from relatives' wallets, newest first (plan §21; simulated; created on first use). */
+  chipIns?: ChipIn[];
 }
 
 const SLOT_CLAIMS = 65_536;
@@ -278,6 +293,9 @@ export interface MockOptions {
 export function createMockService(opts: MockOptions = {}): MockService {
   let s: State = blank();
   let actor: MockActor | null = null;
+  /** withActor: the background actor, and who the app has signed in meanwhile. */
+  let pinnedActor: MockActor | null = null;
+  let chosenActor: MockActor | null = null;
   const wait = (ms: number) => (opts.instant ? Promise.resolve() : sleep(ms));
 
   if (typeof window !== "undefined") {
@@ -294,6 +312,13 @@ export function createMockService(opts: MockOptions = {}): MockService {
     try { window.localStorage.setItem(KEY, serialise(s)); } catch { /* ignore */ }
   };
 
+  /** A wallet the user created themselves: give it a name and demo funds. */
+  const register = (a: MockActor) => {
+    if (a.address in s.names) return;
+    s.names[a.address] = a.label;
+    if (!(a.address in s.balances)) s.balances[a.address] = a.role === "owner" ? toBase(25000) : a.role === "buyer" ? toBase(16000) : 0n;
+    save();
+  };
   const est = () => s.snap.estate;
   const name = (a: Base58) => s.names[a] ?? "Someone";
   const first = (a: Base58) => shortName(name(a)); // "Adv. Ndlovu", "Uncle Bongani", "Lerato"
@@ -378,7 +403,8 @@ export function createMockService(opts: MockOptions = {}): MockService {
 
   /* ----- synchronous "instructions" (shared by the async API and the stage seeder) ----- */
 
-  function createEstate(draft: WillDraft, residualLabel?: string, practice?: boolean): TxResult[] {
+  /** `seeded`: the demo story's estate, which stands for one signed before plan §22.1 P1 and keeps its demo-clock wait. */
+  function createEstate(draft: WillDraft, residualLabel?: string, practice?: boolean, seeded = false): TxResult[] {
     need(!s.created, "BadStatus", "This estate already has a signed will.");
     const owner = me();
     const txs: TxResult[] = [];
@@ -406,7 +432,13 @@ export function createMockService(opts: MockOptions = {}): MockService {
     e.verifiers = verifiers as [Base58, Base58, Base58];
     e.verifierNames = [0, 1, 2].map((i) => draft.verifiers[i]?.name ?? name(e.verifiers[i])) as [string, string, string];
     e.verifiers.forEach((v, i) => { s.names[v] = e.verifierNames[i]; });
-    e.waitingPeriodSecs = Math.max(MIN_WAIT_SECS, waitingSecsFor(draft.waitingPeriodDays, "mock")); // the program reads at least 60 s
+    // A plan signed now: at least two trusted people and 5 minutes to confirm a death (P1), on the demo clock too. The
+    // demo story's estate keeps the stored values of one signed before (as the program keeps existing estates'),
+    // so its stages stay quick: its demo-clock days, never under the program's 60 s.
+    e.deathThreshold = Math.max(MIN_DEATH_THRESHOLD, e.deathThreshold);
+    e.waitingPeriodSecs = seeded
+      ? Math.max(MIN_WAIT_SECS, Math.round(draft.waitingPeriodDays * DEMO_SECONDS_PER_DAY))
+      : clampDeathWaiting(waitingSecsFor(draft.waitingPeriodDays, "mock"));
     e.status = "Active";
     e.lastHeartbeat = nowSecs();
     e.willHash = fakeHash();
@@ -554,9 +586,10 @@ export function createMockService(opts: MockOptions = {}): MockService {
     return t;
   }
 
+  /** Owner, Active or DeathPending. Only the living owner can sign it, so like a check-in it is proof of life (P2). */
   function withdraw(amountUsdt: number): TxResult {
     needCreated(); needOwner();
-    need(est().status === "Active", "BadStatus", "The vault is locked to its rules once a passing is being confirmed.");
+    need(est().status === "Active" || est().status === "DeathPending", "BadStatus", "The estate has already unlocked.");
     const amt = toBase(amountUsdt);
     need(amt > 0n, "InvalidAmount", "Enter an amount above zero.");
     need(est().vaultBalance >= amt, "InsufficientFunds", "The vault does not hold that much.");
@@ -564,6 +597,7 @@ export function createMockService(opts: MockOptions = {}): MockService {
     credit(me(), amt);
     const t = tx();
     log("Withdraw", `${first(me())} withdrew ${usd(amt)} from the vault`, t, amt);
+    proofOfLife(est(), nowSecs(), log, tx);
     return t;
   }
 
@@ -636,6 +670,11 @@ export function createMockService(opts: MockOptions = {}): MockService {
     const e = est();
     need(e.status === "Unlocked", "BadStatus", "Only after the estate has unlocked.");
     const to = s.snap.residual ?? G.sweepRecipient() ?? fail("NoResidualRecipient", "Nobody was named to receive what is left.");
+    // A removed beneficiary's live rule is ended first (end_orphan_rule, P3): nothing under it can pay.
+    for (const r of orphanRules(s.snap.rules, s.snap.beneficiaries, nowSecs())) {
+      r.validUntil = nowSecs() - 1;
+      log("RuleEnded", `A ${r.category.toLowerCase()} rule for someone no longer in the plan was ended, so what it kept back can be paid`, tx());
+    }
     const amount = surplusOf(e.vaultBalance, s.snap.rules, nowSecs());
     need(amount > 0n, "NothingToSweep", "The rules still need everything in the vault.");
     e.vaultBalance -= amount;
@@ -768,7 +807,7 @@ export function createMockService(opts: MockOptions = {}): MockService {
     return t;
   }
 
-  function submitClaim(input: { rule: Base58; payee: Base58; amountUsdt: number }, evidenceHash: string, report: AgentReport | null, reviewed?: string): { t: TxResult; claim: Claim } {
+  function submitClaim(input: { rule: Base58; payee: Base58; amountUsdt: number }, evidenceHash: string, report: AgentReport | null, reviewed?: string): { t: TxResult; claim: Claim; reviewTx: TxResult | null } {
     needCreated(); needBeneficiary();
     const rule = s.snap.rules.find((r) => r.address === input.rule) ?? fail("BadStatus", "That rule does not exist.");
     need(est().status === "Unlocked" || (rule.startsNow && est().status === "Active"), "BadStatus", rule.startsNow ? "Claims are paused while a passing is being confirmed." : "This rule only starts after the estate is unlocked.");
@@ -792,18 +831,20 @@ export function createMockService(opts: MockOptions = {}): MockService {
     const t = tx();
     log("ClaimSubmitted", `${first(me())} asked for ${usd(amt)} to be paid to ${payee.name}`, t, amt);
     // No report: the agent's review didn't finish, and the claim waits for it (H7).
-    if (report) reviewClaim(claim, report, reviewed);
-    return { t, claim };
+    const reviewTx = report ? reviewClaim(claim, report, reviewed) : null;
+    return { t, claim, reviewTx };
   }
 
   /** review_claim: as on-chain (/api/review), only "reject" blocks; an unsure agent refers, it never approves. */
-  function reviewClaim(claim: Claim, report: AgentReport, reviewed?: string) {
+  function reviewClaim(claim: Claim, report: AgentReport, reviewed?: string): TxResult {
     const rule = s.snap.rules.find((r) => r.address === claim.rule);
     const outcome = outcomeOf(report.verdict);
     claim.agentVerdict = outcome === "Approve" ? "Approved" : outcome === "Refer" ? "Referred" : "Rejected";
     claim.agentReport = report;
     if (outcome === "Reject") claim.status = "Rejected";
-    log("ClaimReviewed", reviewed ?? (outcome === "Refer" ? "The agent was not sure, so it referred the claim to people" : outcome !== "Reject" ? `The agent checked the ${rule?.category.toLowerCase() ?? "claim's"} statement: it matches the claim` : "The agent could not accept the document. The claim was declined"), tx());
+    const t = tx();
+    log("ClaimReviewed", reviewed ?? (outcome === "Refer" ? "The agent was not sure, so it referred the claim to people" : outcome !== "Reject" ? `The agent checked the ${rule?.category.toLowerCase() ?? "claim's"} statement: it matches the claim` : "The agent could not accept the document. The claim was declined"), t);
+    return t;
   }
 
   function approveClaim(address: Base58): TxResult {
@@ -1019,9 +1060,11 @@ export function createMockService(opts: MockOptions = {}): MockService {
     const o = s.snap.offers.find((x) => x.address === ranking.bestOffer);
     need(o?.buyer !== e.agent, "BadAgent", "The agent cannot be the buyer.");
     const signer = me();
-    if (hasLivingSeat(e)) {
-      need(isHeld(signer) && signer !== o?.buyer && signer !== e.agent && e.verifiers.includes(signer), "CoSignerRequired",
-        "A trusted person who is not the buyer must co-sign this sale.");
+    // Nor the hardship beneficiary the sale pays (P4); with nobody else holding a seat it waits for the listing to end.
+    const gainer = a.hardshipBeneficiary;
+    if (eligibleSeats(e.verifiers, gainer).length) {
+      need(isHeld(signer) && signer !== o?.buyer && signer !== e.agent && signer !== gainer && e.verifiers.includes(signer), "CoSignerRequired",
+        signer === gainer ? "You can't co-sign a sale that pays you. Ask another trusted person." : "A trusted person who is not the buyer must co-sign this sale.");
     } else {
       need(a.listingEnds !== null && nowSecs() >= a.listingEnds, "ListingStillOpen", "With no trusted people left, the sale waits until the listing ends.");
     }
@@ -1282,7 +1325,7 @@ export function createMockService(opts: MockOptions = {}): MockService {
     const { draft } = draftFor([{ role: "user", text: "a" }, { role: "user", text: "b" }, { role: "user", text: "c" }]);
     draft.ownerName = "Thabo Mokoena";
     as("thabo", () => {
-      createEstate(draft);
+      createEstate(draft, undefined, undefined, true);
       addOwnWallets(draft);
       deposit(24000);
       // Naledi's school fees: at most 3,000 USD₮ a year (yearly cap), on top of 1,500 per claim and 9,000 in total.
@@ -1354,13 +1397,21 @@ export function createMockService(opts: MockOptions = {}): MockService {
     ...legacyMethods,
 
     setActor(a) {
+      chosenActor = a;
+      if (pinnedActor) return;
       actor = a;
-      if (!a) return;
-      if (!(a.address in s.names)) {
-        // A wallet the user created themselves: give it a name and demo funds.
-        s.names[a.address] = a.label;
-        if (!(a.address in s.balances)) s.balances[a.address] = a.role === "owner" ? toBase(25000) : a.role === "buyer" ? toBase(16000) : 0n;
-        save();
+      if (a) register(a);
+    },
+    async withActor(a, work) {
+      if (pinnedActor) fail("BadStatus", "Someone else is already acting in the background.");
+      pinnedActor = a;
+      actor = a;
+      register(a);
+      try {
+        return await work();
+      } finally {
+        pinnedActor = null;
+        actor = chosenActor;
       }
     },
     resetDemo(stage) { seed(stage); save(); resetLegacy(); },
@@ -1487,6 +1538,23 @@ export function createMockService(opts: MockOptions = {}): MockService {
       save();
     },
     balanceOf(address) { return s.balances[address] ?? null; },
+
+    async listChipIns() {
+      await wait(150);
+      return s.created ? structuredClone((s.chipIns ?? []).slice(0, 10)) : [];
+    },
+    simulateChipIn: (amountUsdt) => mutate(700, () => {
+      needCreated();
+      need(est().status === "Active", "BadStatus", CHIP_IN_ERRORS.not_active);
+      const amount = checkChipInAmount(String(amountUsdt));
+      if (!amount.ok) return fail("InvalidAmount", CHIP_IN_ERRORS[amount.code]);
+      est().vaultBalance += amount.base;
+      const t = tx();
+      // A relative abroad: a wallet the demo has never seen (no name, as on the chain).
+      const entry: ChipIn = { signature: t.signature, explorerUrl: t.explorerUrl, ts: nowSecs(), amount: amount.base, from: newReference(), simulated: true };
+      s.chipIns = [entry, ...(s.chipIns ?? [])].slice(0, 50);
+      return structuredClone(entry);
+    }),
 
     setupDemoGuardians() {
       needCreated();
@@ -1677,10 +1745,10 @@ export function createMockService(opts: MockOptions = {}): MockService {
       await wait(1900);
       const payee = s.snap.payees.find((p) => p.wallet === input.payee);
       const r = report("claim", input.evidence, { amountUsdt: input.amountUsdt, payee: payee?.name });
-      const { t, claim } = submitClaim(input, hash, unreviewed() ? null : r);
+      const { t, claim, reviewTx } = submitClaim(input, hash, unreviewed() ? null : r);
       save();
       if (unreviewed()) fail("ReviewPending", "It was sent, but the agent's review didn't finish. Ask for the review again from the request, with the same file.");
-      return { tx: t, claim: claim.address, report: r };
+      return { tx: t, claim: claim.address, report: r, reviewTx };
     },
     async submitHardship(_e, chosen) {
       const input = { ...chosen, evidence: await requireEvidence(chosen.evidence) };

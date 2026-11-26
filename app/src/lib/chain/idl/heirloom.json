@@ -339,8 +339,8 @@
         {
           "name": "co_signer",
           "docs": [
-            "A living trusted person other than the buyer and the agent. None only when no seat has a holder, and",
-            "then the sale waits for the listing to end."
+            "A living trusted person other than the buyer, the agent and the hardship beneficiary. None only when no",
+            "such seat holder is left, and then the sale waits for the listing to end."
           ],
           "signer": true,
           "optional": true
@@ -1220,6 +1220,74 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "end_orphan_rule",
+      "discriminator": [
+        219,
+        140,
+        161,
+        36,
+        46,
+        54,
+        10,
+        193
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "docs": [
+            "Anyone (any wallet). A signer, so the call can be fee-sponsored (the sponsor is only the fee payer)."
+          ],
+          "signer": true
+        },
+        {
+          "name": "estate",
+          "relations": [
+            "rule"
+          ]
+        },
+        {
+          "name": "rule",
+          "writable": true
+        },
+        {
+          "name": "beneficiary_account",
+          "docs": [
+            "The rule's Beneficiary PDA."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  110,
+                  101,
+                  102,
+                  105,
+                  99,
+                  105,
+                  97,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "estate"
+              },
+              {
+                "kind": "account",
+                "path": "rule.beneficiary",
+                "account": "Rule"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
     },
     {
       "name": "end_rule",
@@ -5441,6 +5509,10 @@
         },
         {
           "name": "estate",
+          "docs": [
+            "Writable: a withdrawal is proof of life (P2)."
+          ],
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -6900,7 +6972,7 @@
     {
       "code": 6055,
       "name": "CoSignerRequired",
-      "msg": "A living trusted person who is neither the buyer nor the agent must co-sign this sale"
+      "msg": "A living trusted person who is not the buyer, the agent or the hardship beneficiary must co-sign this sale"
     },
     {
       "code": 6056,
@@ -6941,6 +7013,21 @@
       "code": 6063,
       "name": "OfferTooOld",
       "msg": "This offer was made before an objection to the sale was upheld"
+    },
+    {
+      "code": 6064,
+      "name": "DeathQuorumTooLow",
+      "msg": "A death must be confirmed by at least two trusted people"
+    },
+    {
+      "code": 6065,
+      "name": "DeathWaitTooShort",
+      "msg": "The wait after a death is confirmed must be at least 5 minutes"
+    },
+    {
+      "code": 6066,
+      "name": "BeneficiaryStillActive",
+      "msg": "This rule's beneficiary is still in the plan"
     }
   ],
   "types": [

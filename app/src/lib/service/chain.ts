@@ -61,7 +61,7 @@ import {
 } from "@solana/spl-token";
 import { actionHeaders, ensureReadPass, readHeaders, readerKey } from "../access/client";
 import { actionBody, type AgentAction } from "../access/messages";
-import { clampWaiting } from "../continuity/logic";
+import { MIN_DEATH_THRESHOLD, clampDeathWaiting } from "../continuity/logic";
 import { pack } from "../chain/pack";
 import { requireCurrentApp } from "../chain/write-guard";
 import { requireEvidence } from "../evidence";
@@ -461,6 +461,8 @@ export function createChainService(): HeirloomService {
   const service: HeirloomService = {
     mode: "chain",
     ...continuity,
+    // Chip in (plan §21): found by the estate's tag, each checked against the vault's own token balances.
+    listChipIns: (estate) => cached(`chipins:${estate}`, 15_000, async () => (await import("../chipin/find")).findChipIns(getConnection(), estate, chainCtx().usdtMint.toBase58())),
     listLetters: async (estate, opts) => (await letters()).listLetters(estate, opts),
     saveLetter: async (estate, input, version) => (await letters()).saveLetter(estate, input, version),
     deleteLetter: async (estate, id, version) => (await letters()).deleteLetter(estate, id, version),
@@ -593,7 +595,7 @@ export function createChainService(): HeirloomService {
       checkPeople(draft, owner.toBase58(), exists ? key(exists, "agent") : agentAddress);
       const willHash = await hashJson(draft);
       const { waitingSecsFor } = await import("../will-summary");
-      const waiting = clampWaiting(waitingSecsFor(draft.waitingPeriodDays, "chain"));
+      const waiting = clampDeathWaiting(waitingSecsFor(draft.waitingPeriodDays, "chain"));
       const txs: TxResult[] = [];
 
       const savedMeta = exists ? await getMetaForWrite(estate.toBase58()) : null;
@@ -608,7 +610,7 @@ export function createChainService(): HeirloomService {
       if (!exists) {
         setup.push(ix.createEstate(ctx, {
           owner, agent: pk(agentAddress), verifiers: draft.verifiers.map((v) => pk(v.wallet!)) as [PublicKey, PublicKey, PublicKey],
-          deathThreshold: 2, claimThreshold: 1, hardshipThreshold: 2, waitingPeriodSecs: waiting,
+          deathThreshold: MIN_DEATH_THRESHOLD, claimThreshold: 1, hardshipThreshold: 2, waitingPeriodSecs: waiting,
         }));
       }
       setup.push(ix.setWill(ctx, owner, willHash, `heirloom:will:${willHash.slice(0, 16)}`));
@@ -797,7 +799,7 @@ export function createChainService(): HeirloomService {
       // Sent: a review that doesn't finish leaves the claim waiting for it, to be asked for again (H7).
       const r = await review(input.evidence, "claim", estate, `Claim for ${input.amountUsdt} USD₮ under rule #${ruleId}, payee wallet ${input.payee}.`, claim)
         .catch((e: unknown) => { throw reviewPending(e); });
-      return { tx, claim, report: r.report };
+      return { tx, claim, report: r.report, reviewTx: r.tx };
     },
 
     async submitHardship(estate, chosen) {

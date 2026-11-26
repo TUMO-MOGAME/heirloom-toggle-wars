@@ -45,7 +45,7 @@ export const REHEARSAL_PLAN = [
 ] as const;
 
 const USDT = 1_000_000n;
-const WAITING = 60;
+const WAITING = 300; // a new estate's death wait is at least 5 minutes (plan §22.1 P1)
 const FALLBACK_WAIT = 45;
 // The program never waits less than 60 s (MIN_WAITING_SECS): a succession after its confirmation (N5), and each step
 // of the fallback countdown, doubled for a referred death (H6).

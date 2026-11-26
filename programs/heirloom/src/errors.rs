@@ -117,7 +117,7 @@ pub enum HeirloomError {
     NotParticipant,
     #[msg("You cannot approve or dismiss in your own favour")]
     OwnApproval,
-    #[msg("A living trusted person who is neither the buyer nor the agent must co-sign this sale")]
+    #[msg("A living trusted person who is not the buyer, the agent or the hardship beneficiary must co-sign this sale")]
     CoSignerRequired,
     #[msg("With no trusted people left, a sale waits for the listing to end")]
     ListingStillOpen,
@@ -136,4 +136,11 @@ pub enum HeirloomError {
     DeathDisproved,
     #[msg("This offer was made before an objection to the sale was upheld")]
     OfferTooOld,
+    // ---- finalist hardening (added 2026-11-25; append only, never reorder)
+    #[msg("A death must be confirmed by at least two trusted people")]
+    DeathQuorumTooLow,
+    #[msg("The wait after a death is confirmed must be at least 5 minutes")]
+    DeathWaitTooShort,
+    #[msg("This rule's beneficiary is still in the plan")]
+    BeneficiaryStillActive,
 }

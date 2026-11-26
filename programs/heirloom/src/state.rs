@@ -36,6 +36,15 @@ pub const YEAR_SECS: i64 = 365 * 86_400;
 /// Every wait is bounded, so no setting can lock funds forever.
 pub const MIN_WAITING_SECS: i64 = 60;
 pub const MAX_WAITING_SECS: i64 = YEAR_SECS;
+/// The death waiting period a new estate (or any later change) may set: at least 5 minutes, so nobody is declared
+/// dead offline in a minute (plan §22.1 P1). Estates created before keep their stored value; the 60 s floors stay.
+pub const MIN_DEATH_WAITING_SECS: i64 = 300;
+/// Trusted people needed to confirm a death on a new estate (or any later change): one person and the agent can't
+/// unlock a living owner (P1). Quorums still shrink to the living seats.
+pub const MIN_DEATH_THRESHOLD: u8 = 2;
+/// High bit of a Sale `Objection.votes_uphold` (seat votes use bits 0..2): an earlier objection to this sale was
+/// upheld, so offers made before `raised_at` stay too old even after this one is dismissed or lapses (P5).
+pub const SALE_CUTOFF_KEPT: u8 = 1 << 7;
 pub const MAX_GUARD_WAIT_SECS: i64 = 180 * 86_400;
 pub const MAX_INTERVAL_SECS: i64 = 10 * YEAR_SECS;
 pub const MIN_LISTING_SECS: i64 = 3_600;
@@ -246,6 +255,13 @@ impl Estate {
             hold = hold.saturating_add(grace);
         }
         ts >= since.saturating_add(hold)
+    }
+
+    /// The death quorum and waiting period every new setting must meet (P1): create_estate, and any later change.
+    pub fn check_death_settings(death_threshold: u8, waiting_period_secs: i64) -> Result<()> {
+        require!(death_threshold >= MIN_DEATH_THRESHOLD, crate::errors::HeirloomError::DeathQuorumTooLow);
+        require!(waiting_period_secs >= MIN_DEATH_WAITING_SECS, crate::errors::HeirloomError::DeathWaitTooShort);
+        Ok(())
     }
 
     pub fn clear_death_claim(&mut self) {
@@ -620,6 +636,14 @@ impl Objection {
     }
 
     /// The owner showed life after it was raised, so the death it challenged, and any votes on it, are void.
+    /// Offers made at or before this time can't be accepted (M8): when this objection was upheld, or when an earlier
+    /// one was (P5). None when no objection to the sale has been upheld.
+    pub fn sale_cutoff(&self) -> Option<i64> {
+        (self.kind == TargetKind::Sale
+            && (self.status == ObjectionStatus::Upheld || self.votes_uphold & SALE_CUTOFF_KEPT != 0))
+            .then_some(self.raised_at)
+    }
+
     pub fn voided_by_owner(&self, estate: &Estate) -> bool {
         matches!(self.kind, TargetKind::Unlock | TargetKind::Fallback) && self.raised_at < estate.last_heartbeat
     }

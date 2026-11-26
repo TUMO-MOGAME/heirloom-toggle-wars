@@ -1,0 +1,13 @@
+{
+  "cluster": "devnet",
+  "multisig": "SqjbTV4CqKHy5zAGk4UW3JaNsAURgBuR7bXbuuYaU8x",
+  "vault": "A66NhjuJpRQdCCjZuNdPaM1aGB822se8rFdTAvQMxkFR",
+  "threshold": 2,
+  "timeLockSecs": 600,
+  "members": [
+    "FHRjTDqQrPCi7QxvdaTu25RRf6gGMpj6wAhHyybX2LL5",
+    "3sbgnaE3JYsgoTgXUKwGTxRRLsQhiUcAQv8fmTnUkhsc",
+    "X9ogSeUvfxHLAEmfRp6Jw6Ko4jbi8ShB4z651ttF7kP"
+  ],
+  "createdTx": "vgiEE1jmn5VMYN2UPiw3SjF3jdFwD2FPNKxXUnSPkn3afpZXBtzrhDZKxnEJz8mTk7pF9siUtf1YN6E8w9iCUXo"
+}

@@ -33,7 +33,10 @@ let signedBody: string;
 let answer: { status: number; body: unknown };
 let timing: SaleTiming;
 
+const standing = asset as { hardshipBeneficiary: string | null };
+
 beforeEach(() => {
+  standing.hardshipBeneficiary = null;
   verifiers = [mine, key(), key()];
   offers = [offer(lowBuyer, 10n), offer(buyer, 12n)];
   timing = { now: 1_000, objectionWindowSecs: null, saleObjectionUpheldAt: null, hardshipQuorumAt: null };
@@ -141,6 +144,19 @@ describe("acceptBestOffer", () => {
 
   it("with no trusted person left nothing is signed in the wallet: the agent's lone path", async () => {
     verifiers = [NOBODY, NOBODY, NOBODY];
+    await settle();
+    expect(posted[0].tx).toBeUndefined();
+  });
+
+  it("P4: the hardship beneficiary never co-signs the sale that pays them", async () => {
+    standing.hardshipBeneficiary = mine;
+    await expect(settle()).rejects.toMatchObject({ code: "CoSignerRequired" });
+    expect(posted).toEqual([]);
+  });
+
+  it("P4: with only the hardship beneficiary holding a seat, nothing is signed in the wallet: the agent's lone path", async () => {
+    standing.hardshipBeneficiary = mine;
+    verifiers = [mine, NOBODY, NOBODY];
     await settle();
     expect(posted[0].tx).toBeUndefined();
   });

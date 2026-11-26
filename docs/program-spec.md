@@ -45,13 +45,13 @@ Signer roles: **owner** (estate.owner), **agent** (estate.agent), **verifier** (
 
 | # | Instruction | Args | Signer | Rules (error if broken) |
 |---|---|---|---|---|
-| 1 | `create_estate` | agent Pubkey, verifiers [Pubkey;3], death_threshold u8, claim_threshold u8, hardship_threshold u8, waiting_period_secs i64 | owner | verifiers distinct and ≠ owner; 1 ≤ thresholds ≤ 3; waiting ≥ 0; inits vault ATA; status Active; last_heartbeat = now |
+| 1 | `create_estate` | agent Pubkey, verifiers [Pubkey;3], death_threshold u8, claim_threshold u8, hardship_threshold u8, waiting_period_secs i64 | owner | verifiers distinct and ≠ owner; 1 ≤ thresholds ≤ 3 and **death_threshold ≥ 2**; 60 s ≤ waiting ≤ 1 year and **waiting ≥ 300 s** (§22.1 P1); inits vault ATA; status Active; last_heartbeat = now |
 | 2 | `set_will` | will_hash [u8;32], will_uri String | owner | status Active; uri ≤ 200 |
 | 3 | `add_beneficiary` | label String | owner | Active; label ≤ 32. Accounts: wallet (unchecked) |
 | 4 | `add_payee` | kind PayeeKind, name String | owner | Active; name ≤ 64. Accounts: wallet (unchecked) |
 | 5 | `add_rule` (replaced by `add_rule_v2`, see below; this row is kept for the history) | category, allowed_payee_kind, max_per_claim u64, lifetime_cap u64, valid_until i64, starts_now bool, recurring_amount u64, interval_secs i64, first_due i64 | owner | Active; max_per_claim ≤ lifetime_cap; both > 0. Accounts: beneficiary PDA, optional `payee` (Payee PDA); rule seeds use estate.rule_count, then rule_count += 1. If recurring_amount > 0: interval_secs > 0 (InvalidAmount), recurring_amount ≤ max_per_claim (ExceedsPerClaimCap), payee required (PayeeRequired) with kind == allowed_payee_kind (WrongPayeeKind); stores next_due = first_due, fixed_payee = payee.wallet. Otherwise interval/next_due = 0, fixed_payee = default and `payee` may be omitted (pass the program id = Anchor None) |
 | 6 | `deposit` | amount u64 | owner | Active; owner ATA → vault |
-| 7 | `withdraw` | amount u64 | owner | Active only; vault → owner ATA |
+| 7 | `withdraw` | amount u64 | owner | Active or DeathPending; **proof of life** like heartbeat (§22.1 P2); vault → owner ATA |
 | 8 | `heartbeat` | – | owner | Active or DeathPending; last_heartbeat = now |
 | 9 | `register_asset` | floor_price, hardship_floor, asking_price u64, proceeds_to Pubkey, doc_hash | owner | Active; floor ≥ hardship_floor > 0; asking ≥ floor; nft mint decimals 0; moves 1 NFT owner ATA → nft escrow (init_if_needed) |
 | 10 | `submit_death_claim` | cert_hash | beneficiary | status Active; sets death_cert_hash, death_submitted_by, death_verdict Pending, attestations 0 |
@@ -99,7 +99,7 @@ Losing offers are returned by the buyer calling `withdraw_offer` (works in any a
 | add_beneficiary | owner(w,s), estate, wallet, beneficiary(w), system_program |
 | add_payee | owner(w,s), estate, wallet, payee(w), system_program |
 | add_rule | owner(w,s), estate(w), beneficiary (Beneficiary PDA), rule(w), payee (optional Payee PDA), system_program |
-| deposit / withdraw | owner(s), estate, usdt_mint, owner_usdt(w), vault(w), token_program |
+| deposit / withdraw | owner(s), estate (withdraw: w), usdt_mint, owner_usdt(w), vault(w), token_program |
 | register_asset | owner(w,s), estate, nft_mint, owner_nft(w), nft_escrow(w), asset(w), token_program, associated_token_program, system_program |
 | submit_death_claim | beneficiary(s), estate(w), beneficiary_account |
 | review_death | agent(s), estate(w) |
@@ -393,8 +393,8 @@ clamped to 60 s..1 day. `R` = max(fallback wait, 60 s).
   `owner_replace_seat`, `remove_member`, `set_agent`, `set_fallback`, `set_seat_monitors`, the owner's
   `vote_objection` and the owner's `resolve_dispute`. Unlock and Fallback challenges raised before it are void
   with their votes: they block nothing, votes on them fail with ObjectionLapsed, `lapse_objection` closes them
-  at once and a new one may be raised. Other owner instructions (deposit, withdraw, owner_approve_claim,
-  set_will, rules, assets) are not proof of life.
+  at once and a new one may be raised. Since §22.1 P2 `withdraw` is proof of life too. Other owner instructions
+  (deposit, owner_approve_claim, set_will, rules, assets) are not proof of life.
 - **A disproved claim.** An open claim older than `last_heartbeat` (a check-in under the older program, which
   did not clear it) is disproved: `review_death`, `attest_death` and `finalize_unlock` refuse it
   (DeathDisproved), the fallback treats the death as not established, and anyone who may report replaces it at
@@ -611,7 +611,9 @@ write unless the deployed program is the one its IDL was built from.
 ### Client notes
 
 - A report cleared by `finalize_succession` can be followed by a fresh report in the same transaction.
-- Removing a payee or beneficiary doesn't end their rules; send `end_rule` with the removal when it should.
+- Removing a payee or beneficiary doesn't end their rules; send `end_rule` with the removal when it should. After
+  the unlock anyone may end a removed beneficiary's rule with `end_orphan_rule` (§22.1 P3); the app does so
+  before `sweep_residual`.
 - A title mint must give up both authorities before `register_asset`.
 - `finalize_succession` reads no remaining account any more.
 
@@ -619,3 +621,57 @@ write unless the deployed program is the one its IDL was built from.
 
 `[profile.release.package.heirloom] opt-level = "z"` in the root Cargo.toml: the upgrade budget caps the binary
 at 1,020,000 bytes. Without the program keypair build with `anchor build --ignore-keys`; never `anchor keys sync`.
+
+## Finalist hardening (added 2026-11-25, plan.md §22.1, branch `r5/program`)
+
+No account layout changed; one instruction and three errors are appended; `withdraw`'s estate became writable.
+
+### Rules
+
+- **P1 One person can't unlock.** `create_estate` refuses `death_threshold < 2` (DeathQuorumTooLow) and a
+  `waiting_period_secs` under `MIN_DEATH_WAITING_SECS` = 300 s (DeathWaitTooShort), after the old range checks
+  (InvalidThreshold, TimeOutOfRange). `Estate::check_death_settings` holds both checks for any later instruction
+  that changes them (none exists today). Existing estates keep their stored values; every 60 s floor
+  (`MIN_WAITING_SECS`: report grace, disputes, succession, fallback) is unchanged. Quorums still shrink to the
+  living seats, so the sole-survivor paths are as before.
+- **P2 Withdraw is proof of life.** `withdraw` runs while Active or DeathPending and calls `record_proof_of_life`
+  first, exactly as `heartbeat`: `last_heartbeat = now`, a death claim is cleared, the estate is Active again and
+  `DeathVetoed` is emitted. Still refused once Unlocked.
+- **P3 `end_orphan_rule`.** Anyone, estate Unlocked: ends a live rule (`valid_until = now - 1`, `RuleEnded`) whose
+  Beneficiary PDA is inactive (the owner removed them). Refused while the beneficiary is active
+  (BeneficiaryStillActive), before the unlock (BadStatus) and for an ended rule (RuleExpired). No money moves; the
+  next `sweep_residual` no longer reserves the rule's `lifetime_cap - spent_total`. Nothing it releases could be
+  paid: every claim and schedule checks that the beneficiary is active, and nobody can add one back after the
+  unlock. The program has no record that a beneficiary died, so a dead (not removed) beneficiary's rule keeps its
+  reserve until `valid_until` (documented limit).
+- **P4 The hardship beneficiary never co-signs.** In `accept_offer` the co-signer must differ from the buyer, the
+  agent and `asset.hardship_beneficiary` (CoSignerRequired). When nobody but the hardship beneficiary holds a seat,
+  the sale waits for the listing to end, as with no seats (ListingStillOpen).
+- **P5 The upheld cut-off survives.** Re-raising a Sale objection over an upheld one (or over one that carries the
+  flag) sets `SALE_CUTOFF_KEPT` (bit 7) in `votes_uphold`; seat votes use bits 0..2 and every count masks with the
+  living seats, so the flag is never a vote. `Objection::sale_cutoff()` is `raised_at` when the objection is
+  Upheld or carries the flag; `accept_offer` refuses an offer created at or before it (OfferTooOld). So once a
+  sale objection was upheld, a later one that is dismissed or lapses cuts off at least as much: offers made on the
+  relisting before that decision must be placed again too. A sale with no upheld objection is unchanged.
+- **P6 Best offer: not enforced (documented limit).** Offers are separate PDAs `["offer", asset, buyer]` and the
+  Asset keeps no count or maximum, so the program can't prove that no higher open offer exists without a layout
+  change or trusting a client-supplied list. It enforces the floor (or hardship floor), the agreed
+  `expected_amount`, the objection windows and the co-signature; choosing the best offer stays with the agent and
+  the co-signing trusted person (the app ranks offers the same way on the server and in the browser).
+
+### New instruction (appended)
+
+| Instruction | Args | Accounts (IDL order) | Checks |
+|---|---|---|---|
+| `end_orphan_rule` | – | caller(s), estate, rule(w) (`has_one = estate`), beneficiary_account `["beneficiary", estate, rule.beneficiary]` | Unlocked; beneficiary inactive; rule live |
+
+### Errors (appended)
+
+`DeathQuorumTooLow 6064, DeathWaitTooShort 6065, BeneficiaryStillActive 6066`. `CoSignerRequired`'s message now
+names the hardship beneficiary (same code).
+
+### Mixed versions
+
+The new client marks `withdraw`'s estate writable (accepted by the deployed program too) and builds
+`end_orphan_rule` only when its IDL has it; the release pin keeps every write closed until the upgraded program is
+the pinned one.

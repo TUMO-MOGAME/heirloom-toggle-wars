@@ -23,7 +23,7 @@ use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 
 const USDT: u64 = 1_000_000; // 6 decimals
-const WAITING: i64 = 120; // demo waiting period (2 minutes)
+const WAITING: i64 = 300; // demo waiting period: the 5 minutes a new estate needs at least (P1)
 const DAY: i64 = 86_400;
 /// A realistic clock: LiteSVM starts at 0, which would read as "never" in the stored times.
 const GENESIS: i64 = 1_790_000_000;
@@ -2463,6 +2463,8 @@ fn fallback_objection_with_no_monitors_lapses_and_fallback_pays() {
         env.set_seat_monitors(i, [d(), d()]).unwrap();
     }
     env.claim_again();
+    // The death's own wait (H6) is longer than the countdown since P1: let it pass first.
+    warp(&mut env.svm, WAITING);
     env.start_fallback().unwrap();
     let started = env.guard().fallback_started_at;
     let guard = guard_pda(&env.estate);
@@ -7919,7 +7921,7 @@ fn held_accounts_of_another_estate_are_refused() {
     env.estate = estate_pda(&attacker.pubkey());
     let real = env.verifier_keys();
     let theirs = [env.buyer1.pubkey(), env.buyer2.pubkey(), Keypair::new().pubkey()];
-    let i = env.create_estate_ix(theirs, 1, 1, 1, WAITING);
+    let i = env.create_estate_ix(theirs, 2, 1, 1, WAITING);
     send(&mut env.svm, i, &[&env.owner]).unwrap();
     let x = env.buyer2.pubkey();
     env.add_beneficiary(x, "x");
@@ -8076,6 +8078,9 @@ fn held_error_numbers_in_the_spec() {
     assert_eq!(6000 + HeirloomError::OfferChanged as u32, 6061);
     assert_eq!(6000 + HeirloomError::DeathDisproved as u32, 6062);
     assert_eq!(6000 + HeirloomError::OfferTooOld as u32, 6063);
+    assert_eq!(6000 + HeirloomError::DeathQuorumTooLow as u32, 6064);
+    assert_eq!(6000 + HeirloomError::DeathWaitTooShort as u32, 6065);
+    assert_eq!(6000 + HeirloomError::BeneficiaryStillActive as u32, 6066);
 }
 
 // =================================================================== re-review (plan 18.10 follow-up, N1-N7)
@@ -8342,4 +8347,297 @@ fn n2_attack_the_lone_heir_with_a_lost_agent_still_recovers() {
     env.approve_claim_by(&spouse, claim).unwrap();
     warp(&mut env.svm, 2 * WINDOW);
     env.execute_claim(rule, claim).unwrap();
+}
+
+// =================================================================== finalist hardening (plan 22.1, P1-P6)
+
+impl Env {
+    fn withdraw(&mut self, amount: u64) -> Result<(), String> {
+        let owner = self.owner.pubkey();
+        let i = ix(
+            heirloom::accounts::Withdraw {
+                owner,
+                estate: self.estate,
+                usdt_mint: self.usdt_mint,
+                owner_usdt: ata(&owner, &self.usdt_mint),
+                vault: self.vault(),
+                token_program: token_program(),
+            },
+            heirloom::instruction::Withdraw { amount },
+        );
+        send(&mut self.svm, i, &[&self.owner])
+    }
+
+    fn end_orphan_rule(&mut self, rule: Pubkey) -> Result<(), String> {
+        let r: Rule = fetch(&self.svm, &rule);
+        let i = ix(
+            heirloom::accounts::EndOrphanRule {
+                caller: self.stranger.pubkey(),
+                estate: self.estate,
+                rule,
+                beneficiary_account: beneficiary_pda(&self.estate, &r.beneficiary),
+            },
+            heirloom::instruction::EndOrphanRule {},
+        );
+        send(&mut self.svm, i, &[&self.stranger])
+    }
+}
+
+impl Sale {
+    fn relist(&mut self, duration_secs: i64) {
+        let i = ix(
+            heirloom::accounts::ListAsset { authority: self.env.agent.pubkey(), estate: self.env.estate, asset: self.asset },
+            heirloom::instruction::ListAsset { duration_secs },
+        );
+        send(&mut self.env.svm, i, &[&self.env.agent]).unwrap();
+    }
+}
+
+// ------------------------------------------------------------------- P1 one person can't unlock
+
+#[test]
+fn r5_p1_a_new_estate_needs_two_trusted_people_and_five_minutes_to_unlock() {
+    let mut env = Env::new();
+    let v = env.verifier_keys();
+    // The agent and one trusted person must not be able to declare a living owner dead.
+    let i = env.create_estate_ix(v, 1, 1, 1, WAITING);
+    expect_err(send(&mut env.svm, i, &[&env.owner]), HeirloomError::DeathQuorumTooLow);
+    // ...nor in a minute, while the owner is offline.
+    for secs in [60, 120, heirloom::MIN_DEATH_WAITING_SECS - 1] {
+        let i = env.create_estate_ix(v, 2, 1, 1, secs);
+        expect_err(send(&mut env.svm, i, &[&env.owner]), HeirloomError::DeathWaitTooShort);
+    }
+    // The old bounds still come first.
+    let i = env.create_estate_ix(v, 2, 1, 1, 59);
+    expect_err(send(&mut env.svm, i, &[&env.owner]), HeirloomError::TimeOutOfRange);
+    let i = env.create_estate_ix(v, 2, 1, 1, heirloom::MIN_DEATH_WAITING_SECS);
+    send(&mut env.svm, i, &[&env.owner]).unwrap();
+    let e = env.estate_state();
+    assert_eq!((e.death_threshold, e.waiting_period_secs), (2, 300));
+}
+
+#[test]
+fn r5_p1_an_estate_from_before_keeps_its_stored_quorum_and_wait() {
+    let mut env = Env::configured();
+    env.edit_estate(|e| {
+        e.death_threshold = 1;
+        e.waiting_period_secs = 60;
+    });
+    env.submit_death_claim(1).unwrap();
+    env.review_death(true).unwrap();
+    env.attest_death(0).unwrap();
+    assert_eq!(env.estate_state().status, EstateStatus::DeathPending);
+    warp(&mut env.svm, 60);
+    env.finalize_unlock().unwrap();
+    assert_eq!(env.estate_state().status, EstateStatus::Unlocked);
+}
+
+#[test]
+fn r5_p1_the_quorum_of_two_still_shrinks_to_the_last_living_seat() {
+    let mut env = Env::configured();
+    env.edit_estate(|e| {
+        e.verifiers[1] = Pubkey::default();
+        e.verifiers[2] = Pubkey::default();
+    });
+    env.submit_death_claim(1).unwrap();
+    env.review_death(true).unwrap();
+    env.attest_death(0).unwrap();
+    assert_eq!(env.estate_state().status, EstateStatus::DeathPending);
+    warp(&mut env.svm, WAITING);
+    env.finalize_unlock().unwrap();
+}
+
+// ------------------------------------------------------------------- P2 a withdrawal is proof of life
+
+#[test]
+fn r5_p2_a_withdrawal_records_life_and_voids_a_pending_death_claim() {
+    let mut env = Env::configured();
+    env.submit_death_claim(1).unwrap();
+    env.review_death(true).unwrap();
+    env.attest_death(0).unwrap();
+    env.attest_death(1).unwrap();
+    assert_eq!(env.estate_state().status, EstateStatus::DeathPending);
+    warp(&mut env.svm, 10);
+    env.withdraw(10 * USDT).unwrap();
+    let e = env.estate_state();
+    assert_eq!(e.status, EstateStatus::Active);
+    assert_eq!(e.death_cert_hash, [0u8; 32]);
+    assert_eq!(e.last_heartbeat, now(&env.svm));
+    assert_eq!(balance(&env.svm, &env.vault()), 4_990 * USDT);
+    warp(&mut env.svm, WAITING);
+    expect_err(env.finalize_unlock(), HeirloomError::BadStatus);
+
+    // A claim not yet confirmed is void too, and the check-in moves on.
+    env.submit_death_claim(1).unwrap();
+    warp(&mut env.svm, 10);
+    env.withdraw(USDT).unwrap();
+    let e = env.estate_state();
+    assert_eq!((e.death_cert_hash, e.last_heartbeat), ([0u8; 32], now(&env.svm)));
+
+    // Never after the unlock.
+    env.unlock();
+    expect_err(env.withdraw(USDT), HeirloomError::BadStatus);
+}
+
+// ------------------------------------------------------------------- P3 a removed beneficiary's reserve is released
+
+#[test]
+fn r5_p3_anyone_ends_a_removed_beneficiarys_rule_after_the_unlock() {
+    let mut env = Env::configured();
+    let until = now(&env.svm) + YEAR;
+    let (k1, k2) = (env.kid1.pubkey(), env.kid2.pubkey());
+    let kept = env.add_rule(0, k1, PayeeKind::University, 600 * USDT, 1_000 * USDT, until);
+    let orphan = env.add_rule(1, k2, PayeeKind::University, 600 * USDT, 2_000 * USDT, until);
+    let heir = env.executor.pubkey();
+    env.set_residual(heir).unwrap();
+    env.remove_beneficiary(k2).unwrap();
+    // While the owner lives, only the owner ends a rule.
+    expect_err(env.end_orphan_rule(orphan), HeirloomError::BadStatus);
+    env.unlock();
+
+    env.sweep(heir, &[kept, orphan]).unwrap();
+    assert_eq!(balance(&env.svm, &env.vault()), 3_000 * USDT, "both rules still reserve");
+    // A rule whose beneficiary is still in the plan stays.
+    expect_err(env.end_orphan_rule(kept), HeirloomError::BeneficiaryStillActive);
+    // A stranger ends the removed beneficiary's rule; no money moves in the ending itself.
+    env.end_orphan_rule(orphan).unwrap();
+    assert_eq!(balance(&env.svm, &env.vault()), 3_000 * USDT);
+    assert!(fetch::<Rule>(&env.svm, &orphan).valid_until < now(&env.svm));
+    expect_err(env.end_orphan_rule(orphan), HeirloomError::RuleExpired);
+    env.sweep(heir, &[kept, orphan]).unwrap();
+    assert_eq!(balance(&env.svm, &env.vault()), 1_000 * USDT, "only the kept rule's reserve is left");
+}
+
+#[test]
+fn r5_p3_the_beneficiary_account_must_be_the_rules_own() {
+    let mut env = Env::configured();
+    let until = now(&env.svm) + YEAR;
+    let (k1, k2) = (env.kid1.pubkey(), env.kid2.pubkey());
+    let kept = env.add_rule(0, k1, PayeeKind::University, 600 * USDT, 1_000 * USDT, until);
+    env.remove_beneficiary(k2).unwrap();
+    env.unlock();
+    // kid2's (inactive) account passed for kid1's rule: refused by the seeds.
+    let i = ix(
+        heirloom::accounts::EndOrphanRule {
+            caller: env.stranger.pubkey(),
+            estate: env.estate,
+            rule: kept,
+            beneficiary_account: beneficiary_pda(&env.estate, &k2),
+        },
+        heirloom::instruction::EndOrphanRule {},
+    );
+    let stranger = env.stranger.insecure_clone();
+    send(&mut env.svm, i, &[&stranger]).unwrap_err();
+    assert!(fetch::<Rule>(&env.svm, &kept).valid_until > now(&env.svm));
+}
+
+// ------------------------------------------------------------------- P4 the hardship beneficiary never co-signs
+
+#[test]
+fn r5_p4_the_hardship_beneficiary_cannot_co_sign_their_own_sale() {
+    let mut s = Sale::new();
+    s.place_offer(1, 7_500 * USDT).unwrap();
+    s.approved_hardship(); // kid2's
+    let kid2 = s.env.kid2.insecure_clone();
+    // kid2 also holds a seat.
+    s.env.edit_estate(|e| e.verifiers[1] = kid2.pubkey());
+    expect_err(s.accept_offer_with(1, Some(&kid2)), HeirloomError::CoSignerRequired);
+    // Another trusted person may.
+    let v0 = s.env.verifiers[0].insecure_clone();
+    s.accept_offer_with(1, Some(&v0)).unwrap();
+    assert_eq!(balance(&s.env.svm, &ata(&kid2.pubkey(), &s.env.usdt_mint)), 7_500 * USDT);
+}
+
+#[test]
+fn r5_p4_with_only_the_hardship_beneficiary_left_the_sale_waits_for_the_listing_to_end() {
+    let mut s = Sale::new();
+    s.place_offer(1, 7_500 * USDT).unwrap();
+    s.approved_hardship();
+    let kid2 = s.env.kid2.insecure_clone();
+    s.env.edit_estate(|e| e.verifiers = [kid2.pubkey(), Pubkey::default(), Pubkey::default()]);
+    expect_err(s.accept_offer_with(1, Some(&kid2)), HeirloomError::ListingStillOpen);
+    expect_err(s.accept_offer_with(1, None), HeirloomError::ListingStillOpen);
+    warp(&mut s.env.svm, 3 * DAY);
+    s.accept_offer_with(1, None).unwrap();
+    assert_eq!(balance(&s.env.svm, &ata(&kid2.pubkey(), &s.env.usdt_mint)), 7_500 * USDT);
+}
+
+// ------------------------------------------------------------------- P5 an upheld sale objection's cut-off stays
+
+/// Sale with a Guard: buyer 2's offer, then a sale objection upheld by verifiers 1 and 2, and the asset relisted.
+fn upheld_sale() -> (Sale, People) {
+    let mut s = Sale::build(true);
+    let people = s.people.take().unwrap();
+    let asset = s.asset;
+    s.place_offer(2, 9_500 * USDT).unwrap();
+    s.env.object(&people, TargetKind::Sale, asset, 0, Some(asset), None).unwrap();
+    let (v1, v2) = (s.env.v(1), s.env.v(2));
+    s.env.vote_objection(&v1, asset, true, None, Some(asset), None).unwrap();
+    s.env.vote_objection(&v2, asset, true, None, Some(asset), None).unwrap();
+    s.relist(DAY);
+    expect_err(s.accept_offer(2), HeirloomError::OfferTooOld);
+    (s, people)
+}
+
+#[test]
+fn r5_p5_a_dismissed_re_raise_does_not_revive_offers_from_before_the_upheld_objection() {
+    let (mut s, people) = upheld_sale();
+    let asset = s.asset;
+    warp(&mut s.env.svm, 1);
+    s.env.object(&people, TargetKind::Sale, asset, 0, Some(asset), None).unwrap();
+    let (v1, v2) = (s.env.v(1), s.env.v(2));
+    s.env.vote_objection(&v1, asset, false, None, Some(asset), None).unwrap();
+    s.env.vote_objection(&v2, asset, false, None, Some(asset), None).unwrap();
+    let o = s.env.objection(&asset);
+    assert_eq!(o.status, ObjectionStatus::Dismissed);
+    assert_eq!(o.votes_dismiss & 0b111, 0b110);
+    warp(&mut s.env.svm, WINDOW);
+    expect_err(s.accept_offer(2), HeirloomError::OfferTooOld);
+    // Made again after the decision, the offer goes through.
+    s.withdraw_offer(2).unwrap();
+    warp(&mut s.env.svm, 1);
+    s.place_offer(2, 9_500 * USDT).unwrap();
+    warp(&mut s.env.svm, WINDOW);
+    s.accept_offer(2).unwrap();
+}
+
+#[test]
+fn r5_p5_a_lapsed_re_raise_keeps_the_cut_off_too() {
+    let (mut s, people) = upheld_sale();
+    let asset = s.asset;
+    warp(&mut s.env.svm, 1);
+    s.env.object(&people, TargetKind::Sale, asset, 0, Some(asset), None).unwrap();
+    expect_err(s.accept_offer(2), HeirloomError::ObjectionOpen);
+    warp(&mut s.env.svm, 2 * WAITING);
+    expect_err(s.accept_offer(2), HeirloomError::OfferTooOld);
+}
+
+#[test]
+fn r5_p5_without_an_upheld_objection_a_dismissed_one_cuts_off_nothing() {
+    let mut s = Sale::build(true);
+    let people = s.people.take().unwrap();
+    let asset = s.asset;
+    s.place_offer(2, 9_500 * USDT).unwrap();
+    s.env.object(&people, TargetKind::Sale, asset, 0, Some(asset), None).unwrap();
+    let (v1, v2) = (s.env.v(1), s.env.v(2));
+    s.env.vote_objection(&v1, asset, false, None, Some(asset), None).unwrap();
+    s.env.vote_objection(&v2, asset, false, None, Some(asset), None).unwrap();
+    assert_eq!(s.env.objection(&asset).votes_uphold, 0);
+    warp(&mut s.env.svm, WINDOW);
+    s.accept_offer(2).unwrap();
+}
+
+// ------------------------------------------------------------------- P6 best offer: a documented limit
+
+/// The program can't prove that no higher open offer exists (offers are separate accounts with no count on the
+/// asset), so "best offer" stays the agent's and co-signer's choice; the floor and the agreed amount are enforced.
+#[test]
+fn r5_p6_the_program_enforces_the_floor_and_the_agreed_amount_not_the_best_offer() {
+    let mut s = Sale::new();
+    s.place_offer(1, FLOOR).unwrap();
+    s.place_offer(2, FLOOR + 500 * USDT).unwrap();
+    let v1 = s.env.verifiers[1].insecure_clone();
+    expect_err(s.accept_offer_expecting(1, Some(&v1), FLOOR + 1), HeirloomError::OfferChanged);
+    s.accept_offer(1).unwrap();
+    assert_eq!(fetch::<Asset>(&s.env.svm, &s.asset).status, AssetStatus::Sold);
 }

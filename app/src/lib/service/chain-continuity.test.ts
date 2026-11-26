@@ -143,6 +143,27 @@ describe("sweepResidual", () => {
     accounts.delete(residualPda(programId, estate).toBase58());
     await refused(svc().sweepResidual(estate), "NoResidualRecipient");
   });
+  it("P3: after the unlock a removed beneficiary's live rule is ended first, by the caller, then the sweep pays", async () => {
+    snap.estate.status = "Unlocked";
+    snap.beneficiaries = [{ wallet: kid, active: true }, { wallet: other, active: false }];
+    snap.rules = [rule(0, { beneficiary: kid }), rule(1), rule(2, { validUntil: NOW - 1 })];
+    await svc().sweepResidual(estate);
+    expect(names()).toEqual(["end_orphan_rule", "sweep_residual"]);
+    expect(sent).toHaveLength(2);
+    expect(has(0, rulePda(programId, estate, 1))).toBe(true);
+    expect(has(0, beneficiaryPda(programId, estate, new PublicKey(other)))).toBe(true);
+    expect(all()[0].keys[0].pubkey.toBase58()).toBe(owner.toBase58());
+  });
+
+  it("P3: nothing to end before the unlock, or when every rule's beneficiary is still in the plan", async () => {
+    snap.beneficiaries = [{ wallet: other, active: false }];
+    snap.rules = [rule(0)];
+    await svc().sweepResidual(estate);
+    snap.estate.status = "Unlocked";
+    snap.beneficiaries = [{ wallet: other, active: true }];
+    await svc().sweepResidual(estate);
+    expect(names()).toEqual(["sweep_residual", "sweep_residual"]);
+  });
 });
 
 describe("the agent", () => {

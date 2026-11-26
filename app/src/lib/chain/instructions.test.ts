@@ -21,7 +21,7 @@ const rule0 = rulePda(programId, estate, 0);
 const H = "ab".repeat(32);
 
 const built: Record<string, () => ReturnType<typeof ix.buildIx>> = {
-  create_estate: () => ix.createEstate(ctx, { owner, agent, verifiers: v, deathThreshold: 2, claimThreshold: 1, hardshipThreshold: 2, waitingPeriodSecs: 120 }),
+  create_estate: () => ix.createEstate(ctx, { owner, agent, verifiers: v, deathThreshold: 2, claimThreshold: 1, hardshipThreshold: 2, waitingPeriodSecs: 300 }),
   set_will: () => ix.setWill(ctx, owner, H, "heirloom:will:x"),
   add_beneficiary: () => ix.addBeneficiary(ctx, owner, ben, "Lerato"),
   add_payee: () => ix.addPayee(ctx, owner, payee, "University", "UCT"),
@@ -77,6 +77,7 @@ const built: Record<string, () => ReturnType<typeof ix.buildIx>> = {
   set_yearly_cap: () => ix.setYearlyCap(ctx, { owner, rule: rule0, cap: 3_000_000_000n, periodStart: 0 }),
   // continuity
   end_rule: () => ix.endRule(ctx, owner, rule0),
+  end_orphan_rule: () => ix.endOrphanRule(ctx, { caller: k(), estate, rule: rule0, beneficiaryWallet: ben }),
   set_residual: () => ix.setResidual(ctx, owner, ben),
   sweep_residual: () => ix.sweepResidual(ctx, { payer: ben, estate, recipient: ben, reportIndex: 255, rules: [] }),
   set_agent: () => ix.setAgent(ctx, owner, k()),

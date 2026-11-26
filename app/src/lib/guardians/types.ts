@@ -64,6 +64,11 @@ export interface Objection {
   votesDismiss: number;
   /** Fallback objections only, while Open: when it lapses (counts as dismissed) unless upheld; else null. Added by Agent B. */
   lapsesAt?: number | null;
+  /**
+   * Sale objections: an earlier objection to this sale was upheld, so offers made at or before `raisedAt` stay too old
+   * even once this one is dismissed or lapses (plan §22.1 P5; the program's SALE_CUTOFF_KEPT bit).
+   */
+  keepsSaleCutoff?: boolean;
 }
 
 export interface FallbackRecipient {

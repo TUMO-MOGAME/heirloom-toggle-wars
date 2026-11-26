@@ -7,6 +7,9 @@
 #   idl      the same, then copy the checked IDL to app/src/lib/chain/idl/heirloom.json.
 #   deploy   the same, then upgrade the devnet program by its id, after printing the size, the SOL needed and the
 #            balance. It refuses when the balance is short. It never creates a program.
+#            Since 25 Nov 2026 the upgrade authority is a 2-of-3 Squads multisig, so this mode refuses: build with
+#            the verifiable image instead (docs/security-audit.md §4c), write a buffer, hand the buffer to the vault and
+#            upgrade through scripts/squads/squads.mjs (propose, approve twice, execute after the time lock).
 #
 # The program id is the one below and nothing here can change it: keys are never synced and sources are never copied
 # back (on a fresh clone, with no keypair, syncing keys would invent a new id and write it into the repo).

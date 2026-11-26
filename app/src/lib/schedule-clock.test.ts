@@ -35,5 +35,5 @@ describe("clockText", () => {
 });
 
 describe("M5: the wait as it will be signed", () => {
-  it("a 0-day wait is the program's shortest, 60 seconds", () => expect(waitingSecsFor(0, "chain", undefined)).toBe(60));
+  it("a 0-day wait is the shortest a new estate may sign, 300 seconds (plan §22.1 P1)", () => expect(waitingSecsFor(0, "chain", undefined)).toBe(300));
 });

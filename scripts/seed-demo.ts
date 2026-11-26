@@ -51,7 +51,7 @@ async function main() {
     verifiers: DEMO_WILL.verifiers.map((v, i) => ({ ...v, wallet: w.addresses[(["ndlovu", "pillay", "bongani"] as const)[i]] })),
   });
   const willHash = await hashJson(draft);
-  const waiting = Number(process.env.NEXT_PUBLIC_DEMO_WAITING_SECS || 60);
+  const waiting = Math.max(300, Number(process.env.NEXT_PUBLIC_DEMO_WAITING_SECS || 300)); // P1: at least 5 minutes
 
   // 1. Estate + will
   const setup = [];

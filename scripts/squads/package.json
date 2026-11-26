@@ -1,0 +1,19 @@
+{
+  "name": "heirloom-squads",
+  "private": true,
+  "type": "module",
+  "description": "Heirloom's devnet upgrade authority: a 2-of-3 Squads v4 multisig with a time lock",
+  "scripts": {
+    "show": "node squads.mjs show"
+  },
+  "dependencies": {
+    "@solana/web3.js": "1.99.0",
+    "@sqds/multisig": "2.1.4",
+    "bigint-buffer": "file:../../app/vendor/bigint-buffer",
+    "bs58": "4.0.1"
+  },
+  "overrides": {
+    "bigint-buffer": "$bigint-buffer",
+    "jayson": "5.0.0"
+  }
+}

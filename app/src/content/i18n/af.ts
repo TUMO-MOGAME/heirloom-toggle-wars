@@ -15,6 +15,8 @@ import { listenAf } from "./listen";
 import { voiceAf } from "./voice";
 import { receiptsAf } from "./receipts";
 import { legacyAf } from "./legacy";
+import { chipinAf } from "./chipin";
+import { guidedAf } from "./guided";
 
 export const af: Bundle = {
   ask: askAf,
@@ -24,6 +26,8 @@ export const af: Bundle = {
   voice: voiceAf,
   receipts: receiptsAf,
   legacy: legacyAf,
+  chipin: chipinAf,
+  guided: guidedAf,
   legalNote: "Hierdie bladsy is net in Engels beskikbaar. Dit is 'n sjabloon wat 'n regsadviseur moet nagaan.",
 
   site: {

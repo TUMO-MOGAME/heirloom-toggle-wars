@@ -1,6 +1,6 @@
 import type { Recurrence, Rule as ChainRule, WillDraft } from "./types";
 import { fullName } from "./names";
-import { clampWaiting } from "./continuity/logic";
+import { MIN_DEATH_WAITING_SECS, clampDeathWaiting } from "./continuity/logic";
 
 type Rule = WillDraft["rules"][number];
 
@@ -14,10 +14,11 @@ export const DEMO_SECONDS_PER_DAY = 2;
  * An unset or empty variable is "not set" (Number("") is 0, which once made every chain wait 0 s).
  */
 export function waitingSecsFor(days: number, mode: "mock" | "chain", demoWaitEnv: string | undefined = process.env.NEXT_PUBLIC_DEMO_WAITING_SECS): number {
-  if (mode === "mock") return Math.max(5, Math.round(days * DEMO_SECONDS_PER_DAY));
+  // A new estate's death wait is at least 5 minutes in both services (plan §22.1 P1), the demo clock included.
+  if (mode === "mock") return Math.max(MIN_DEATH_WAITING_SECS, Math.round(days * DEMO_SECONDS_PER_DAY));
   const demo = demoWaitEnv === undefined || demoWaitEnv.trim() === "" ? NaN : Number(demoWaitEnv);
-  // As the program takes it (M5): never shorter than its 60 seconds, never longer than a year.
-  return clampWaiting(Number.isFinite(demo) && demo >= 0 ? demo : Math.round(days * 86_400));
+  // As the program takes it (M5, P1): never shorter than its 5 minutes, never longer than a year.
+  return clampDeathWaiting(Number.isFinite(demo) && demo >= 0 ? demo : Math.round(days * 86_400));
 }
 
 /** "30 days", or "300 seconds (demo clock)" when the period is shorter than a day. */

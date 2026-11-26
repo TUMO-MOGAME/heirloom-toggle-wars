@@ -17,5 +17,5 @@
 **Don't quote (not verified well enough):**
 - "70–90% of South Africans die without a will": figures attributed to the Master's Office range from
   70% to 90%, mostly second-hand and several years old ([Discovery, 2021](https://www.discovery.co.za/corporate/the-importance-of-a-last-will-and-testament)). Use fact 1 instead.
-- "170,000 estates a year": a single 2024 press report; no DOJ publication found. If you use it on stage, say "about".
+- "150,000 estates a year": the Master's own figure (Parliamentary reply NW4249, Aug 2026). The older "170,000" press figure could not be verified; don't use it.
 - Any South Africa-specific USD₮ share: Chainalysis doesn't publish one (in SA, Bitcoin was 74% of fiat purchases).

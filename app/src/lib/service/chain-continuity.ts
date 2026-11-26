@@ -7,7 +7,7 @@ import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-t
 import type { Base58, PayeeKind, Rule } from "../types";
 import type { ContinuityService, RemoveMemberInput } from "../continuity/types";
 import type { HeirloomService, TxResult } from "./types";
-import { MAX_RULES } from "../continuity/logic";
+import { MAX_RULES, orphanRules } from "../continuity/logic";
 import { toBase } from "../format";
 import { chainCtx } from "../chain/client";
 import * as ix from "../chain/instructions";
@@ -130,7 +130,12 @@ export function createChainContinuity(d: ChainContinuityDeps): ChainContinuity {
       must(recipient, "NoResidualRecipient", "The owner did not name anyone to receive what is left.");
       const ctx = chainCtx();
       const count = num(await estateRaw(estate), "rule_count");
+      const snap = await d.fetchEstate(estate);
       const rules = Array.from({ length: count }, (_, i) => rulePda(ctx.programId, estate, i));
+      // A removed beneficiary's live rule is ended first (P3), so its reserve is paid too. Anyone may; no money moves.
+      const orphans = snap.estate.status === "Unlocked" && ix.hasInstruction("end_orphan_rule") ? orphanRules(snap.rules, snap.beneficiaries, now() + ENDING_SECS) : [];
+      const ends = orphans.map((r) => ix.endOrphanRule(ctx, { caller: me(), estate: new PublicKey(estate), rule: new PublicKey(r.address), beneficiaryWallet: new PublicKey(r.beneficiary) }));
+      for (const group of pack(ends)) await d.send(group);
       return d.send([ix.sweepResidual(ctx, { payer: me(), estate: new PublicKey(estate), recipient: new PublicKey(recipient), reportIndex, rules })]);
     },
 

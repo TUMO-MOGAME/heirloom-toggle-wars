@@ -2,8 +2,8 @@
   "//": "The deployed program this build was made for (plan §18.9 C1). Writes and /api/health fail closed until it matches the chain. Set only by scripts/pin-program.ts, after the upgrade, from the deployed program itself.",
   "cluster": "devnet",
   "programId": "b3PBVwkLnyx7eyLPNtc5J3Ds3os3cenqCVRHaCJM7FY",
-  "idlSha256": "8869f5638e55236f6bf7def637f0c371165ee11dae9f79ebbd2483daafbe7142",
-  "deploySlot": 525556644,
-  "binarySha256": "c5294fe48eeb92757aa6e884e6e20f59c13cef87792c074d8a444a134f3cdd6d",
-  "binaryBytes": 899296
+  "idlSha256": "7856dba6e6eda5b8643a6710ac4df371acdfd4e37f0c12a57635a63eb8d9899d",
+  "deploySlot": 526117721,
+  "binarySha256": "03c1d5835f2c0ea2e34e2932a438a4221bf3aaaf732698fc53b6a5ee758b478e",
+  "binaryBytes": 1128608
 }

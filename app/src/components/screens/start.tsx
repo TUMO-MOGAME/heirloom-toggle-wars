@@ -3,8 +3,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, m as motion } from "motion/react";
 import { MotionScope } from "@/components/ui/motion-provider";
-import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, ShieldCheck, Smartphone, TriangleAlert, UsersRound, Wallet } from "@/components/ui/icons";
+import { ArrowLeft, ArrowRight, Check, Copy, KeyRound, Play, ShieldCheck, Smartphone, TriangleAlert, UsersRound, Wallet } from "@/components/ui/icons";
 import type { ScreensCopy } from "@/content/screens";
+import { guided as guidedEnglish } from "@/content/guided";
 import { useLocalized } from "@/lib/i18n/client";
 import type { Role } from "@/lib/types";
 import { usePhoneWallets, useWallet, type PhoneWalletOption } from "@/lib/hooks/wallet-source";
@@ -26,6 +27,7 @@ export function StartScreen(props: Parameters<typeof StartScreenBody>[0]) {
 
 function StartScreenBody({ copy: english }: { copy: ScreensCopy["start"] }) {
   const copy = useLocalized(english, (t) => t.screens.start);
+  const guidedCard = useLocalized(guidedEnglish.card, (t) => t.guided.card);
   const { common } = useCopy();
   const router = useRouter();
   const wallet = useWallet();
@@ -149,9 +151,21 @@ function StartScreenBody({ copy: english }: { copy: ScreensCopy["start"] }) {
               <h1 className="mt-2 text-h1"><Marked text={copy.title} /></h1>
               <p className="mt-3 text-lead text-ink-2">{copy.body}</p>
               <div className="mt-6 grid gap-4">
+                <Card className="border-ink">
+                  <div className="flex items-start gap-3.5">
+                    <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-accent-ink"><Play className="size-6" aria-hidden="true" /></span>
+                    <div className="min-w-0">
+                      <h2 className="text-h3">{guidedCard.title}</h2>
+                      <p className="mt-1 text-ink-2">{guidedCard.body}</p>
+                    </div>
+                  </div>
+                  <ButtonLink href="/start/guided" block className="mt-4">
+                    {guidedCard.cta}<ArrowRight className="size-5" aria-hidden="true" />
+                  </ButtonLink>
+                </Card>
                 <Card>
                   <div className="flex items-start gap-3.5">
-                    <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-accent-ink"><UsersRound className="size-6" aria-hidden="true" /></span>
+                    <span className="grid size-12 shrink-0 place-items-center rounded-full bg-surface-2 text-ink"><UsersRound className="size-6" aria-hidden="true" /></span>
                     <div className="min-w-0">
                       <h2 className="text-h3">{copy.demo.title}</h2>
                       <p className="mt-1 text-ink-2">{copy.demo.body}</p>

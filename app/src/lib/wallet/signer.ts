@@ -18,11 +18,35 @@ export interface ActiveSigner {
 }
 
 let active: ActiveSigner | null = null;
+/** The wallet the UI has active, kept while another one signs in the background (withActiveSigner). */
+let chosen: ActiveSigner | null = null;
+let pinned = false;
 const listeners = new Set<(s: ActiveSigner | null) => void>();
 
 export function setActiveSigner(s: ActiveSigner | null): void {
+  chosen = s;
+  if (pinned) return; // the background signer stays until its work is done
   active = s;
   listeners.forEach((l) => l(s));
+}
+
+/**
+ * Runs `work` with `s` as the signer, then puts back the wallet the UI has active. For the guided run (plan §22.2): a
+ * practice wallet on this device signs its own step in the background, without switching who is signed in. One at a
+ * time; the signing itself is the wallet's own (its PIN, its keys), nothing signs for it.
+ */
+export async function withActiveSigner<T>(s: ActiveSigner, work: () => Promise<T>): Promise<T> {
+  if (pinned) throw new Error("Another wallet is already signing in the background.");
+  pinned = true;
+  active = s;
+  listeners.forEach((l) => l(s));
+  try {
+    return await work();
+  } finally {
+    pinned = false;
+    active = chosen;
+    listeners.forEach((l) => l(chosen));
+  }
 }
 
 export function getActiveSigner(): ActiveSigner {

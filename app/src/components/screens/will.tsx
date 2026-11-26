@@ -21,7 +21,7 @@ import { WillLettersCard } from "@/components/letters/lazy";
 import { FRESH_ATTR, firstDemoPersona } from "@/lib/service/fresh-visit";
 import { ruleKey, signedEvery, waitingSecsFor, waitingText, withOwnerSummary } from "@/lib/will-summary";
 import { clockOf, clockText, ruleClock, scheduleSecs } from "@/lib/schedule-clock";
-import { MIN_WAITING_SECS } from "@/lib/continuity/logic";
+import { MIN_DEATH_WAITING_SECS } from "@/lib/continuity/logic";
 import { isMockService } from "@/lib/service/is-mock";
 import { willView } from "@/lib/hooks/pick-estate";
 import { ConnectPeople, EndRule, ResidualPicker } from "@/components/continuity/continuity";
@@ -45,7 +45,7 @@ function useWaitPeriod(copy: Copy) {
   // What the plan will really get (M5): a wait shorter than the program allows is signed as the shortest one.
   return (days: number) => {
     const secs = waitingSecsFor(days, mode);
-    return mode === "chain" && secs === MIN_WAITING_SECS && days * 86_400 < MIN_WAITING_SECS ? fmt(copy.preview.periodMin, { secs }) : waitingText(secs, copy.preview);
+    return mode === "chain" && secs === MIN_DEATH_WAITING_SECS && days * 86_400 < MIN_DEATH_WAITING_SECS ? fmt(copy.preview.periodMin, { secs }) : waitingText(secs, copy.preview);
   };
 }
 

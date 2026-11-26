@@ -135,7 +135,9 @@ describe("the server fails closed (this build is unpinned, or pinned to another 
     const res = await GET(new Request("http://t/api/health", { headers: { "x-forwarded-for": "203.0.113.50" } }));
     expect(res.status).toBe(503);
     expect(RELEASE.deploySlot).not.toBe(SLOT);
-    expect(await res.json()).toMatchObject({ ok: false, programCurrent: false, programProblem: RELEASE.deploySlot === null ? "unpinned" : "deployment" });
+    // A build whose IDL is newer than the pin (a program upgrade waiting for its release) says "idl".
+    const problem = RELEASE.deploySlot === null ? "unpinned" : (await bundledIdlSha256()) !== RELEASE.idlSha256 ? "idl" : "deployment";
+    expect(await res.json()).toMatchObject({ ok: false, programCurrent: false, programProblem: problem });
   });
 
   it("the check is one small read, shared for a few seconds", async () => {

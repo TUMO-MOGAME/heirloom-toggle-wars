@@ -2,12 +2,13 @@
 
 > Read this first. The plan is [plan.md](plan.md); the brief and rules are [docs/toggle-wars.md](docs/toggle-wars.md).
 
-**Last updated:** 2026-11-23
+**Last updated:** 2026-11-26 (Heirloom brought up to 676e768)
 **Phase:** prework (allowed by rule 4). Hacking opens Thu 26 Nov 04:30 SAST; we finish Sat 28 Nov and submit by Sun 29 Nov 12:00 SAST.
 
 ## Done
 - 23 Nov: public repo created from Heirloom a202bc0 (fresh history, prior work disclosed); brief, rules and full plan
   written; Heirloom's own plan and status moved to `docs/heirloom/`.
+- 26 Nov: brought in Heirloom up to 676e768 on request (still parked for new Toggle Wars work): security audit, Squads 2-of-3 upgrade authority, Chip in, the hardened program and the guided run. app/, programs/, scripts/, supabase/ are byte-identical to Heirloom main 676e768, which passed 348 program tests, vitest 2405/2405 and both builds. release.json pins the hardened devnet program (slot 526117721, upgraded through Squads proposal 1). Heirloom's plan and status refreshed under `docs/heirloom/`.
 
 ## Next up
 - Tumo: T1–T9 (plan §5): register, webinar questions, Discord, Flagsmith account and three environments, keys in

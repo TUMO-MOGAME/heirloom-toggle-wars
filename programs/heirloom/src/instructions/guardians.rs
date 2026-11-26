@@ -1062,6 +1062,8 @@ pub fn raise_objection_handler(
     // except a dismissed objection on a one-off claim or hardship.
     let ts = now()?;
     let objection = &mut ctx.accounts.objection;
+    // A sale objection that was upheld keeps cutting off older offers after this one (P5); the flag carries on.
+    let keep_cutoff = is_set(&objection.target) && kind == TargetKind::Sale && objection.sale_cutoff().is_some();
     if is_set(&objection.target) {
         let open = if kind == TargetKind::Fallback {
             objection.status == ObjectionStatus::Open
@@ -1124,7 +1126,7 @@ pub fn raise_objection_handler(
         reason_hash,
         raised_at: ts,
         status: ObjectionStatus::Open,
-        votes_uphold: 0,
+        votes_uphold: if keep_cutoff { SALE_CUTOFF_KEPT } else { 0 },
         votes_dismiss: 0,
         bump,
     });

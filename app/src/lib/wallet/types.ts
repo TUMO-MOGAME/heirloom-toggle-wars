@@ -31,4 +31,9 @@ export interface WalletApi {
   refreshBalances(): Promise<void>;
   /** Signs + sends a serialized (base64) Solana transaction with the active wallet (WDK or phone). */
   signAndSend(base64Tx: string): Promise<string>;
+  /**
+   * Runs `work` with another wallet stored on this device as the signer (the guided run's practice child), then puts
+   * the active wallet back. Who is signed in doesn't change. Demo: mock signatures, as for every wallet.
+   */
+  actAs<T>(address: Base58, work: () => Promise<T>): Promise<T>;
 }

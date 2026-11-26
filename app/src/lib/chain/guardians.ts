@@ -7,6 +7,7 @@ import { PublicKey, type Connection } from "@solana/web3.js";
 import type { AgentReport, Base58, Claim, Estate } from "../types";
 import type { AssetKind, FallbackDeathReport, FallbackRecipient, GuardiansSnapshot, Objection, ObjectionStatus, Seat, SeatApprovalItem, TargetKind } from "../guardians/types";
 import { eligibleSeats, MIN_WAIT_SECS, quorum, refuteWait, unlockWaitSecs } from "../death-rules";
+import { SALE_CUTOFF_KEPT } from "./sale-timing";
 import { openToPeople } from "../verdict";
 import { formatUsdt, shortAddress } from "../format";
 import { accountName, getCoder, getIdl } from "./idl";
@@ -228,6 +229,7 @@ export function assembleGuardians(
       raisedAt, status,
       lapsesAt: status !== "Open" ? null : voided ? raisedAt : kind === "Fallback" ? raisedAt + fallbackWait : objectionLapsesAt(raisedAt, estate.waitingPeriodSecs),
       votesUphold: countBits(num(o, "votes_uphold") & voting), votesDismiss: countBits(num(o, "votes_dismiss") & voting),
+      ...(kind === "Sale" && (num(o, "votes_uphold") & SALE_CUTOFF_KEPT) !== 0 ? { keepsSaleCutoff: true } : {}),
     };
   }).sort((a, b) => b.raisedAt - a.raisedAt);
 

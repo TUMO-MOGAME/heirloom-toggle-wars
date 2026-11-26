@@ -16,7 +16,7 @@ import {
 import { loadEnv, loadOrCreateWallets, wdk, send, sendCoSigned, explorer, log, disposeAll, connection, rpcUrl, type PersonaId } from "./_shared";
 
 loadEnv();
-const WAIT = 60; // seconds: the throwaway estate's waiting period (the program's minimum)
+const WAIT = 300; // seconds: the throwaway estate's waiting period (the minimum for a new estate, plan §22.1 P1)
 
 async function main() {
   const w = await loadOrCreateWallets();

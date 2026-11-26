@@ -110,6 +110,12 @@ describe("U1: I'm still here", () => {
     expect(ixs()[0].keys.map((m) => [m.pubkey.toBase58(), m.isWritable]).find(([k]) => k === estate)).toEqual([estate, true]);
   });
 
+  it("P2: a withdrawal writes the estate too, so the program records it as proof of life", async () => {
+    await createChainService().withdraw(estate, 1);
+    expect(names()).toEqual(["withdraw"]);
+    expect(ixs()[0].keys.map((m) => [m.pubkey.toBase58(), m.isWritable]).find(([k]) => k === estate)).toEqual([estate, true]);
+  });
+
   it.each(["pending", "submitted"])("%s: no success is reported", async (status) => {
     h.status = status;
     await expect(createChainService().heartbeat(estate)).rejects.toThrow(/^NotConfirmed: /);
@@ -134,6 +140,12 @@ describe("createEstateFromWill", () => {
   ])("%s signs nothing", async (_, verifiers, code) => {
     await expect(createChainService().createEstateFromWill({ ...draft, verifiers }, { practice: true })).rejects.toMatchObject({ code });
     expect(h.signed).toEqual([]);
+  });
+
+  it("P1: a new estate is signed with two trusted people for a passing and at least 5 minutes' wait", async () => {
+    await createChainService().createEstateFromWill({ ...draft, waitingPeriodDays: 0 }, { practice: true });
+    const create = getCoder().instruction.decode(Buffer.from(ixs()[0].data))!.data as { death_threshold: number; waiting_period_secs: unknown };
+    expect([create.death_threshold, Number(String(create.waiting_period_secs)) >= 300]).toEqual([2, true]);
   });
 
   it("practice mode makes the payee and writes the schedule", async () => {

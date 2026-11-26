@@ -40,6 +40,38 @@ pub fn end_rule_handler(ctx: Context<EndRule>) -> Result<()> {
     Ok(())
 }
 
+// ====================================================================== end_orphan_rule
+
+#[derive(Accounts)]
+pub struct EndOrphanRule<'info> {
+    /// Anyone (any wallet). A signer, so the call can be fee-sponsored (the sponsor is only the fee payer).
+    pub caller: Signer<'info>,
+
+    pub estate: Account<'info, Estate>,
+
+    #[account(mut, has_one = estate)]
+    pub rule: Account<'info, Rule>,
+
+    /// The rule's Beneficiary PDA.
+    #[account(seeds = [BENEFICIARY_SEED, estate.key().as_ref(), rule.beneficiary.as_ref()], bump = beneficiary_account.bump)]
+    pub beneficiary_account: Account<'info, Beneficiary>,
+}
+
+/// Anyone, estate Unlocked: ends a rule whose beneficiary the owner removed (P3). Nothing it could pay is payable
+/// (every payout checks the beneficiary is active, and nobody can add one back after the unlock), so its reserve
+/// goes to sweep_residual. No money moves here.
+pub fn end_orphan_rule_handler(ctx: Context<EndOrphanRule>) -> Result<()> {
+    require!(ctx.accounts.estate.status == EstateStatus::Unlocked, HeirloomError::BadStatus);
+    require!(!ctx.accounts.beneficiary_account.active, HeirloomError::BeneficiaryStillActive);
+    let ts = now()?;
+    let rule = &mut ctx.accounts.rule;
+    require!(ts <= rule.valid_until, HeirloomError::RuleExpired);
+    rule.valid_until = ts.saturating_sub(1);
+
+    emit!(RuleEnded { estate: rule.estate, rule: rule.key(), ts });
+    Ok(())
+}
+
 // ====================================================================== set_residual
 
 #[derive(Accounts)]

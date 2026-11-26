@@ -3,8 +3,148 @@
 > Read this first in any new session. The design is in [plan.md](plan.md); the on-chain contract is in [docs/program-spec.md](docs/program-spec.md).
 > Update this file at the end of every work session.
 
-**Last updated:** 2026-11-25 (spoken French call works on the demo; ElevenLabs side track done)
+**Last updated:** 2026-11-25 (finalist push, plan §22: hardened program live on devnet via Squads, guided run live on both sites)
 **Phase:** preparing for Dev3pack Global (27-29 Nov 2026; prework allowed and disclosed). Submitted to W3Node 13 Nov. Both sites deploy from `main`. The repo goes public on 27 Nov (Tumo).
+
+## FINALIST PUSH (25 Nov 2026): plan §22, LIVE on main b45b2a0+ (both sites checked)
+### Done
+- Head-judge review (Best App Overall, assuming public repo + current video): 68/100. Plan §22 targets 85.
+- Program P1-P5 live on devnet: Squads proposal 1 (2 of 3 approvals, 600 s time lock), upgrade tx
+  2xP4eycn8qL388fCi4gAtmgQS9V33Q9HSxo1ha8X4RF5tbx4BYs5JvgtB7YQYq399tpexNM8UyuiKfVxLwHbbuAx, slot 526117721.
+  Verifiable Docker build (solana-verifiable-build:3.1.10, built in /build): 1,128,608 bytes, sha256 03c1d583...,
+  solana-verify program hash 9d706ac2... = live program; 348/348 LiteSVM on those exact bytes. The program data was
+  grown by 20,480 bytes first with plain `solana program extend` (ExtendProgramChecked is not active on devnet:
+  InvalidInstructionData, so no authority is needed). Buffer 9Uquw6kS... consumed. Vault A66NhjuJ... funded 0.2 SOL
+  (for simulated fees; `squads.mjs propose --dry-run` now simulates the vault's upgrade first). release.json pinned.
+- Guided run (/start/guided) live on both sites. Devnet, fresh browser at 360 px, on the hardened program: 11/11 in
+  1:38, 8 transactions (README proof). Demo: ~22 s at 360 and 1280, axe clean, no sideways scroll, 0 errors.
+  Fixed on the way: the over-cap step read the sponsor's "simulation_failed" code before the program's
+  ExceedsPerClaimCap, so it showed Stopped (40b23b0, with a test).
+- Docs: README opens with "In 30 seconds" and the guided run; Best Agentic App entry docs/dev3pack-agentic.md (its
+  claims checked against the review route and program); submission names both tracks; numbers now 58 instructions,
+  348 program tests, 2,405 app tests; security-audit §1/§2/§4c record the third read and the new build.
+- Gate on b45b2a0: vitest 2405/2405, tsc app and scripts, eslint, mock and chain next build; npm audit --omit=dev 0.
+### Next up (Tumo)
+- 27 Nov: make the repo public; then the OtterSec verification (`solana-verify remote submit-job`, program hash
+  9d706ac2...) through the Squads path in the JUDGE-SCORE PUSH section below.
+- Record the video around the guided run (it shows every step's transaction in 1.5 minutes).
+- Enter Best Agentic App on the dashboard with docs/dev3pack-agentic.md.
+- Try the chip-in QR with Phantom on a real phone (devnet) and add the tx to the README.
+### Decisions log
+- 25 Nov (Tumo): "Upgrade it" for the P1-P5 program through Squads.
+- 25 Nov: one proposal for the upgrade only; the extend went outside Squads because devnet's loader still takes the
+  unchecked ExtendProgram (no authority). Re-check when ExtendProgramChecked activates: then extend goes through Squads.
+### Blockers
+- npm audit (all deps): 1 moderate in minimatch under typescript-eslint (dev only).
+
+## PROGRAM HARDENING (25 Nov 2026): plan §22.1 P1-P6 (merged and live, see above)
+### Done
+- P1 `create_estate` refuses death_threshold < 2 (DeathQuorumTooLow 6064) and a death wait < 300 s (DeathWaitTooShort
+  6065; new MIN_DEATH_WAITING_SECS, the 60 s MIN_WAITING_SECS floors unchanged). Existing estates keep stored values.
+- P2 `withdraw` is proof of life (record_proof_of_life, as heartbeat), Active or DeathPending; its estate is writable.
+- P3 new `end_orphan_rule` (anyone, Unlocked, the rule's beneficiary inactive; BeneficiaryStillActive 6066): no money
+  moves, sweep_residual stops reserving it. Both services end such rules before a sweep; Vault shows the sweepable sum.
+- P4 the hardship beneficiary never co-signs their sale; alone in the seats, the sale waits for the listing to end.
+- P5 a re-raised Sale objection keeps the upheld cut-off (SALE_CUTOFF_KEPT, bit 7 of votes_uphold; never a vote).
+- P6 not enforceable without a layout change or a trusted list: documented (spec, security-audit §5, `r5_p6_*`).
+- Program: 348/348 LiteSVM (12 new r5_p*; the 7 that test a fix failed first on the old binary). Local anchor build
+  911,568 bytes, sha256 b01cfdf3...; clippy 0 errors, 10 program warnings as triaged. IDL: + end_orphan_rule, withdraw
+  estate writable, 3 errors appended, CoSignerRequired text. App IDL updated; release.json NOT re-pinned.
+- App: vitest 2374/2374 (24 new), tsc app and scripts, eslint, mock and chain builds. Copy en/af/st/zu (af/st/zu
+  machine-assisted). Scripts create new estates with 300 s waits.
+### Next up
+- Lead: review and merge; verifiable (docker) build; the devnet ProgramData holds 1,112,672 bytes and the docker build
+  of the old code was 213 KB larger than the local one, so expect an `extend` before the Squads upgrade; then pin.
+- Until the pin, devnet writes fail closed on this branch (bundled IDL differs from release.json).
+### Decisions log
+- 25 Nov: the demo story's seeded mock estate keeps its 60 s demo-clock wait (it stands for an estate signed before
+  P1, as devnet's seeded estates do); a plan signed in the mock now gets at least 300 s.
+- 25 Nov: P5 keeps a cut-off at least as late as the upheld one: offers made on a relisting before a later objection
+  is decided must be placed again (no field holds the old time).
+### Blockers
+- None for the branch. Rehearsals with new estates now wait 300 s per death wait (slower runs).
+
+## GUIDED RUN (25 Nov 2026): plan §22.2 (merged and live, see above)
+### Done
+- /start has a first card "Run the whole story in one tab" -> /start/guided. Eleven steps: wallet, test money, a
+  ready-made editable plan (Lerato, university only, 50 a claim / 200 in total, 3 trusted people, 30-day wait; the chain
+  service signs a death quorum of 2), practice wallets, sign and lock, fund (120), Lerato's claim of 40 with the demo
+  fee statement (signed in the background by her practice wallet), the agent's review, owner approves, the program
+  pays the university, then a claim of 60 refused by the program (ExceedsPerClaimCap). Step list with progress, time,
+  per-step time and each transaction (Explorer on devnet, "(simulated)" on the demo). Steps after the plan run on
+  their own with a 1.2 s pause; Pause/Continue, Start over, Try again with plain words (429, starter refusals,
+  interrupted step), resume after reload (each step checks what already went through: never a second deposit/pay).
+- Background signing without switching persona: lib/wallet/signer.ts `withActiveSigner` + WalletApi `actAs` (a wallet
+  stored on this device signs with its own keys); mock service `withActor` (the app's refresh can't overwrite it).
+  submitClaim now also returns the agent's `reviewTx` (both services). The PIN typed in the run is kept in memory only
+  until the practice wallets are made.
+- Code: lib/guided/machine.ts (pure state machine), lib/guided/run.ts (steps), components/guided/guided-run.tsx,
+  app/(app)/start/guided/page.tsx (own route chunk; /start only links). Copy content/guided.ts + i18n/guided.ts (af/st/zu
+  machine-assisted). Screenshots: docs/screenshots/guided-run/.
+- Checks: vitest 2380/2380 (30 new: machine, run on the mock service and a chain-shaped service, copy slices); tsc app
+  and scripts; eslint; mock and chain next build. Playwright on the mock production build at 360 and 1280: 3 taps from
+  /start, 21 s run, axe clean (4 screens each), no sideways scroll, 0 console errors. Chain build smoke (no wallet made,
+  nothing sent): form, validation, axe, 360/1280 clean.
+### Next up
+- Lead: review, merge, deploy both sites, then one real devnet run on the live site (needs the server's agent key and
+  starter, which a local build here doesn't have) and record its links and time.
+- After r5/program merges: nothing to change (quorum 2, wait 30 days on chain).
+### Blockers
+- npm audit (all deps): 1 moderate advisory in minimatch under typescript-eslint (dev only, new advisory, lockfile
+  unchanged by this branch); `npm audit --omit=dev` is 0.
+
+## CHIP IN (25 Nov 2026): plan §21, merged into main with the audit pack
+### Done
+- Any Solana wallet adds USD₮ to a family's vault by QR code or link, no account: a Solana Pay transaction request
+  and a Solana Action (blink) on one endpoint, /api/chipin/<estate>; /actions.json maps /chip-in/* to it. The program
+  is unchanged (a plain transfer_checked into the vault ATA is a deposit). Specs read 25 Nov from the Solana Pay
+  SPEC.md and the Actions spec (solana-developers/solana-actions, v2.3).
+- Both services: chain finds chip-ins by the estate's tag (checked against the vault's token balances); the demo
+  simulates them ("Simulate a chip-in", marked Simulated) and its endpoint answers disabled / 403. Owner's Vault
+  screen: amount picker, QR code, Open in a wallet, copy link, share, recent chip-ins. Public page /chip-in/<estate>.
+  Copy in en, af, st, zu (af/st/zu machine-assisted). New tokens --qr-ink / --qr-paper (dark on light in both themes).
+- qrcode 1.5.4 is now a direct dependency (it was already installed through @solana-mobile/wallet-standard-mobile).
+- Devnet proof (lead's chain build on localhost, the seeded demo estate J6WCQ..., persona lerato, 5 test USD₮):
+  https://explorer.solana.com/tx/2fzoFmGwotpg44LnKipLsVtns6edP3GSnxGyoqw1xTU7ZGwpsXRgK8vJpPRcz7DEgxrAK4wA9Nm9UFEFWM5EPNn?cluster=devnet
+  (simulated ok first, 192 CU; found again by the estate's tag). Script: scripts/chipin-devnet.ts.
+- Gate on the branch: vitest 2350/2350 (28 new), tsc app and scripts, eslint, audit 0, mock and chain builds.
+### Next up
+- Lead: review, merge, deploy both sites; then on the live devnet site scan the code with Phantom (devnet) and
+  Solflare, and paste the /chip-in link into dial.to to check the blink. Not yet tried with a real phone wallet.
+- Wallet-facing words (label, message, errors) are English only: the endpoint doesn't know the reader's language.
+### Decisions log
+- 25 Nov: transaction request, not transfer request (the vault owner is an off-curve PDA). No fee sponsor: the
+  sender's wallet pays its own fee. One per-estate tag plus a per-request reference on the transfer, so the owner's
+  app lists every chip-in and one code can be found alone. Limit 10 000 USD₮ a chip-in; GET 60/min, POST 20/min per IP.
+  No program version gate on this route: it builds no program instruction.
+### Blockers
+- None for the branch. Spam that names the tag can push real chip-ins out of the 20 signatures read (they are still
+  in the vault; only the list is affected).
+
+## JUDGE-SCORE PUSH (25 Nov 2026): branch feat/audit-solana-pay
+Goal (Tumo): Technical 23, Solana 19, Impact 13, Completeness 10 on the Best App Overall rubric. Legal details parked.
+### Done
+- **Verifiable build live on devnet.** Built in `solanafoundation/solana-verifiable-build:3.1.10` (digest f71be5ca...) with
+  solana-verify's exact command; 1,112,672 bytes, file sha256 a77f6069..., program hash (zeros stripped) fce51b51...;
+  336/336 tests on that exact binary; upgraded slot 525979508 with CLI 4.3.2 (tx 4A25C3d3...); live dump matches.
+  Backup of the previous binary in WSL ~/heirloom-backups/. Cost: deployer 10.17 -> 9.56 SOL, then 9.46 after funding members.
+- **Hotfix pushed to main (136bc17, Tumo approved):** release.json re-pinned (the upgrade had put devnet writes in
+  fail-closed mode for about 15 min). All three sites /api/health ok, programCurrent true, sponsor on for devnet.
+- **Upgrade authority = Squads v4 2-of-3 multisig**, time lock 600 s, no config authority. Multisig SqjbTV4C...,
+  vault A66NhjuJ... (the authority). Members: deployer FHRjTDqQ..., member2 3sbgnaE3..., member3 X9ogSeUv... (keys in
+  WSL ~/.config/heirloom-squads/, 0.05 SOL each). Tooling: scripts/squads/ (own package.json, npm audit 0).
+  `build-program.sh deploy` now refuses by design; upgrades go through squads.mjs (propose, approve x2, execute).
+- **docs/security-audit.md** (threat model, 62 findings, clippy and cargo audit triage, verifiable build, Squads);
+  clippy: 0 errors, 10 program warnings all benign; cargo audit: 2 advisories, both only via litesvm (tests).
+- **docs/research.md** (problem evidence re-verified, law, competitors, uniqueness, weaknesses, testing plan, roadmap).
+  Fixed stats it caught: 150,000 estates a year (Master, NW4249) replaces the unverifiable 170,000 in business.md,
+  pitch.md, landing-facts.md; the 70-75% figure is working adults, not deaths.
+- README and submission link the audit and research; README "Why Solana" names the multisig.
+### Next up
+- Chip in merged (section above). After deploy: try Phantom/Solflare on devnet and dial.to; 360 px check.
+- 27 Nov after the repo is public: `solana-verify export-pda-tx` (Squads path) -> `squads.mjs propose-tx` ->
+  approve x2 -> execute -> `solana-verify remote submit-job --program-id b3PB... --uploader A66NhjuJ...` (devnet).
+- Tumo: video; interviews to fill research.md §7 (Impact 13 needs real results); git remote set-url to dev3pack-Hackathon.
 
 
 ## RELEASE (23 Nov 2026): plan §18 is live

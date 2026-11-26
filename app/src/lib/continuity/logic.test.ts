@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampWaiting, listingEnded, nextDueAfter, reservedByRules, residualRecipient, surplusOf } from "./logic";
+import { clampDeathWaiting, clampWaiting, listingEnded, nextDueAfter, orphanRules, reservedByRules, residualRecipient, surplusOf, sweepableSurplus } from "./logic";
 import { missingPeople, practicePayees, withWallets } from "./practice";
 import { openToPeople, outcomeOf, quorumFor } from "../verdict";
 import type { WillDraft } from "../types";
@@ -78,5 +78,29 @@ describe("practice setup", () => {
   it("makes a payee for every schedule and every kind, and none twice", () => {
     expect(practicePayees(draft.rules)).toEqual([{ name: "Westerford", kind: "School" }, { name: "Practice University", kind: "University" }]);
     expect(practicePayees(draft.rules, [{ name: "westerford", kind: "School" }, { name: "UCT", kind: "University" }])).toEqual([]);
+  });
+});
+
+describe("finalist hardening (plan §22.1)", () => {
+  it("P1: a new estate's death wait is at least 5 minutes and at most a year", () => {
+    expect([clampDeathWaiting(0), clampDeathWaiting(60), clampDeathWaiting(301), clampDeathWaiting(9e9)]).toEqual([300, 300, 301, 365 * 86_400]);
+  });
+
+  const people = [{ wallet: "kid", active: true }, { wallet: "gone", active: false }];
+  const rules = [
+    { beneficiary: "kid", validUntil: 200, lifetimeCap: 100n, spentTotal: 0n },
+    { beneficiary: "gone", validUntil: 200, lifetimeCap: 300n, spentTotal: 50n },
+    { beneficiary: "gone", validUntil: 50, lifetimeCap: 900n, spentTotal: 0n }, // ended already
+    { beneficiary: "unknown", validUntil: 200, lifetimeCap: 10n, spentTotal: 0n }, // no Beneficiary on record: the program can't end it
+  ];
+
+  it("P3: only a live rule of a removed beneficiary is an orphan", () => {
+    expect(orphanRules(rules, people, 100)).toEqual([rules[1]]);
+    expect(orphanRules(rules, people, 300)).toEqual([]);
+  });
+
+  it("P3: the sweep pays an orphan's reserve too", () => {
+    expect(surplusOf(1_000n, rules, 100)).toBe(640n);
+    expect(sweepableSurplus(1_000n, rules, people, 100)).toBe(890n);
   });
 });

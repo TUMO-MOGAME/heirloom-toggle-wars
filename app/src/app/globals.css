@@ -60,6 +60,10 @@
   --underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 C 80 4, 200 2, 297 6' fill='none' stroke='%23f0a35e' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
   color-scheme: dark;
 
+  /* QR codes: dark on light in both themes, the way phone cameras read them (Chip in). Not a theme colour. */
+  --qr-ink: #000000;
+  --qr-paper: #ffffff;
+
   /* Type scale (fluid, mobile first; sizes from the redesign, kept modest) */
   --step--1: 0.8125rem;
   --step-0: 1rem;
@@ -289,6 +293,8 @@
   --color-ink-2-inv: var(--ink-2-inv);
   --color-amber-inv: var(--amber-inv);
   --color-scrim: var(--scrim);
+  --color-qr-ink: var(--qr-ink);
+  --color-qr-paper: var(--qr-paper);
 
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   /* Work Sans, then Geist: Work Sans has no ₮, so the tugrik falls through to Geist's tiny tugrik face. */

@@ -103,8 +103,10 @@ describe("the waiting period the review shows is the one the estate gets", () =>
     expect(waitingSecsFor(30, "chain", "")).toBe(30 * 86_400);
   });
   it("mock: the demo clock", () => {
-    expect(waitingSecsFor(30, "mock")).toBe(60);
-    expect(waitingSecsFor(0, "mock")).toBe(5);
+    // A new estate's death wait is at least 5 minutes, on the demo clock too (plan §22.1 P1).
+    expect(waitingSecsFor(30, "mock")).toBe(300);
+    expect(waitingSecsFor(0, "mock")).toBe(300);
+    expect(waitingSecsFor(365, "mock")).toBe(730);
   });
   it("reads as seconds on a demo clock, never \"0 days\"", () => {
     expect(waitingText(300, words)).toBe("300 seconds (demo clock)");

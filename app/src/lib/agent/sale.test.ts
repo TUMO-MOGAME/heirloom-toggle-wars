@@ -155,6 +155,22 @@ describe("the honest sale", () => {
   });
 });
 
+describe("P4: the hardship beneficiary never co-signs the sale that pays them (plan §22.1)", () => {
+  it("as a trusted person, refused before anything is signed", async () => {
+    asset.hardshipBeneficiary = trusted.address;
+    await refused(await send(b64(wire([theSale()]))), 403, "CoSignerRequired");
+  });
+
+  it("holding the only seat left: the agent's lone path once the listing has ended", async () => {
+    asset.hardshipBeneficiary = trusted.address;
+    world.estate.verifiers = [trusted.address, PublicKey.default.toBase58(), PublicKey.default.toBase58()];
+    await refused(await send(undefined), 409, "ListingStillOpen");
+    asset.listingEnds = 1_000;
+    expect((await send(undefined)).status).toBe(200);
+    expect(h.alone).toHaveLength(1);
+  });
+});
+
 describe("not the sale that stands now", () => {
   const changed = async (t: TransactionInstruction, signers?: Keypair[]) =>
     refused(await send(b64(wire([t], signers ? { signers } : {}))), 409, "sale_changed");
