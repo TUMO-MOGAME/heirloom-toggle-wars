@@ -50,10 +50,11 @@ VARIANT_ENV_WEIGHT=0   # the variation's weight on the environment default, as i
 # Flagsmith's "count" is per-identity event count; its results compare the mean of that per visitor, which is
 # plan §2's "mean per visitor". (Flagsmith's "mean" aggregation averages each event's numeric `value` instead,
 # which our events don't carry, so it would be the wrong one.)
+# expected_direction is for the variation (blank) against control: the hypothesis (docs/preregistration.md) expects blank to be lower.
 METRICS=(
-  "plan_first_message|occurrence|up|increase"
-  "plan_reviewed|occurrence|up|increase"
-  "plan_signed|occurrence|up|increase"
+  "plan_first_message|occurrence|up|decrease"
+  "plan_reviewed|occurrence|up|decrease"
+  "plan_signed|occurrence|up|decrease"
   "plan_message|count|down|not_increase"
 )
 AA_METRICS=("plan_first_message|occurrence|up|increase")
@@ -79,6 +80,8 @@ fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TMP="$(mktemp -d)"
+# On Git Bash, give Windows programs (node, flagsmith.exe) a path they can open: /tmp/x → C:/Users/…/Temp/x.
+if command -v cygpath >/dev/null 2>&1; then TMP="$(cygpath -m "$TMP")"; fi
 trap 'rm -rf "$TMP"' EXIT
 umask 077
 
