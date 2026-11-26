@@ -37,7 +37,7 @@ AA_FLAG="aa_check"
 AA_CONTROL_VALUE="same"
 AA_VARIANT_VALUE="same"   # identical on purpose: an A/A check
 AA_VARIANT_KEY="twin"
-AA_NAME="A/A check"
+AA_NAME="${FLAGSMITH_AA_NAME:-A/A check}"   # a fresh A/A needs a new name (a completed one is never reused)
 AA_HYPOTHESIS="A/A check of the wiring (plan C11): two identical versions. Expect about 50/50 exposures, no sample ratio mismatch and no winner on plan_first_message."
 
 KILL_FLAG="experiments_enabled"

@@ -48,7 +48,20 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
     A/A experiment 781 on Development (flag aa_check 306265, variation twin 37500). Simulation's warehouse showed
     `pending_connection`: recheck before starting 778.
   - A/A experiment 781 started (20:48 UTC); 400 simulated visitors running against the local site (Development key).
-  - C10 launch checks running on the live site.
+  - C10 launch checks on the live site (Flagsmith blocked during the checks, so no test traffic reached Production):
+    360 px no sideways scroll on /try, /will, /, /privacy; plan builder works by touch; axe 0 violations (360 and
+    1280); Lighthouse desktop 99–100 perf, 100 a11y; mobile perf /will 90 and 82, / 94 and 89 (Heirloom's app
+    bundle; same for both arms). Fixed before the start: wrapped suggestion chips overflowed their pill border at
+    360 px (`chat-parts.tsx`, control arm only), commit 8224487, redeployed both sites, checked live.
+  - **A/A run 1 (experiment 781) invalid, found by the check itself:** Flagsmith counted 130 exposures from 400
+    visitors, all converters (100% in both arms). Cause: the simulator's leave step (`page.evaluate` with a function)
+    threw `__name is not defined` under tsx, silently, so no visitor flushed on leave; only visitors who stayed long
+    enough for the SDK's own timer were counted. The app was not at fault (a plain-JS probe flushed on hide). Fixed in
+    `scripts/simulate/simulate.ts` (string evaluate; flush errors now logged); checked with 8 visitors, every one
+    now sends its exposure. 781 completed (rollout control); snapshot kept in
+    `docs/results/aa-2026-11-26T21-22-08Z.json` as evidence. A/A run 2 = experiment 791, started 21:24 UTC, 400 new
+    simulated visitors.
+  - The same bug would have hit the Simulation experiment; it is fixed before that starts.
 
 ## Next up
 - Tumo: decide the prereg fixes (Blockers), then T4–T7: Flagsmith project + 3 environments + the managed warehouse in

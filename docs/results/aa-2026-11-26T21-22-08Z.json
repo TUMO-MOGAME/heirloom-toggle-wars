@@ -1,0 +1,250 @@
+{
+  "data": "test",
+  "notice": "Test traffic (Development): local runs and the A/A check. Not real visitors.",
+  "environment": "Development",
+  "mode": "aa",
+  "fetched_at": "2026-11-26T21:22:08.168Z",
+  "experiment": {
+    "id": 781,
+    "name": "A/A check",
+    "status": "running",
+    "started_at": "2026-11-26T20:48:54.672016Z",
+    "ended_at": null,
+    "flag": "aa_check"
+  },
+  "results_as_of": "2026-11-26T21:19:21.760909Z",
+  "results_final": false,
+  "notes": [
+    "results: refreshed less than 5 minutes ago; using the last computed figures",
+    "exposures: refreshed less than 5 minutes ago; using the last computed figures"
+  ],
+  "summary": {
+    "exposures": {
+      "twin": 63,
+      "control": 67
+    },
+    "excluded_identities": 0,
+    "srm": {
+      "configured_split": {
+        "twin": 0.5,
+        "control": 0.5
+      },
+      "ours": {
+        "p_value": 0.7257233449947523,
+        "total": 130,
+        "checked": true
+      },
+      "flagsmith_p_value": null,
+      "warning": false,
+      "threshold": 0.001
+    },
+    "metrics": [
+      {
+        "metric_id": 782,
+        "name": "plan_first_message",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "increase",
+        "role": "primary",
+        "versions": {
+          "twin": {
+            "identities": 63,
+            "total": 63,
+            "conversion_rate": 1,
+            "collecting_data": false
+          },
+          "control": {
+            "identities": 67,
+            "total": 67,
+            "conversion_rate": 1,
+            "collecting_data": false
+          }
+        },
+        "comparisons": {
+          "twin": {
+            "flagsmith": {
+              "lift": 0,
+              "ci_low": 0,
+              "ci_high": 0,
+              "chance_to_win": 0.5
+            },
+            "ours": {
+              "method": "Beta-Binomial, Beta(1,1) prior, Monte Carlo",
+              "control_mean": 1,
+              "treatment_mean": 1,
+              "lift": 0,
+              "ci95_low": -0.0461912250590448,
+              "ci95_high": 0.044080948431624335,
+              "chance_to_beat_control": 0.48488,
+              "expected_loss_ship_treatment": 0.007874599407304082,
+              "expected_loss_keep_control": 0.006942925023453159
+            }
+          }
+        }
+      }
+    ],
+    "decision_rule_reading": "A/A pass on the primary metric: no winner",
+    "reading_note": "A reading, not a decision: plan §2 decides only at the stop (Sat 28 Nov 14:00 SAST). Expected loss and our interval come from this script; Flagsmith's own numbers are under comparisons.*.flagsmith."
+  },
+  "flagsmith_raw": {
+    "experiment": {
+      "id": 781,
+      "feature": {
+        "id": 306265,
+        "name": "aa_check",
+        "type": "MULTIVARIATE",
+        "initial_value": "same",
+        "multivariate_options": [
+          {
+            "id": 37500,
+            "uuid": "89153d60-19e1-40b7-862c-b45f5717fd20",
+            "type": "unicode",
+            "integer_value": null,
+            "string_value": "same",
+            "boolean_value": null,
+            "default_percentage_allocation": 0,
+            "key": "twin"
+          }
+        ]
+      },
+      "name": "A/A check",
+      "hypothesis": "A/A check of the wiring (plan C11): two identical versions. Expect about 50/50 exposures, no sample ratio mismatch and no winner on plan_first_message.",
+      "status": "running",
+      "metrics": [
+        {
+          "id": 887,
+          "metric": 782,
+          "metric_name": "plan_first_message",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "increase",
+          "created_at": "2026-11-26T20:48:17.993282Z"
+        }
+      ],
+      "experiment_rollout": {
+        "enabled": true,
+        "rollout_percentage": 100,
+        "feature_state_value": {
+          "type": "string",
+          "value": "same"
+        },
+        "multivariate_feature_state_values": [
+          {
+            "multivariate_feature_option": 37500,
+            "percentage_allocation": 50
+          }
+        ],
+        "audience": {
+          "match": "any",
+          "segments": []
+        }
+      },
+      "created_at": "2026-11-26T20:48:17.991054Z",
+      "updated_at": "2026-11-26T20:48:54.675409Z",
+      "started_at": "2026-11-26T20:48:54.672016Z",
+      "ended_at": null,
+      "rollout_decision": null,
+      "rollout_variant": null
+    },
+    "results": {
+      "as_of": "2026-11-26T21:19:21.760909Z",
+      "last_error_at": null,
+      "refresh_requested_at": "2026-11-26T21:19:21.603459Z",
+      "payload": {
+        "metrics": [
+          {
+            "variants": {
+              "twin": {
+                "n": 63,
+                "sum": 63,
+                "sum_squares": 63
+              },
+              "control": {
+                "n": 67,
+                "sum": 67,
+                "sum_squares": 67
+              }
+            },
+            "inference": {
+              "twin": {
+                "lift": 0,
+                "ci_low": 0,
+                "ci_high": 0,
+                "chance_to_win": 0.5
+              }
+            },
+            "metric_id": 782,
+            "conversions_timeseries": {
+              "points": [
+                {
+                  "bucket": "2026-11-26T20:00:00+00:00",
+                  "converted_identities": {
+                    "twin": 28,
+                    "control": 22
+                  }
+                },
+                {
+                  "bucket": "2026-11-26T21:00:00+00:00",
+                  "converted_identities": {
+                    "twin": 35,
+                    "control": 45
+                  }
+                }
+              ],
+              "granularity": "hour"
+            }
+          }
+        ],
+        "srm_p_value": null,
+        "exposures_timeseries": {
+          "points": [
+            {
+              "bucket": "2026-11-26T20:00:00+00:00",
+              "new_identities": {
+                "twin": 28,
+                "control": 22
+              }
+            },
+            {
+              "bucket": "2026-11-26T21:00:00+00:00",
+              "new_identities": {
+                "twin": 35,
+                "control": 45
+              }
+            }
+          ],
+          "granularity": "hour"
+        }
+      },
+      "is_final": false
+    },
+    "exposures": {
+      "as_of": "2026-11-26T21:19:22.049307Z",
+      "last_error_at": null,
+      "refresh_requested_at": "2026-11-26T21:19:21.993880Z",
+      "payload": {
+        "timeseries": {
+          "points": [
+            {
+              "bucket": "2026-11-26T20:00:00+00:00",
+              "new_identities": {
+                "twin": 28,
+                "control": 22
+              }
+            },
+            {
+              "bucket": "2026-11-26T21:00:00+00:00",
+              "new_identities": {
+                "twin": 35,
+                "control": 45
+              }
+            }
+          ],
+          "granularity": "hour"
+        },
+        "excluded_identities": 0
+      },
+      "is_final": false
+    }
+  }
+}

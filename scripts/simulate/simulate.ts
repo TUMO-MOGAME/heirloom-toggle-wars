@@ -136,6 +136,8 @@ interface VisitorLog {
   flushWaitMs: number;
   durationMs: number;
   error?: string;
+  /** Set when the leave step (hidden + pagehide) failed, so the flush can't be trusted for this visitor. */
+  flushError?: string;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -245,15 +247,20 @@ async function visit(browser: Browser, args: Args, index: number, plannedAtMs: n
     // until Flagsmith has been quiet for 1.5 s (at most 10 s).
     const flushStart = Date.now();
     try {
-      await page.evaluate(() => {
+      // A string, not a function: tsx/esbuild adds a `__name` helper to functions, which doesn't exist in the page,
+      // so a function here threw and nothing was flushed (found in the A/A run of 26 Nov; see status.md).
+      await page.evaluate(`(() => {
         Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
         Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
         document.dispatchEvent(new Event("visibilitychange"));
         window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: false }));
-      });
+      })()`);
       lastActivity = Math.max(lastActivity, Date.now());
       while (Date.now() - flushStart < 10_000 && (inFlight > 0 || Date.now() - lastActivity < 1_500)) await sleep(100);
-    } catch { /* the page may already be gone */ }
+    } catch (e) {
+      // The page may already be gone; anything else is logged, never swallowed.
+      log.flushError = (e as Error).message.split("\n")[0].slice(0, 200);
+    }
     log.flushWaitMs = Date.now() - flushStart;
     await context.close().catch(() => undefined);
     log.durationMs = Date.now() - t0;
