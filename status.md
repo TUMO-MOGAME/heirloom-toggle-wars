@@ -87,6 +87,10 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
     commands and privacy test link filled; submission draft results and screenshots filled. All four built-in
     simulator effects fall inside Flagsmith's 95% intervals. Left for after the stop: the final Production line, the
     "shipped" screenshot, the video link and badges (marked `FINAL`/`TODO` in the files).
+  - Fri ~17:00, §5a wiring check on Production (identity lookups only, no exposures or events, so the real experiment
+    is untouched): 4 test ids × 3 lookups each, every id kept its version (2 control, 2 blank: both sides served);
+    flag MULTIVARIATE and on; kill switch on. Exposures 50/50, conversions arriving and SRM can't be checked on
+    Production with 1 real visitor; they passed on the same build in the Simulation experiment.
 
 ## Next up
 - Phase 2 is done (C7–C11 ✅; A/A passed on run 2, `docs/results/aa-check.md`).
