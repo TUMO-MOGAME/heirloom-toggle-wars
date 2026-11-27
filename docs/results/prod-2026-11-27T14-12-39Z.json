@@ -1,0 +1,297 @@
+{
+  "data": "real",
+  "notice": "Real visitors (Production).",
+  "environment": "Production",
+  "mode": "prod",
+  "fetched_at": "2026-11-27T14:12:39.402Z",
+  "experiment": {
+    "id": 780,
+    "name": "Worked examples in the plan builder",
+    "status": "running",
+    "started_at": "2026-11-27T07:28:21.313390Z",
+    "ended_at": null,
+    "flag": "plan_builder_examples"
+  },
+  "results_as_of": "2026-11-27T14:12:38.668813Z",
+  "results_final": false,
+  "notes": [],
+  "summary": {
+    "exposures": {
+      "control": 1
+    },
+    "excluded_identities": 0,
+    "srm": {
+      "configured_split": {
+        "blank": 0.5,
+        "control": 0.5
+      },
+      "ours": {
+        "p_value": 0.31731101247206933,
+        "total": 1,
+        "checked": false
+      },
+      "flagsmith_p_value": null,
+      "warning": false,
+      "threshold": 0.001
+    },
+    "metrics": [
+      {
+        "metric_id": 801,
+        "name": "plan_first_message",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "primary",
+        "versions": {
+          "control": {
+            "identities": 1,
+            "total": 0,
+            "conversion_rate": 0,
+            "collecting_data": true
+          }
+        },
+        "comparisons": {}
+      },
+      {
+        "metric_id": 802,
+        "name": "plan_reviewed",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "secondary",
+        "versions": {
+          "control": {
+            "identities": 1,
+            "total": 0,
+            "conversion_rate": 0,
+            "collecting_data": true
+          }
+        },
+        "comparisons": {}
+      },
+      {
+        "metric_id": 803,
+        "name": "plan_signed",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "secondary",
+        "versions": {
+          "control": {
+            "identities": 1,
+            "total": 0,
+            "conversion_rate": 0,
+            "collecting_data": true
+          }
+        },
+        "comparisons": {}
+      },
+      {
+        "metric_id": 804,
+        "name": "plan_message",
+        "aggregation": "count",
+        "direction": "down",
+        "expected_direction": "not_increase",
+        "role": "guardrail",
+        "versions": {
+          "control": {
+            "identities": 1,
+            "total": 0,
+            "mean_per_visitor": 0,
+            "collecting_data": true
+          }
+        },
+        "comparisons": {}
+      }
+    ],
+    "decision_rule_reading": "no results yet (collecting data)",
+    "reading_note": "A reading, not a decision: plan §2 decides only at the stop (Sat 28 Nov 14:00 SAST). Expected loss and our interval come from this script; Flagsmith's own numbers are under comparisons.*.flagsmith."
+  },
+  "flagsmith_raw": {
+    "experiment": {
+      "id": 780,
+      "feature": {
+        "id": 306251,
+        "name": "plan_builder_examples",
+        "type": "MULTIVARIATE",
+        "initial_value": "control",
+        "multivariate_options": [
+          {
+            "id": 37487,
+            "uuid": "5092b617-0b88-4f61-a703-721aa87c7a31",
+            "type": "unicode",
+            "integer_value": null,
+            "string_value": "blank",
+            "boolean_value": null,
+            "default_percentage_allocation": 0,
+            "key": "blank"
+          }
+        ]
+      },
+      "name": "Worked examples in the plan builder",
+      "hypothesis": "People don't know how to describe an estate plan. Seeing worked examples makes the first step easy, so with examples at least 10% more visitors send a first message, and more reach 'review my plan'. Pre-registered: docs/preregistration.md (tag prereg).",
+      "status": "running",
+      "metrics": [
+        {
+          "id": 883,
+          "metric": 801,
+          "metric_name": "plan_first_message",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:48:03.502763Z"
+        },
+        {
+          "id": 884,
+          "metric": 802,
+          "metric_name": "plan_reviewed",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:48:03.502781Z"
+        },
+        {
+          "id": 885,
+          "metric": 803,
+          "metric_name": "plan_signed",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:48:03.502792Z"
+        },
+        {
+          "id": 886,
+          "metric": 804,
+          "metric_name": "plan_message",
+          "aggregation": "count",
+          "direction": "down",
+          "expected_direction": "not_increase",
+          "created_at": "2026-11-26T20:48:03.502802Z"
+        }
+      ],
+      "experiment_rollout": {
+        "enabled": true,
+        "rollout_percentage": 100,
+        "feature_state_value": {
+          "type": "string",
+          "value": "control"
+        },
+        "multivariate_feature_state_values": [
+          {
+            "multivariate_feature_option": 37487,
+            "percentage_allocation": 50
+          }
+        ],
+        "audience": {
+          "match": "any",
+          "segments": []
+        }
+      },
+      "created_at": "2026-11-26T20:48:03.499551Z",
+      "updated_at": "2026-11-27T07:28:21.317918Z",
+      "started_at": "2026-11-27T07:28:21.313390Z",
+      "ended_at": null,
+      "rollout_decision": null,
+      "rollout_variant": null
+    },
+    "results": {
+      "as_of": "2026-11-27T14:12:38.668813Z",
+      "last_error_at": null,
+      "refresh_requested_at": "2026-11-27T14:12:38.470734Z",
+      "payload": {
+        "metrics": [
+          {
+            "variants": {
+              "control": {
+                "n": 1,
+                "sum": 0,
+                "sum_squares": 0
+              }
+            },
+            "inference": {},
+            "metric_id": 801,
+            "conversions_timeseries": {
+              "points": [],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "control": {
+                "n": 1,
+                "sum": 0,
+                "sum_squares": 0
+              }
+            },
+            "inference": {},
+            "metric_id": 802,
+            "conversions_timeseries": {
+              "points": [],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "control": {
+                "n": 1,
+                "sum": 0,
+                "sum_squares": 0
+              }
+            },
+            "inference": {},
+            "metric_id": 803,
+            "conversions_timeseries": {
+              "points": [],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "control": {
+                "n": 1,
+                "sum": 0,
+                "sum_squares": 0
+              }
+            },
+            "inference": {},
+            "metric_id": 804,
+            "conversions_timeseries": null
+          }
+        ],
+        "srm_p_value": null,
+        "exposures_timeseries": {
+          "points": [
+            {
+              "bucket": "2026-11-27T09:00:00+00:00",
+              "new_identities": {
+                "control": 1
+              }
+            }
+          ],
+          "granularity": "hour"
+        }
+      },
+      "is_final": false
+    },
+    "exposures": {
+      "as_of": "2026-11-27T14:12:38.943122Z",
+      "last_error_at": null,
+      "refresh_requested_at": "2026-11-27T14:12:38.819072Z",
+      "payload": {
+        "timeseries": {
+          "points": [
+            {
+              "bucket": "2026-11-27T09:00:00+00:00",
+              "new_identities": {
+                "control": 1
+              }
+            }
+          ],
+          "granularity": "hour"
+        },
+        "excluded_identities": 0
+      },
+      "is_final": false
+    }
+  }
+}

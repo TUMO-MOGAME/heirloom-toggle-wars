@@ -72,6 +72,18 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
   - Simulator moved to GitHub Actions (`.github/workflows/simulate.yml`): two runners × 1,000 visitors over 4 hours,
     against the Simulation site only, no secrets. Run logs kept as workflow artifacts.
 
+  - Fri 16:12 SAST: GitHub Actions run 45960124675 finished (4 h, success): 2 × 1,000 simulated visitors, 0 errors,
+    0 flush errors. Logs kept: `scripts/simulate/runs/2026-11-27T07-41-29-303Z.json` (a) and `…07-41-32-694Z.json`
+    (b). Snapshots: `docs/results/sim-2026-11-27T14-12-28Z.json` (simulated: blank 1043 / control 961, SRM p = 0.067;
+    first message blank 42.6% vs control 62.1%, lift −31.5%, interval −37.4% to −25.6%, chance blank wins 0%) and
+    `docs/results/prod-2026-11-27T14-12-39Z.json` (real: 1 visitor, collecting data).
+  - **Decision (Tumo, Fri 16:15):** real visitors can't be found in time, so the **Simulation is the headline result**,
+    labelled simulated everywhere. Production still runs to the pre-registered stop (Sat 14:00) and is reported
+    honestly with whatever it collects (most likely "not enough data"; the decision rule then keeps `control`). Nothing
+    in the pre-registration changes. The README must say plainly that the simulation recovers the effect built into
+    the simulator's model (~39% for control, docs/simulation.md): it proves the pipeline finds a known effect, not
+    how people behave.
+
 ## Next up
 - Phase 2 is done (C7–C11 ✅; A/A passed on run 2, `docs/results/aa-check.md`).
 - Phase 3 (Fri 27 Nov):
