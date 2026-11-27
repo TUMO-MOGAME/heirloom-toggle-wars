@@ -1,0 +1,436 @@
+{
+  "data": "simulated",
+  "notice": "SIMULATED: synthetic visitors from scripts/simulate (docs/simulation.md). Never add to the real results.",
+  "environment": "Simulation",
+  "mode": "sim",
+  "fetched_at": "2026-11-27T07:43:36.929Z",
+  "experiment": {
+    "id": 778,
+    "name": "Worked examples in the plan builder",
+    "status": "running",
+    "started_at": "2026-11-27T07:28:43.580405Z",
+    "ended_at": null,
+    "flag": "plan_builder_examples"
+  },
+  "results_as_of": "2026-11-27T07:43:33.918617Z",
+  "results_final": false,
+  "notes": [],
+  "summary": {
+    "exposures": {
+      "blank": 13,
+      "control": 7
+    },
+    "excluded_identities": 0,
+    "srm": {
+      "configured_split": {
+        "blank": 0.5,
+        "control": 0.5
+      },
+      "ours": {
+        "p_value": 0.1797127007898613,
+        "total": 20,
+        "checked": false
+      },
+      "flagsmith_p_value": null,
+      "warning": false,
+      "threshold": 0.001
+    },
+    "metrics": [
+      {
+        "metric_id": 796,
+        "name": "plan_first_message",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "primary",
+        "versions": {
+          "blank": {
+            "identities": 13,
+            "total": 7,
+            "conversion_rate": 0.5384615384615384,
+            "collecting_data": true
+          },
+          "control": {
+            "identities": 7,
+            "total": 6,
+            "conversion_rate": 0.8571428571428571,
+            "collecting_data": true
+          }
+        },
+        "comparisons": {
+          "blank": {
+            "flagsmith": null,
+            "ours": {
+              "method": "Beta-Binomial, Beta(1,1) prior, Monte Carlo",
+              "control_mean": 0.8571428571428571,
+              "treatment_mean": 0.5384615384615384,
+              "lift": -0.3717948717948718,
+              "ci95_low": -0.6467975325240822,
+              "ci95_high": 0.2547969410035957,
+              "chance_to_beat_control": 0.09489,
+              "expected_loss_ship_treatment": 0.2531044174330533,
+              "expected_loss_keep_control": 0.009151051653548016
+            }
+          }
+        }
+      },
+      {
+        "metric_id": 797,
+        "name": "plan_reviewed",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "secondary",
+        "versions": {
+          "blank": {
+            "identities": 13,
+            "total": 4,
+            "conversion_rate": 0.3076923076923077,
+            "collecting_data": true
+          },
+          "control": {
+            "identities": 7,
+            "total": 3,
+            "conversion_rate": 0.42857142857142855,
+            "collecting_data": true
+          }
+        },
+        "comparisons": {
+          "blank": {
+            "flagsmith": null,
+            "ours": {
+              "method": "Beta-Binomial, Beta(1,1) prior, Monte Carlo",
+              "control_mean": 0.42857142857142855,
+              "treatment_mean": 0.3076923076923077,
+              "lift": -0.282051282051282,
+              "ci95_low": -0.747443824481825,
+              "ci95_high": 1.4024356982068653,
+              "chance_to_beat_control": 0.29156,
+              "expected_loss_ship_treatment": 0.14617771192129997,
+              "expected_loss_keep_control": 0.035545452027667984
+            }
+          }
+        }
+      },
+      {
+        "metric_id": 798,
+        "name": "plan_signed",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "secondary",
+        "versions": {
+          "blank": {
+            "identities": 13,
+            "total": 3,
+            "conversion_rate": 0.23076923076923078,
+            "collecting_data": true
+          },
+          "control": {
+            "identities": 7,
+            "total": 2,
+            "conversion_rate": 0.2857142857142857,
+            "collecting_data": true
+          }
+        },
+        "comparisons": {
+          "blank": {
+            "flagsmith": null,
+            "ours": {
+              "method": "Beta-Binomial, Beta(1,1) prior, Monte Carlo",
+              "control_mean": 0.2857142857142857,
+              "treatment_mean": 0.23076923076923078,
+              "lift": -0.1923076923076922,
+              "ci95_low": -0.7857592472406616,
+              "ci95_high": 2.4876111733341144,
+              "chance_to_beat_control": 0.370195,
+              "expected_loss_ship_treatment": 0.11176788384432572,
+              "expected_loss_keep_control": 0.04511566652665766
+            }
+          }
+        }
+      },
+      {
+        "metric_id": 799,
+        "name": "plan_message",
+        "aggregation": "count",
+        "direction": "down",
+        "expected_direction": "not_increase",
+        "role": "guardrail",
+        "versions": {
+          "blank": {
+            "identities": 13,
+            "total": 15,
+            "mean_per_visitor": 1.1538461538461537,
+            "collecting_data": true
+          },
+          "control": {
+            "identities": 7,
+            "total": 12,
+            "mean_per_visitor": 1.7142857142857142,
+            "collecting_data": true
+          }
+        },
+        "comparisons": {
+          "blank": {
+            "flagsmith": null,
+            "ours": {
+              "method": "normal approximation to each mean, Monte Carlo",
+              "control_mean": 1.7142857142857142,
+              "treatment_mean": 1.1538461538461537,
+              "lift": -0.3269230769230769,
+              "ci95_low": -0.7712425485597049,
+              "ci95_high": 0.6807323404618074,
+              "chance_to_beat_control": 0.824085,
+              "expected_loss_ship_treatment": 0.05724035060645025,
+              "expected_loss_keep_control": 0.6178268323213167
+            }
+          }
+        }
+      }
+    ],
+    "decision_rule_reading": "collecting data: below Flagsmith's floor (50 identities and 5 conversions per version)",
+    "reading_note": "A reading, not a decision: plan §2 decides only at the stop (Sat 28 Nov 14:00 SAST). Expected loss and our interval come from this script; Flagsmith's own numbers are under comparisons.*.flagsmith."
+  },
+  "flagsmith_raw": {
+    "experiment": {
+      "id": 778,
+      "feature": {
+        "id": 306251,
+        "name": "plan_builder_examples",
+        "type": "MULTIVARIATE",
+        "initial_value": "control",
+        "multivariate_options": [
+          {
+            "id": 37487,
+            "uuid": "5092b617-0b88-4f61-a703-721aa87c7a31",
+            "type": "unicode",
+            "integer_value": null,
+            "string_value": "blank",
+            "boolean_value": null,
+            "default_percentage_allocation": 0,
+            "key": "blank"
+          }
+        ]
+      },
+      "name": "Worked examples in the plan builder",
+      "hypothesis": "People don't know how to describe an estate plan. Seeing worked examples makes the first step easy, so with examples at least 10% more visitors send a first message, and more reach 'review my plan'. Pre-registered: docs/preregistration.md (tag prereg).",
+      "status": "running",
+      "metrics": [
+        {
+          "id": 878,
+          "metric": 796,
+          "metric_name": "plan_first_message",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:47:45.402466Z"
+        },
+        {
+          "id": 879,
+          "metric": 797,
+          "metric_name": "plan_reviewed",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:47:45.402493Z"
+        },
+        {
+          "id": 880,
+          "metric": 798,
+          "metric_name": "plan_signed",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:47:45.402511Z"
+        },
+        {
+          "id": 881,
+          "metric": 799,
+          "metric_name": "plan_message",
+          "aggregation": "count",
+          "direction": "down",
+          "expected_direction": "not_increase",
+          "created_at": "2026-11-26T20:47:45.402529Z"
+        }
+      ],
+      "experiment_rollout": {
+        "enabled": true,
+        "rollout_percentage": 100,
+        "feature_state_value": {
+          "type": "string",
+          "value": "control"
+        },
+        "multivariate_feature_state_values": [
+          {
+            "multivariate_feature_option": 37487,
+            "percentage_allocation": 50
+          }
+        ],
+        "audience": {
+          "match": "any",
+          "segments": []
+        }
+      },
+      "created_at": "2026-11-26T20:47:45.395155Z",
+      "updated_at": "2026-11-27T07:28:43.584212Z",
+      "started_at": "2026-11-27T07:28:43.580405Z",
+      "ended_at": null,
+      "rollout_decision": null,
+      "rollout_variant": null
+    },
+    "results": {
+      "as_of": "2026-11-27T07:43:33.918617Z",
+      "last_error_at": null,
+      "refresh_requested_at": "2026-11-27T07:43:33.873736Z",
+      "payload": {
+        "metrics": [
+          {
+            "variants": {
+              "blank": {
+                "n": 13,
+                "sum": 7,
+                "sum_squares": 7
+              },
+              "control": {
+                "n": 7,
+                "sum": 6,
+                "sum_squares": 6
+              }
+            },
+            "inference": {
+              "blank": null
+            },
+            "metric_id": 796,
+            "conversions_timeseries": {
+              "points": [
+                {
+                  "bucket": "2026-11-27T07:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 7,
+                    "control": 6
+                  }
+                }
+              ],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "blank": {
+                "n": 13,
+                "sum": 4,
+                "sum_squares": 4
+              },
+              "control": {
+                "n": 7,
+                "sum": 3,
+                "sum_squares": 3
+              }
+            },
+            "inference": {
+              "blank": null
+            },
+            "metric_id": 797,
+            "conversions_timeseries": {
+              "points": [
+                {
+                  "bucket": "2026-11-27T07:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 4,
+                    "control": 3
+                  }
+                }
+              ],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "blank": {
+                "n": 13,
+                "sum": 3,
+                "sum_squares": 3
+              },
+              "control": {
+                "n": 7,
+                "sum": 2,
+                "sum_squares": 2
+              }
+            },
+            "inference": {
+              "blank": null
+            },
+            "metric_id": 798,
+            "conversions_timeseries": {
+              "points": [
+                {
+                  "bucket": "2026-11-27T07:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 3,
+                    "control": 2
+                  }
+                }
+              ],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "blank": {
+                "n": 13,
+                "sum": 15,
+                "sum_squares": 39
+              },
+              "control": {
+                "n": 7,
+                "sum": 12,
+                "sum_squares": 30
+              }
+            },
+            "inference": {
+              "blank": null
+            },
+            "metric_id": 799,
+            "conversions_timeseries": null
+          }
+        ],
+        "srm_p_value": null,
+        "exposures_timeseries": {
+          "points": [
+            {
+              "bucket": "2026-11-27T07:00:00+00:00",
+              "new_identities": {
+                "blank": 13,
+                "control": 7
+              }
+            }
+          ],
+          "granularity": "hour"
+        }
+      },
+      "is_final": false
+    },
+    "exposures": {
+      "as_of": "2026-11-27T07:43:34.662359Z",
+      "last_error_at": null,
+      "refresh_requested_at": "2026-11-27T07:43:34.604341Z",
+      "payload": {
+        "timeseries": {
+          "points": [
+            {
+              "bucket": "2026-11-27T07:00:00+00:00",
+              "new_identities": {
+                "blank": 13,
+                "control": 7
+              }
+            }
+          ],
+          "granularity": "hour"
+        },
+        "excluded_identities": 0
+      },
+      "is_final": false
+    }
+  }
+}
