@@ -1,0 +1,250 @@
+{
+  "label": "SIMULATED: scripted visitors, not real people. Never add these to Production results.",
+  "simulated": true,
+  "smoke": false,
+  "complete": true,
+  "environment": "sim",
+  "target": "https://heirloom-toggle-wars-simulation.vercel.app/try",
+  "seed": "sim-warmup-2026-11-27",
+  "visitors": 3,
+  "overMs": 0,
+  "concurrency": 3,
+  "startedAt": "2026-11-27T07:29:11.646Z",
+  "finishedAt": "2026-11-27T07:29:39.923Z",
+  "method": "docs/simulation.md",
+  "model": {
+    "types": {
+      "unsure": 0.5,
+      "knows": 0.3,
+      "browser": 0.2
+    },
+    "first": {
+      "unsureTapsIfShown": 0.7,
+      "unsureWritesIfNone": 0.35,
+      "knowsTypes": 0.85,
+      "browserSends": 0.1
+    },
+    "review": {
+      "unsure": 0.5,
+      "knows": 0.75,
+      "browser": 0.2
+    },
+    "sign": {
+      "unsure": 0.6,
+      "knows": 0.8,
+      "browser": 0.3
+    },
+    "messages": {
+      "unsureTapping": [
+        3,
+        3
+      ],
+      "unsureTyping": [
+        3,
+        4
+      ],
+      "knows": [
+        2,
+        3
+      ],
+      "browser": [
+        2,
+        2
+      ]
+    },
+    "phoneShare": 0.6,
+    "viewports": {
+      "phone": {
+        "width": 360,
+        "height": 780
+      },
+      "desktop": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    "pauses": {
+      "arrive": [
+        2000,
+        5000
+      ],
+      "consent": [
+        500,
+        1500
+      ],
+      "turn": [
+        1200,
+        4000
+      ],
+      "review": [
+        3000,
+        8000
+      ]
+    }
+  },
+  "note": "Counts are by visitor type and by what was on screen (examples shown or not). The simulator never reads the flag value; the versions themselves are in the Simulation environment in Flagsmith.",
+  "summary": {
+    "total": {
+      "visitors": 3,
+      "firstMessage": 1,
+      "reviewed": 1,
+      "signed": 1,
+      "messages": 3,
+      "signBlocked": 0,
+      "reviewNotOffered": 0,
+      "errors": 0
+    },
+    "byType": {
+      "unsure": {
+        "visitors": 1,
+        "firstMessage": 0,
+        "reviewed": 0,
+        "signed": 0,
+        "messages": 0,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      },
+      "knows": {
+        "visitors": 1,
+        "firstMessage": 1,
+        "reviewed": 1,
+        "signed": 1,
+        "messages": 3,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      },
+      "browser": {
+        "visitors": 1,
+        "firstMessage": 0,
+        "reviewed": 0,
+        "signed": 0,
+        "messages": 0,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      }
+    },
+    "bySeen": {
+      "shown": {
+        "visitors": 1,
+        "firstMessage": 1,
+        "reviewed": 1,
+        "signed": 1,
+        "messages": 3,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      },
+      "not-shown": {
+        "visitors": 1,
+        "firstMessage": 0,
+        "reviewed": 0,
+        "signed": 0,
+        "messages": 0,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      },
+      "not-looked": {
+        "visitors": 1,
+        "firstMessage": 0,
+        "reviewed": 0,
+        "signed": 0,
+        "messages": 0,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      }
+    },
+    "byTypeAndSeen": {
+      "knows/shown": {
+        "visitors": 1,
+        "firstMessage": 1,
+        "reviewed": 1,
+        "signed": 1,
+        "messages": 3,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      },
+      "browser/not-looked": {
+        "visitors": 1,
+        "firstMessage": 0,
+        "reviewed": 0,
+        "signed": 0,
+        "messages": 0,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      },
+      "unsure/not-shown": {
+        "visitors": 1,
+        "firstMessage": 0,
+        "reviewed": 0,
+        "signed": 0,
+        "messages": 0,
+        "signBlocked": 0,
+        "reviewNotOffered": 0,
+        "errors": 0
+      }
+    }
+  },
+  "log": [
+    {
+      "index": 0,
+      "type": "knows",
+      "viewport": "desktop",
+      "plannedAtMs": 0,
+      "startedAtMs": 1,
+      "seen": "shown",
+      "first": "type",
+      "messagesPlanned": 3,
+      "messagesSent": 3,
+      "reviewed": true,
+      "signed": true,
+      "signBlocked": false,
+      "reviewNotOffered": false,
+      "flagsmithRequests": 4,
+      "flushWaitMs": 1839,
+      "durationMs": 27857
+    },
+    {
+      "index": 1,
+      "type": "browser",
+      "viewport": "phone",
+      "plannedAtMs": 0,
+      "startedAtMs": 2,
+      "seen": "not-looked",
+      "first": null,
+      "messagesPlanned": 0,
+      "messagesSent": 0,
+      "reviewed": false,
+      "signed": false,
+      "signBlocked": false,
+      "reviewNotOffered": false,
+      "flagsmithRequests": 2,
+      "flushWaitMs": 2386,
+      "durationMs": 10764
+    },
+    {
+      "index": 2,
+      "type": "unsure",
+      "viewport": "desktop",
+      "plannedAtMs": 0,
+      "startedAtMs": 2,
+      "seen": "not-shown",
+      "first": null,
+      "messagesPlanned": 0,
+      "messagesSent": 0,
+      "reviewed": false,
+      "signed": false,
+      "signBlocked": false,
+      "reviewNotOffered": false,
+      "flagsmithRequests": 2,
+      "flushWaitMs": 2271,
+      "durationMs": 10801
+    }
+  ]
+}

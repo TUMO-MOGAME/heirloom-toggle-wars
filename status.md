@@ -63,6 +63,15 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
     simulated visitors.
   - The same bug would have hit the Simulation experiment; it is fixed before that starts.
 
+- **Fri 27 Nov, Phase 3 started:**
+  - **Production experiment 780 started 2026-11-27T07:28:21Z (09:28 SAST).** Stops Sat 28 Nov 14:00 SAST
+    (12:00 UTC): about 28.5 hours. Wiring check without exposures (identity lookups only): kill switch on, flag on,
+    test ids get both `control` and `blank`.
+  - Simulation experiment 778 started 2026-11-27T07:28:43Z. Warehouse still `pending_connection` at start; 3 warm-up
+    simulated visitors sent (both versions seen, every visitor flushed).
+  - Simulator moved to GitHub Actions (`.github/workflows/simulate.yml`): two runners × 1,000 visitors over 4 hours,
+    against the Simulation site only, no secrets. Run logs kept as workflow artifacts.
+
 ## Next up
 - Phase 2 is done (C7–C11 ✅; A/A passed on run 2, `docs/results/aa-check.md`).
 - Phase 3 (Fri 27 Nov):

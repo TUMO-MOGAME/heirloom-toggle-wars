@@ -1,0 +1,63 @@
+# Runs the published simulator (docs/simulation.md) on GitHub's machines, so no laptop has to stay on.
+# Simulated visitors only, against the Simulation site only: the simulator itself refuses any other host.
+# It needs no secret: the Simulation site already carries its own client-side Flagsmith key.
+name: Simulate visitors (Simulation environment)
+
+on:
+  workflow_dispatch:
+    inputs:
+      visitors:
+        description: "Visitors per runner (two runners)"
+        default: "1000"
+      over:
+        description: "Spread arrivals over (e.g. 4h)"
+        default: "4h"
+      seed:
+        description: "Seed prefix (each runner adds its own suffix)"
+        default: "sim-2026-11-27"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simulate
+  cancel-in-progress: false
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [a, b]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install app dependencies (the simulator imports the app's copy and Playwright)
+        working-directory: app
+        run: npm ci --no-audit --no-fund
+      - name: Install Chromium
+        working-directory: app
+        run: npx playwright install --with-deps chromium
+      - name: Run the simulator
+        working-directory: app
+        run: >
+          npx tsx --tsconfig ../scripts/simulate/tsconfig.json ../scripts/simulate/simulate.ts
+          --env sim
+          --base-url https://heirloom-toggle-wars-simulation.vercel.app
+          --visitors "${{ inputs.visitors }}"
+          --over "${{ inputs.over }}"
+          --concurrency 4
+          --seed "${{ inputs.seed }}-${{ matrix.part }}"
+      - name: Keep the run log (labelled simulated)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-run-${{ matrix.part }}
+          path: scripts/simulate/runs/*.json
+          if-no-files-found: warn
