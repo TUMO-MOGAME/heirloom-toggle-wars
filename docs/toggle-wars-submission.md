@@ -24,7 +24,9 @@ https://github.com/TUMO-MOGAME/heirloom-toggle-wars
 ```
 
 ### Live demo or deployment
-**PENDING** (after deployment): `https://heirloom-toggle-wars.vercel.app/try`
+```
+https://heirloom-toggle-wars.vercel.app/try
+```
 
 ### What did you build, and what problem does it solve?
 ```
@@ -82,16 +84,21 @@ Metrics, from events sent by the app at the moment each action happens:
 
 Decision rule, fixed in advance: ship "blank" only if its chance to beat control is at least 95%, its lift is at least 10% and the guardrail doesn't get worse; keep control if control's chance is at least 95%; otherwise call it inconclusive and keep control.
 
-Two experiments, never mixed: one on real visitors (Production) and one on simulated visitors (Simulation, Playwright, visitor types published before it ran). An A/A check on Development first showed the pipeline is fair. [PENDING: keep this sentence only if the A/A check passes; otherwise say what it found.]
+Two experiments, never mixed: one on real visitors (Production) and one on simulated visitors (Simulation, Playwright, visitor types published before it ran). An A/A check on Development first showed the pipeline is fair: 400 of 400 simulated visitors counted, split 213/187 (p = 0.19), Flagsmith's event count matched the simulator's own log exactly, and no false winner (interval -16% to +23%). Its first run failed and caught a real bug in our simulator before the real experiment started.
 
-Results: PENDING (final numbers after the stop on Sat 28 Nov 14:00 SAST).
+Results (SIMULATED visitors, Simulation environment): 2,004 visitors in real browsers, split 961/1,043 (p = 0.067). With examples, 62.1% sent a first message; without them, 42.6%. Blank: -31.5%, 95% credible interval -37.4% to -25.6%; control's chance to be best > 99%. Reviews (-26.3%), signed plans (-20.0%) and messages per visitor (-26.6%) all fell with it. Decision rule: keep control. The simulator has a known effect built in (blank -28% on first messages), and all four built-in effects fall inside Flagsmith's intervals: the pipeline finds a real difference of this size. That is an effect we put in, not a finding about people.
+
+Results (REAL visitors, Production): [FINAL after the stop on Sat 28 Nov 14:00 SAST. Most likely: "N real visitors, not enough for a result; the rule keeps control."]
+
+Shipped: control, the version with worked examples, by ending the experiment and setting the flag; no redeploy.
 ```
 
 ### [Track 1] Experiment results (screenshots, up to 3)
-**PENDING**. Planned three:
-1. Production experiment results: conversion per version, lift, credible interval, chance to beat control.
-2. Simulation experiment results (the screenshot caption says "Simulated traffic").
-3. The A/A check, or Production exposures over time.
+Upload these three (all from the repo, `docs/results/screenshots/`):
+1. `sim-2-results.png`: Simulation results: 2,004 enrolled, Control > 99%, blank -31.5% (caption: "Simulated visitors").
+2. `sim-1-summary.png`: the experiment page: hypothesis, "Control is the winner", the 50/50 split.
+3. The Production experiment page after the stop (taken Sat 28 Nov, 14:00); or `sim-3-conversions-over-time.png`
+   if Production shows nothing.
 
 ### Tracks 2–4
 Not entered. Leave blank.
@@ -99,7 +106,8 @@ Not entered. Leave blank.
 ## Part 3
 
 ### What did you like about Flagsmith, and what would you improve?
-Draft from building and reading the API and source; revise after the experiments have run on Flagsmith Cloud.
+Checked after the experiments ran on Flagsmith Cloud (27 Nov): the results page, the "Control is the winner"
+banner and the charts worked as described; Flagsmith's SRM p-value did come back empty.
 ```
 What we liked:
 - The coding-agent set-up guide and the Experimentation docs were clear enough to wire exposures and events correctly on the first pass, including keyed variations and flushing events when the tab closes.

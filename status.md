@@ -83,6 +83,10 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
     in the pre-registration changes. The README must say plainly that the simulation recovers the effect built into
     the simulator's model (~39% for control, docs/simulation.md): it proves the pipeline finds a known effect, not
     how people behave.
+  - Fri ~16:40: `docs/results.md` written (interim); README results, experiment wiring (line links), run-it-yourself
+    commands and privacy test link filled; submission draft results and screenshots filled. All four built-in
+    simulator effects fall inside Flagsmith's 95% intervals. Left for after the stop: the final Production line, the
+    "shipped" screenshot, the video link and badges (marked `FINAL`/`TODO` in the files).
 
 ## Next up
 - Phase 2 is done (C7–C11 ✅; A/A passed on run 2, `docs/results/aa-check.md`).
