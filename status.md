@@ -91,6 +91,13 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
     is untouched): 4 test ids × 3 lookups each, every id kept its version (2 control, 2 blank: both sides served);
     flag MULTIVARIATE and on; kill switch on. Exposures 50/50, conversions arriving and SRM can't be checked on
     Production with 1 real visitor; they passed on the same build in the Simulation experiment.
+- **Sat 28 Nov:**
+  - 10:58 SAST: all running (sites 200, flag and kill switch on); Production snapshot: 1 real visitor.
+  - Two read-only checks on the Simulation (Tumo agreed; no new traffic, prereg untouched),
+    `scripts/simulate/checks.py`: simulator logs = Flagsmith on all four event counts per version (597/444,
+    339/271, 228/198, 1178/938); visitors 2,003 logged vs 2,004 exposures (one exposure without a log entry, no
+    events). Sample size: 1,000/version spots a 10% drop (80% power); 150/version only ~26%. In docs/results.md
+    and the README.
 
 ## Next up
 - Phase 2 is done (C7–C11 ✅; A/A passed on run 2, `docs/results/aa-check.md`).

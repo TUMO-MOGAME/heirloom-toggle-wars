@@ -139,6 +139,10 @@ Control's chance to be best is > 99%, so the rule says keep `control`. The simul
 (blank −28% on the first message), and all four built-in effects fall inside Flagsmith's intervals. This shows the
 pipeline finds a real difference of this size. **It is an effect we put in, not a finding about people.**
 
+Two read-only checks afterwards ([details](docs/results.md#two-checks-after-the-run-read-only-added-sat-28-nov)):
+the simulator's own logs and Flagsmith agree **exactly** on every event count, in both versions (for example 597 / 444
+first messages); and 1,000 visitors per version is just enough to spot a 10% change, the pre-registered ship bar.
+
 ### A/A check
 
 Two identical versions on Development, to prove the pipeline is fair. Passed on run 2: 400 of 400 counted, split

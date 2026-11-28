@@ -62,6 +62,40 @@ Screenshots of Flagsmith (simulated data, 27 Nov 14:12 UTC):
 | ![Experiment summary: Control is the winner](results/screenshots/sim-1-summary.png) | ![Results: 2,004 enrolled, > 99% chance to be best, blank −31.5%](results/screenshots/sim-2-results.png) |
 | ![Conversions over time](results/screenshots/sim-3-conversions-over-time.png) | ![Exposures over time, 48 / 52](results/screenshots/sim-4-exposures.png) |
 
+### Two checks after the run (read-only, added Sat 28 Nov)
+
+Both use only data we already had: no new traffic, and nothing in the experiment or the
+[pre-registration](preregistration.md) changed. Re-run with `python scripts/simulate/checks.py`
+([checks.py](../scripts/simulate/checks.py)).
+
+**1. Did Flagsmith receive every event?** The simulator logged what each of its visitors did. Counted up per version,
+the log and Flagsmith agree **exactly** on all four metrics:
+
+| Metric | control: simulator log / Flagsmith | blank: simulator log / Flagsmith |
+|---|---|---|
+| `plan_first_message` | 597 / 597 | 444 / 444 |
+| `plan_reviewed` | 339 / 339 | 271 / 271 |
+| `plan_signed` | 228 / 228 | 198 / 198 |
+| `plan_message` (all messages) | 1,178 / 1,178 | 938 / 938 |
+
+Visitors: 2,003 logged against 2,004 exposures in Flagsmith. 376 simulated visitors left before looking, so the log
+doesn't know their version (they sent no events). One exposure has no entry in the simulator's logs; it sent no
+events, and it moves the rates by less than 0.1 points.
+
+**2. How many visitors does a test need?** For the first message (baseline about 62%):
+
+| Visitors per version | Smallest drop the test spots (80% power, 5% two-sided) | How often the pre-registered rule finds the simulator's built-in effect (2,000 re-runs) |
+|---|---|---|
+| 25 | 58.9% | 36% |
+| 50 | 43.5% | 54% |
+| 150 | 25.7% | 92% |
+| 500 | 14.1% | 100% |
+| **1,000** | **10.0%** | **100%** |
+
+So 1,000 visitors per version is just enough to spot a 10% change, the pre-registered bar for "worth shipping". At
+the pre-registered 150 per version, only large effects (about 26% or more) show reliably. This is also why the
+Production experiment, with 1 real visitor, can't answer the question on its own.
+
 A note on Flagsmith's label "↓ should decrease" next to the primary metric: it is the direction we set for the
 variation under test. We predicted that taking the examples away (`blank`) would *lower* first messages. It did.
 
