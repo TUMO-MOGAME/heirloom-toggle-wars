@@ -2,9 +2,9 @@
 
 > Read this first. The plan is [plan.md](plan.md); the brief and rules are [docs/toggle-wars.md](docs/toggle-wars.md).
 
-**Last updated:** 2026-11-26 22:00 SAST (Phase 1 built: C1–C8 and the C12 draft; not yet committed)
-**Phase:** building, running late. The prereg and the Production start (due Thu 04:30 / 06:00) slipped; the target
-start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 12:00 SAST.
+**Last updated:** 2026-11-28 16:40 SAST (experiments completed, `control` shipped, results final)
+**Phase:** finishing. Left: Tumo's video (under 3:00, YouTube) → Claude adds the link and badge → Tumo submits the
+form by Sun 29 Nov 12:00 SAST (answers in `docs/toggle-wars-submission.md`).
 
 ## Done
 - 23 Nov: public repo created from Heirloom a202bc0 (fresh history, prior work disclosed); brief, rules and full plan
@@ -98,19 +98,27 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
     339/271, 228/198, 1178/938); visitors 2,003 logged vs 2,004 exposures (one exposure without a log entry, no
     events). Sample size: 1,000/version spots a 10% drop (80% power); 150/version only ~26%. In docs/results.md
     and the README.
+  - **Stop (late, logged as a deviation):** pre-registered stop 12:00 UTC; snapshots at 14:10 UTC showed nothing new
+    (Production 1 exposure, same as 08:58; Simulation identical). Both experiments completed at 14:19 UTC with
+    `rollout_decision: control` (780 at 14:19:11, 778 at 14:19:12), on Tumo's go. Checked: Flagsmith serves
+    `control` to 6/6 ids in Production (incl. two that had `blank`) and 6/6 in Simulation; 6 fresh browser visits to
+    the live /try (3 phone, 3 desktop) all show the worked example (screenshots `shipped-*.png`). Final snapshots:
+    prod-2026-11-28T14-19-37Z, sim-2026-11-28T14-19-50Z. Decision: Simulation keep control (> 99%); Production
+    1 visitor, inconclusive, keep control. `docs/preregistration.md` left untouched; the deviation is in
+    docs/results.md.
+  - Strict review (a fresh judge agent): 54/100 before the video and the stop. Fixed: final results everywhere, warm-up
+    3 not 4 plus the 1 untraced exposure, 15%→10% in docs/toggle-wars.md (with a note), screenshots that show
+    "Simulation", SRM labelled as ours, flush link L79–83, hypothesis and guardrail wording as pre-registered, the
+    snapshot gap admitted, the Actions run linked, badges, status header and blockers.
 
 ## Next up
-- Phase 2 is done (C7–C11 ✅; A/A passed on run 2, `docs/results/aa-check.md`).
-- Phase 3 (Fri 27 Nov):
-  - Start the Production experiment 780 (record the exact start time here), then the wiring checks (§5a) on
-    Production about 1 hour later.
-  - Tumo: share `https://heirloom-toggle-wars.vercel.app/try` (plan §7); Claude writes the posts.
-  - Start the Simulation experiment 778 and run the simulator against the simulation site (2,000 visitors spread over
-    the day; `--env sim --base-url https://heirloom-toggle-wars-simulation.vercel.app`).
-  - Every 12 hours: `results.ts prod` and `results.ts sim` snapshots, wiring checks; fix only real bugs and log them.
-  - Tumo: screenshot the A/A experiment page in Flagsmith (Development → Experiments → "A/A check (run 2)").
-  - Still open for Tumo: T1–T3, T8, T9.
-- Never redeploy either site while Production runs (one change only); deploys are by CLI, not on push.
+- Tumo: the video (plan §8, adjusted: problem → both versions → the flag and the exposure → A/A → the Simulation result,
+  said to be a built-in effect → Production: 1 visitor, inconclusive, what would close it → ending the experiment and
+  the live site showing the examples). Upload to YouTube and send the link.
+- Claude: put the video link in the README (badge) and the submission draft; final secret scan; tag `submission`.
+- Tumo (optional): the A/A screenshot in Flagsmith (Development → Experiments → "A/A check (run 2)"); T1, T3, T8.
+- Tumo: submit the form by Sun 29 Nov 12:00 SAST.
+- Don't change the flag or redeploy: the live site must keep showing `control`.
 
 ## Decisions log
 - 23 Nov: separate repo, not Heirloom's (keeps the Dev3pack repo stable, shows what was built for this event).
@@ -127,6 +135,6 @@ start is now Fri 27 Nov morning. We finish Sat 28 Nov and submit by Sun 29 Nov 1
   the 10% guardrail. Phase 1 committed (2786741); prereg committed and tagged `prereg`.
 
 ## Blockers
-- Flagsmith keys, CLI login and Vercel (T4–T7).
-- Unknown whether the free Flagsmith Cloud plan includes Experimentation (the API answers 403 if not).
-- Flagsmith's terms conflict on where event data is hosted; confirm with Flagsmith or the legal adviser.
+- None. (Resolved: keys, CLI and Vercel are set up; Experimentation works on the free plan.)
+- Open, not blocking: Flagsmith's terms conflict on where event data is hosted; confirm with Flagsmith or the legal
+  adviser before any real launch.

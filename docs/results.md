@@ -1,8 +1,16 @@
 # Results: do worked examples help people start a will?
 
-> **Status: interim, Fri 27 Nov 2026, 14:12 UTC (16:12 SAST).** The Production experiment stops at the
-> pre-registered time, **Sat 28 Nov 14:00 SAST**; this page is finalised then. Nothing in the
-> [pre-registration](preregistration.md) (tag `prereg`, commit `03e199c`) has changed.
+> **Status: final, Sat 28 Nov 2026.** Both experiments are completed in Flagsmith and `control` is shipped to everyone
+> through the flag. Nothing in the [pre-registration](preregistration.md) (tag `prereg`, commit `03e199c`) has
+> changed; the one deviation (the experiments were ended 2 h 19 min after the pre-registered stop, with no new data in
+> between) is [below](#deviation-the-stop-was-late).
+
+**In one paragraph.** We asked whether worked examples help people write the first sentence of an estate plan. We
+first proved the measurement is fair (an A/A check: no false winner) and that it finds a real difference when one
+exists (a simulation with a known, built-in effect: found, and Flagsmith's counts match the simulator's own logs
+exactly). The real-visitor experiment then ran for 28.5 hours but reached only 1 real visitor, so it **cannot answer
+the question about people**; by the pre-registered rule it is inconclusive, and the safer default, `control` (with
+examples), stays and is shipped. The question about people is still open, and the pipeline to answer it is ready.
 
 Three experiments, kept apart and never added together:
 
@@ -22,14 +30,18 @@ win 63%). Run 1 failed and caught a real bug in the simulator first. Full write-
 ## 2. Simulation: does the pipeline find a known effect?
 
 **Simulated data, not people.** 2,000 simulated visitors ran in real browsers (Playwright) against the deployed
-Simulation site, from GitHub Actions run 45960124675 (27 Nov, 07:41–11:41 UTC, 0 errors, 0 lost flushes), plus 4
-warm-up visitors. Flagsmith experiment 778. Snapshot:
-[results/sim-2026-11-27T14-12-28Z.json](results/sim-2026-11-27T14-12-28Z.json). Run logs:
+Simulation site, from GitHub Actions run
+[45960124675](https://github.com/TUMO-MOGAME/heirloom-toggle-wars/actions/runs/45960124675) (27 Nov, 07:41–11:41
+UTC, 0 errors, 0 lost flushes), plus 3 warm-up visitors and 1 exposure we can't trace to a simulator log (see the
+check below). Flagsmith experiment 778, completed Sat 28 Nov 14:19 UTC with `control` rolled out. Final snapshot:
+[results/sim-2026-11-28T14-19-50Z.json](results/sim-2026-11-28T14-19-50Z.json) (identical to the Fri 14:12 UTC
+one, [results/sim-2026-11-27T14-12-28Z.json](results/sim-2026-11-27T14-12-28Z.json), which the tables below cite).
+Run logs:
 [a](../scripts/simulate/runs/2026-11-27T07-41-29-303Z.json), [b](../scripts/simulate/runs/2026-11-27T07-41-32-694Z.json).
 
 | Metric | `control` (examples) | `blank` (no examples) | blank vs control (Flagsmith) | 95% credible interval | Chance blank beats control |
 |---|---|---|---|---|---|
-| Visitors (exposures) | 961 | 1,043 | split 48 / 52, SRM p = 0.067 (ok) | | |
+| Visitors (exposures) | 961 | 1,043 | split 48 / 52; our chi-squared SRM test p = 0.067, ok (Flagsmith's own SRM p-value came back empty) | | |
 | **`plan_first_message`** (primary) | **62.1%** | 42.6% | **−31.5%** | −37.4% to −25.6% | < 1% |
 | `plan_reviewed` | 35.3% | 26.0% | −26.3% | −36.2% to −16.5% | < 1% |
 | `plan_signed` | 23.7% | 19.0% | −20.0% | −33.5% to −6.5% | 0.2% |
@@ -101,28 +113,44 @@ variation under test. We predicted that taking the examples away (`blank`) would
 
 ## 3. Production: real visitors
 
-Flagsmith experiment 780, started Fri 27 Nov 07:28:21 UTC (09:28 SAST), stops Sat 28 Nov 12:00 UTC (14:00 SAST).
-Live site: <https://heirloom-toggle-wars.vercel.app/try>.
+Flagsmith experiment 780, started Fri 27 Nov 07:28:21 UTC (09:28 SAST); pre-registered stop Sat 28 Nov 12:00 UTC
+(14:00 SAST); completed in Flagsmith at 14:19:11 UTC with `control` rolled out. Live site:
+<https://heirloom-toggle-wars.vercel.app/try>.
 
-**Interim (Fri 14:12 UTC): 1 real visitor, collecting data.** Snapshot:
-[results/prod-2026-11-27T14-12-39Z.json](results/prod-2026-11-27T14-12-39Z.json). Flagsmith shows results from 50
-identities and 5 conversions per version; the pre-registered target was 150 per version. Real visitors were not
-found in time for a 28.5-hour run, so this experiment will most likely end without enough data. If so, the
-pre-registered rule calls it inconclusive and keeps `control`, and we say so.
+**Final: 1 real visitor (in `control`), 0 first messages, nothing in `blank`.** Flagsmith shows a result only from 50
+identities and 5 conversions per version, and the pre-registered target was 150 per version. We did not find real
+visitors in time for a 28.5-hour run. **By the pre-registered rule this is inconclusive, and `control` stays.** It
+says nothing about how people behave, in either direction.
 
-<!-- FINAL (Sat 28 Nov after 14:00 SAST): the final numbers, the decision, the stop time, the snapshot link. -->
+Snapshots: [Fri 14:12 UTC](results/prod-2026-11-27T14-12-39Z.json),
+[Sat 08:58 UTC](results/prod-2026-11-28T08-58-55Z.json), [Sat 14:10 UTC](results/prod-2026-11-28T14-10-55Z.json)
+(after the stop, before ending: still 1 visitor), [final, Sat 14:19 UTC](results/prod-2026-11-28T14-19-37Z.json).
+The pre-registration says we look every 12 hours; the gap between the Fri and Sat looks was about 19 hours. With 1
+visitor nothing could have been decided differently.
+
+### Deviation: the stop was late
+
+The pre-registered stop was Sat 28 Nov 12:00 UTC. Both experiments were ended in Flagsmith at 14:19 UTC, 2 h 19 min
+late. No data changed in between: Production had the same 1 exposure at 08:58, 14:10 and 14:19 UTC, and the
+Simulation's counts were identical before and after (its simulated traffic ended on Fri 11:41 UTC). No result was
+read to decide whether to stop, and no number reported here comes from after 12:00 UTC that differs from before it.
 
 ## 4. The decision
 
-| Experiment | Reading | Rule says |
+| Experiment | Result | Rule says |
 |---|---|---|
 | Simulation (simulated) | control > 99% best | keep `control` |
-| Production (real) | not enough data yet | (decided at the stop) |
+| Production (real) | 1 visitor: no result | inconclusive, keep `control` |
 
-`control` (worked examples) is what every visitor sees outside the experiment. At the stop, the experiment is ended in
-Flagsmith and `plan_builder_examples` is set so everyone gets `control`: no redeploy.
+**Shipped: `control` (worked examples), Sat 28 Nov 14:19 UTC**, by completing both experiments in Flagsmith with
+`rollout_decision: control` (`scripts/flagsmith/README.md`, "Complete the experiment"). No code changed and nothing
+was redeployed. Checked right after: Flagsmith serves `control` to every identity tried (6 of 6 in Production,
+including the ids that got `blank` during the run, and 6 of 6 in Simulation), and 6 fresh browser visits to the live
+site (3 phone, 3 desktop) all showed the worked example.
 
-<!-- FINAL: when the winner was shipped, and a screenshot of the live site afterwards. -->
+| Phone (390 px) | Desktop |
+|---|---|
+| ![Live site after shipping: the worked example is shown](results/screenshots/shipped-phone.png) | ![Live site after shipping, desktop](results/screenshots/shipped-desktop.png) |
 
 ## 5. What we'd do next
 

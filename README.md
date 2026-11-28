@@ -5,7 +5,10 @@ sentence of their plan?**
 
 Toggle Wars (WeMakeDevs × Flagsmith), 26–29 November 2026 · **Track 01: Test Something Real**
 
-<!-- TODO: badges for the track, the live site (/try) and the video, once they exist. -->
+[![Track 01: Test Something Real](https://img.shields.io/badge/Toggle%20Wars-Track%2001%3A%20Test%20Something%20Real-6837fc)](docs/toggle-wars.md)
+[![Live site](https://img.shields.io/badge/live-heirloom--toggle--wars.vercel.app%2Ftry-000000)](https://heirloom-toggle-wars.vercel.app/try)
+[![Pre-registered](https://img.shields.io/badge/pre--registered-tag%20prereg-2ea44f)](docs/preregistration.md)
+<!-- Video badge: added once the YouTube link exists. -->
 
 > **Prior work, up front.** Heirloom, the app under test, was built before this event. The first commit of this repo
 > (`3461429`) is Heirloom as it was before Toggle Wars. The later "Bring in Heirloom" commits (`eaa5ba6`, `c6d6725`)
@@ -13,18 +16,25 @@ Toggle Wars (WeMakeDevs × Flagsmith), 26–29 November 2026 · **Track 01: Test
 
 ## The result
 
-**Interim, Fri 27 Nov 16:12 SAST.** The Production experiment stops at the pre-registered time, Sat 28 Nov 14:00
-SAST. Full write-up: [docs/results.md](docs/results.md).
+**Final, Sat 28 Nov.** Full write-up: [docs/results.md](docs/results.md).
 
-| Experiment | Headline | Decision (against the [pre-registered rule](docs/preregistration.md#decision-rule)) |
-|---|---|---|
-| A/A check (pipeline fairness, **simulated**) | 400 of 400 counted, split 213 / 187, no false winner (interval −16% to +23%) | Passed: the pipeline is fair |
-| Simulation (**simulated** visitors) | 2,004 visitors. With examples 62.1% wrote a first message, blank 42.6%: blank −31.5% (95% interval −37.4% to −25.6%). Control > 99% best | Keep `control`. All four effects built into the simulator fall inside Flagsmith's intervals |
-| Production (real visitors) | Collecting data (1 visitor at the interim) | Decided at the stop |
+**In short:** we proved the measurement is fair and that it finds a real difference, but we did not reach enough real
+people to answer the question about people. By the pre-registered rule that is inconclusive, so the safer default,
+worked examples (`control`), stays and was shipped through the flag with no redeploy.
 
-![Flagsmith: Control is the winner (simulated data)](docs/results/screenshots/sim-2-results.png)
+| Experiment | What it shows | Result | Decision (against the [pre-registered rule](docs/preregistration.md#decision-rule)) |
+|---|---|---|---|
+| A/A check (**simulated**) | The measurement is fair | 400 of 400 counted, split 213 / 187, no false winner (interval −16% to +23%) | Passed |
+| Simulation (**simulated** visitors) | The measurement finds a known, built-in effect, and loses no events | 2,004 visitors. With examples 62.1% wrote a first message, blank 42.6% (blank −31.5%, 95% interval −37.4% to −25.6%). Every event count matches the simulator's own log exactly | Keep `control` (> 99% best). **An effect we put in, not a finding about people** |
+| Production (real visitors) | The real question | 1 real visitor in 28.5 hours: no result | Inconclusive: keep `control` |
 
-*Flagsmith's results page for the Simulation experiment (simulated visitors, 27 Nov 14:12 UTC).*
+**Shipped:** `control`, Sat 28 Nov 14:19 UTC, by completing both experiments in Flagsmith with `control` rolled out.
+Every visitor now gets the worked examples. The experiments were ended 2 h 19 min after the pre-registered stop, with
+no new data in between ([deviation](docs/results.md#deviation-the-stop-was-late)).
+
+![Flagsmith, Simulation environment: Control is the winner (simulated data)](docs/results/screenshots/sim-1-summary.png)
+
+*Flagsmith's experiment page in the **Simulation** environment (simulated visitors).*
 
 ## The problem
 
@@ -38,9 +48,9 @@ Solana program enforces. The hardest step is the first sentence: people don't kn
 The full pre-registration, frozen at the `prereg` tag, is in [docs/preregistration.md](docs/preregistration.md).
 
 - **Question:** does showing worked examples on the plan builder help more people send their first message?
-- **Hypothesis:** with examples, at least 10% more visitors send a first message, and more reach "review my plan".
-  (Flagsmith shows this as "↓ should decrease" on the primary metric: it is the direction for the variation under
-  test, `blank`.)
+- **Hypothesis** (as pre-registered): with examples at least 10% more visitors send a first message (relative lift),
+  and more reach "review my plan". Flagsmith shows the primary metric as "↓ should decrease": that is the direction
+  we expected for the variation under test, `blank`.
 - **Where:** `/will`, the plan builder.
 - **Flag:** `plan_builder_examples` (multivariate, string).
   - `control`: today's screen, with suggested replies under the greeting ("R1,500 a month for Lerato's books…").
@@ -52,7 +62,7 @@ The full pre-registration, frozen at the `prereg` tag, is in [docs/preregistrati
 - **Split:** 50/50, bucketed on a random anonymous id. A visitor is counted only when the plan builder is actually
   shown.
 - **Decision rule:** ship `blank` only if its chance to beat control on the primary metric is at least 95%, its lift
-  is at least 10%, and the guardrail doesn't get worse. Keep `control` if control's chance to be best is at least 95%.
+  is at least 10%, and the guardrail holds (messages per visitor no more than 10% higher than control's). Keep `control` if control's chance to be best is at least 95%.
   Otherwise the result is inconclusive, and `control` stays as the safer default.
 - **Stopping rule:** the Production experiment stops at Sat 28 Nov 14:00 SAST, whatever the numbers show.
 
@@ -86,7 +96,7 @@ Four typed event names, so a typo can't silently send nothing ([`events.ts`](app
 `plan_first_message` and `plan_message` ([`will.tsx:287-288`](app/src/components/screens/will.tsx#L287-L288)),
 `plan_reviewed` ([`will.tsx:279`](app/src/components/screens/will.tsx#L279)) and `plan_signed`
 ([`will.tsx:310`](app/src/components/screens/will.tsx#L310)). Events are flushed when the tab is hidden or closed
-([`flagsmith.ts:75`](app/src/lib/experiments/flagsmith.ts#L75)).
+([`flagsmith.ts:79-83`](app/src/lib/experiments/flagsmith.ts#L79-L83)).
 
 ### Metrics
 
@@ -114,8 +124,11 @@ A second flag, `experiments_enabled` (boolean). When it is off, everyone sees `c
 
 ### Shipping the winner
 
-End the experiment, then set the flag's value to the winner. Every visitor gets it with no redeploy.
-<!-- TODO: what was shipped, when, and a screenshot of the live site afterwards. -->
+Complete the experiment with the winner rolled out. Every visitor gets it with no redeploy. On Sat 28 Nov 14:19 UTC
+both experiments were completed with `rollout_decision: control`; right after, Flagsmith served `control` to every id
+tried (including ids that had `blank` during the run), and fresh visits to the live site all showed the example:
+
+<img src="docs/results/screenshots/shipped-phone.png" alt="The live plan builder after shipping, on a phone: the worked example is shown" width="300">
 
 ## Results
 
@@ -124,12 +137,14 @@ Full write-up: [docs/results.md](docs/results.md); raw snapshots in [docs/result
 ### Simulation (simulated visitors, labelled as simulated)
 
 These numbers come from a simulator, not from people. 2,000 simulated visitors ran in real browsers against the
-deployed Simulation site from GitHub Actions, plus 4 warm-up visitors. The visitor types and their rates were
+deployed Simulation site from GitHub Actions
+([run 45960124675](https://github.com/TUMO-MOGAME/heirloom-toggle-wars/actions/runs/45960124675)), plus 3 warm-up
+visitors and 1 exposure we can't trace to a simulator log. The visitor types and their rates were
 published in [docs/simulation.md](docs/simulation.md) before it ran.
 
 | Metric | `control` (examples) | `blank` | blank vs control | 95% credible interval |
 |---|---|---|---|---|
-| Visitors | 961 | 1,043 | split 48 / 52, SRM p = 0.067 | |
+| Visitors | 961 | 1,043 | split 48 / 52 (our chi-squared SRM test: p = 0.067, ok) | |
 | **First message** (primary) | **62.1%** | 42.6% | **−31.5%** | −37.4% to −25.6% |
 | Reviewed the plan | 35.3% | 26.0% | −26.3% | −36.2% to −16.5% |
 | Signed the plan | 23.7% | 19.0% | −20.0% | −33.5% to −6.5% |
@@ -151,11 +166,11 @@ bug in the simulator first. Write-up: [docs/results/aa-check.md](docs/results/aa
 
 ### Production (real visitors)
 
-Started Fri 27 Nov 09:28 SAST, stops Sat 28 Nov 14:00 SAST. At the interim (Fri 16:12 SAST) it had 1 real visitor.
-Without a share push big enough to reach the pre-registered 150 per version in 28.5 hours, it will most likely end
-inconclusive, and the rule then keeps `control`.
-
-<!-- FINAL (Sat 28 Nov after 14:00 SAST): final numbers and the decision. -->
+Started Fri 27 Nov 09:28 SAST; pre-registered stop Sat 28 Nov 14:00 SAST; completed 16:19 SAST. **Final: 1 real
+visitor** (in `control`, no first message). Flagsmith needs 50 identities and 5 conversions per version to show a
+result, and we pre-registered 150 per version; at 150, the test spots only drops of about 26% or more. We did not
+reach real people in time, so the result is **inconclusive and `control` stays**. It says nothing about people either
+way. The honest finding is about the method: the pipeline is ready, and the people question is still open.
 
 ### What we'd do next
 

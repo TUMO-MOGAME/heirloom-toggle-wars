@@ -1,7 +1,7 @@
 # Toggle Wars: submission form answers
 
-> Draft of 26 Nov 2026. Copy each field into the WeMakeDevs form as-is. Fields marked **PENDING** wait for the
-> deployment, the experiment results or the video. Final check Sat 28 Nov; submit Sun 29 Nov by 12:00 SAST.
+> Final answers, Sat 28 Nov 2026 (results in). Copy each field into the WeMakeDevs form as-is. Only the video link is
+> still **PENDING**. Submit Sun 29 Nov by 12:00 SAST.
 
 ## Part 1
 
@@ -65,8 +65,7 @@ and the description, if wanted:
 ## Part 2: Track details
 
 ### [Track 1] Walk us through your experiment
-Hypothesis, versions, split and metrics are final (they match the pre-registration). The results paragraph is
-**PENDING**: written from the final snapshot after the stop on Sat 28 Nov 14:00 SAST.
+Final: hypothesis, versions, split and metrics match the pre-registration; results from the final snapshots.
 ```
 Hypothesis: people don't know how to describe an estate plan, so seeing worked examples makes the first step easier. With examples, more visitors send a first message and more reach "review my plan". We pre-registered this, with the metrics, split, stopping rule and decision rule, in docs/preregistration.md, tagged before the experiment started.
 
@@ -88,17 +87,19 @@ Two experiments, never mixed: one on real visitors (Production) and one on simul
 
 Results (SIMULATED visitors, Simulation environment): 2,004 visitors in real browsers, split 961/1,043 (p = 0.067). With examples, 62.1% sent a first message; without them, 42.6%. Blank: -31.5%, 95% credible interval -37.4% to -25.6%; control's chance to be best > 99%. Reviews (-26.3%), signed plans (-20.0%) and messages per visitor (-26.6%) all fell with it. Decision rule: keep control. The simulator has a known effect built in (blank -28% on first messages), and all four built-in effects fall inside Flagsmith's intervals: the pipeline finds a real difference of this size. That is an effect we put in, not a finding about people.
 
-Results (REAL visitors, Production): [FINAL after the stop on Sat 28 Nov 14:00 SAST. Most likely: "N real visitors, not enough for a result; the rule keeps control."]
+Results (REAL visitors, Production): 28.5 hours, 1 real visitor. Not enough for a result (Flagsmith needs 50 per version; we pre-registered 150), so by our rule it is inconclusive and control stays. It says nothing about people either way. We are honest about that: the pipeline is proven, the question about people is still open, and the next step is two weeks with real Heirloom users.
 
-Shipped: control, the version with worked examples, by ending the experiment and setting the flag; no redeploy.
+The experiments were ended 2 h 19 min after the pre-registered stop (Sat 14:00 SAST); no data changed in between.
+
+Shipped: control, the version with worked examples, on Sat 28 Nov by completing both experiments in Flagsmith with control rolled out. No code change, no redeploy; checked on the live site right after.
 ```
 
 ### [Track 1] Experiment results (screenshots, up to 3)
 Upload these three (all from the repo, `docs/results/screenshots/`):
 1. `sim-2-results.png`: Simulation results: 2,004 enrolled, Control > 99%, blank -31.5% (caption: "Simulated visitors").
 2. `sim-1-summary.png`: the experiment page: hypothesis, "Control is the winner", the 50/50 split.
-3. The Production experiment page after the stop (taken Sat 28 Nov, 14:00); or `sim-3-conversions-over-time.png`
-   if Production shows nothing.
+3. `sim-3-conversions-over-time.png`: the two lines pulling apart (Production has 1 visitor, so its page shows
+   nothing to see).
 
 ### Tracks 2–4
 Not entered. Leave blank.

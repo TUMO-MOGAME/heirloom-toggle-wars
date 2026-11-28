@@ -67,8 +67,10 @@ something people find hard: writing down who should be looked after when they di
 - **Flag:** `plan_builder_examples`, multivariate.
   - `control`: today's screen, with worked examples to tap ("R1,500 a month for Lerato's books…").
   - `blank`: the same greeting, with no examples.
-- **Hypothesis:** worked examples help people start. With examples, at least 15% more visitors send their first
-  message, and more of them reach "review my plan".
+- **Hypothesis:** worked examples help people start. With examples, at least 10% more visitors send their first
+  message, and more of them reach "review my plan". (The first draft said 15%; it was set to 10%, the same bar as
+  "worth shipping", before the `prereg` tag and before any data existed: see
+  [preregistration.md](preregistration.md#deviation-from-the-plan).)
 - **Primary metric:** `plan_first_message`. It fires early in a visit, as the organisers advise.
 - **Secondary metrics:**
   - `plan_reviewed`: reached "review my plan".

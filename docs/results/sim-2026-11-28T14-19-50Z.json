@@ -1,0 +1,603 @@
+{
+  "data": "simulated",
+  "notice": "SIMULATED: synthetic visitors from scripts/simulate (docs/simulation.md). Never add to the real results.",
+  "environment": "Simulation",
+  "mode": "sim",
+  "fetched_at": "2026-11-28T14:19:50.300Z",
+  "experiment": {
+    "id": 778,
+    "name": "Worked examples in the plan builder",
+    "status": "completed",
+    "started_at": "2026-11-27T07:28:43.580405Z",
+    "ended_at": "2026-11-28T14:19:12.109745Z",
+    "flag": "plan_builder_examples"
+  },
+  "results_as_of": "2026-11-28T14:17:47.615177Z",
+  "results_final": false,
+  "notes": [
+    "results: refreshed less than 5 minutes ago; using the last computed figures",
+    "exposures: refreshed less than 5 minutes ago; using the last computed figures",
+    "rollout split not returned; SRM tested against 50/50"
+  ],
+  "summary": {
+    "exposures": {
+      "blank": 1043,
+      "control": 961
+    },
+    "excluded_identities": 0,
+    "srm": {
+      "configured_split": {
+        "control": 0.5,
+        "blank": 0.5
+      },
+      "ours": {
+        "p_value": 0.06698947643885354,
+        "total": 2004,
+        "checked": true
+      },
+      "flagsmith_p_value": null,
+      "warning": false,
+      "threshold": 0.001
+    },
+    "metrics": [
+      {
+        "metric_id": 796,
+        "name": "plan_first_message",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "primary",
+        "versions": {
+          "blank": {
+            "identities": 1043,
+            "total": 444,
+            "conversion_rate": 0.42569511025886864,
+            "collecting_data": false
+          },
+          "control": {
+            "identities": 961,
+            "total": 597,
+            "conversion_rate": 0.6212278876170656,
+            "collecting_data": false
+          }
+        },
+        "comparisons": {
+          "blank": {
+            "flagsmith": {
+              "lift": -0.3147520921963606,
+              "ci_low": -0.37375270996384674,
+              "ci_high": -0.2557514744288744,
+              "chance_to_win": 0
+            },
+            "ours": {
+              "method": "Beta-Binomial, Beta(1,1) prior, Monte Carlo",
+              "control_mean": 0.6212278876170656,
+              "treatment_mean": 0.42569511025886864,
+              "lift": -0.3147520921963606,
+              "ci95_low": -0.3712093719254373,
+              "ci95_high": -0.25340226443601344,
+              "chance_to_beat_control": 0,
+              "expected_loss_ship_treatment": 0.1951632646853054,
+              "expected_loss_keep_control": 0
+            }
+          }
+        }
+      },
+      {
+        "metric_id": 797,
+        "name": "plan_reviewed",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "secondary",
+        "versions": {
+          "blank": {
+            "identities": 1043,
+            "total": 271,
+            "conversion_rate": 0.2598274209012464,
+            "collecting_data": false
+          },
+          "control": {
+            "identities": 961,
+            "total": 339,
+            "conversion_rate": 0.35275754422476585,
+            "collecting_data": false
+          }
+        },
+        "comparisons": {
+          "blank": {
+            "flagsmith": {
+              "lift": -0.2634390811619534,
+              "ci_low": -0.3618303020372682,
+              "ci_high": -0.16504786028663865,
+              "chance_to_win": 7.69900397878942e-8
+            },
+            "ours": {
+              "method": "Beta-Binomial, Beta(1,1) prior, Monte Carlo",
+              "control_mean": 0.35275754422476585,
+              "treatment_mean": 0.2598274209012464,
+              "lift": -0.2634390811619534,
+              "ci95_low": -0.3549717669722715,
+              "ci95_high": -0.15799388046278307,
+              "chance_to_beat_control": 0.000005,
+              "expected_loss_ship_treatment": 0.09274164027535697,
+              "expected_loss_keep_control": 2.448555789948209e-8
+            }
+          }
+        }
+      },
+      {
+        "metric_id": 798,
+        "name": "plan_signed",
+        "aggregation": "occurrence",
+        "direction": "up",
+        "expected_direction": "decrease",
+        "role": "secondary",
+        "versions": {
+          "blank": {
+            "identities": 1043,
+            "total": 198,
+            "conversion_rate": 0.18983700862895495,
+            "collecting_data": false
+          },
+          "control": {
+            "identities": 961,
+            "total": 228,
+            "conversion_rate": 0.2372528616024974,
+            "collecting_data": false
+          }
+        },
+        "comparisons": {
+          "blank": {
+            "flagsmith": {
+              "lift": -0.19985366099813287,
+              "ci_low": -0.335165575973499,
+              "ci_high": -0.06454174602276674,
+              "chance_to_win": 0.0018967755434121658
+            },
+            "ours": {
+              "method": "Beta-Binomial, Beta(1,1) prior, Monte Carlo",
+              "control_mean": 0.2372528616024974,
+              "treatment_mean": 0.18983700862895495,
+              "lift": -0.19985366099813287,
+              "ci95_low": -0.3242472092621695,
+              "ci95_high": -0.05268196186485629,
+              "chance_to_beat_control": 0.004745,
+              "expected_loss_ship_treatment": 0.04741697776304733,
+              "expected_loss_keep_control": 0.000027032616168824366
+            }
+          }
+        }
+      },
+      {
+        "metric_id": 799,
+        "name": "plan_message",
+        "aggregation": "count",
+        "direction": "down",
+        "expected_direction": "not_increase",
+        "role": "guardrail",
+        "versions": {
+          "blank": {
+            "identities": 1043,
+            "total": 938,
+            "mean_per_visitor": 0.8993288590604027,
+            "collecting_data": false
+          },
+          "control": {
+            "identities": 961,
+            "total": 1178,
+            "mean_per_visitor": 1.2258064516129032,
+            "collecting_data": false
+          }
+        },
+        "comparisons": {
+          "blank": {
+            "flagsmith": {
+              "lift": -0.26633698339809253,
+              "ci_low": -0.34283133773452507,
+              "ci_high": -0.18984262906166,
+              "chance_to_win": 0.9999999999955784
+            },
+            "ours": {
+              "method": "normal approximation to each mean, Monte Carlo",
+              "control_mean": 1.2258064516129032,
+              "treatment_mean": 0.8993288590604027,
+              "lift": -0.26633698339809253,
+              "ci95_low": -0.34036911539048026,
+              "ci95_high": -0.18682529150058427,
+              "chance_to_beat_control": 1,
+              "expected_loss_ship_treatment": 0,
+              "expected_loss_keep_control": 0.3264880620155332
+            }
+          }
+        }
+      }
+    ],
+    "decision_rule_reading": "keep control: 100.0% chance control is best",
+    "reading_note": "A reading, not a decision: plan §2 decides only at the stop (Sat 28 Nov 14:00 SAST). Expected loss and our interval come from this script; Flagsmith's own numbers are under comparisons.*.flagsmith."
+  },
+  "flagsmith_raw": {
+    "experiment": {
+      "id": 778,
+      "feature": {
+        "id": 306251,
+        "name": "plan_builder_examples",
+        "type": "MULTIVARIATE",
+        "initial_value": "control",
+        "multivariate_options": [
+          {
+            "id": 37487,
+            "uuid": "5092b617-0b88-4f61-a703-721aa87c7a31",
+            "type": "unicode",
+            "integer_value": null,
+            "string_value": "blank",
+            "boolean_value": null,
+            "default_percentage_allocation": 0,
+            "key": "blank"
+          }
+        ]
+      },
+      "name": "Worked examples in the plan builder",
+      "hypothesis": "People don't know how to describe an estate plan. Seeing worked examples makes the first step easy, so with examples at least 10% more visitors send a first message, and more reach 'review my plan'. Pre-registered: docs/preregistration.md (tag prereg).",
+      "status": "completed",
+      "metrics": [
+        {
+          "id": 878,
+          "metric": 796,
+          "metric_name": "plan_first_message",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:47:45.402466Z"
+        },
+        {
+          "id": 879,
+          "metric": 797,
+          "metric_name": "plan_reviewed",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:47:45.402493Z"
+        },
+        {
+          "id": 880,
+          "metric": 798,
+          "metric_name": "plan_signed",
+          "aggregation": "occurrence",
+          "direction": "up",
+          "expected_direction": "decrease",
+          "created_at": "2026-11-26T20:47:45.402511Z"
+        },
+        {
+          "id": 881,
+          "metric": 799,
+          "metric_name": "plan_message",
+          "aggregation": "count",
+          "direction": "down",
+          "expected_direction": "not_increase",
+          "created_at": "2026-11-26T20:47:45.402529Z"
+        }
+      ],
+      "experiment_rollout": null,
+      "created_at": "2026-11-26T20:47:45.395155Z",
+      "updated_at": "2026-11-28T14:19:12.439295Z",
+      "started_at": "2026-11-27T07:28:43.580405Z",
+      "ended_at": "2026-11-28T14:19:12.109745Z",
+      "rollout_decision": "control",
+      "rollout_variant": null
+    },
+    "results": {
+      "as_of": "2026-11-28T14:17:47.615177Z",
+      "last_error_at": null,
+      "refresh_requested_at": "2026-11-28T14:17:47.528130Z",
+      "payload": {
+        "metrics": [
+          {
+            "variants": {
+              "blank": {
+                "n": 1043,
+                "sum": 444,
+                "sum_squares": 444
+              },
+              "control": {
+                "n": 961,
+                "sum": 597,
+                "sum_squares": 597
+              }
+            },
+            "inference": {
+              "blank": {
+                "lift": -0.3147520921963606,
+                "ci_low": -0.37375270996384674,
+                "ci_high": -0.2557514744288744,
+                "chance_to_win": 0
+              }
+            },
+            "metric_id": 796,
+            "conversions_timeseries": {
+              "points": [
+                {
+                  "bucket": "2026-11-27T07:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 43,
+                    "control": 47
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T08:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 105,
+                    "control": 158
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T09:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 116,
+                    "control": 133
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T10:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 118,
+                    "control": 153
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T11:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 62,
+                    "control": 106
+                  }
+                }
+              ],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "blank": {
+                "n": 1043,
+                "sum": 271,
+                "sum_squares": 271
+              },
+              "control": {
+                "n": 961,
+                "sum": 339,
+                "sum_squares": 339
+              }
+            },
+            "inference": {
+              "blank": {
+                "lift": -0.2634390811619534,
+                "ci_low": -0.3618303020372682,
+                "ci_high": -0.16504786028663865,
+                "chance_to_win": 7.69900397878942e-8
+              }
+            },
+            "metric_id": 797,
+            "conversions_timeseries": {
+              "points": [
+                {
+                  "bucket": "2026-11-27T07:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 25,
+                    "control": 25
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T08:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 66,
+                    "control": 98
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T09:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 69,
+                    "control": 82
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T10:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 70,
+                    "control": 82
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T11:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 41,
+                    "control": 52
+                  }
+                }
+              ],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "blank": {
+                "n": 1043,
+                "sum": 198,
+                "sum_squares": 198
+              },
+              "control": {
+                "n": 961,
+                "sum": 228,
+                "sum_squares": 228
+              }
+            },
+            "inference": {
+              "blank": {
+                "lift": -0.19985366099813287,
+                "ci_low": -0.335165575973499,
+                "ci_high": -0.06454174602276674,
+                "chance_to_win": 0.0018967755434121658
+              }
+            },
+            "metric_id": 798,
+            "conversions_timeseries": {
+              "points": [
+                {
+                  "bucket": "2026-11-27T07:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 19,
+                    "control": 16
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T08:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 48,
+                    "control": 77
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T09:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 48,
+                    "control": 54
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T10:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 50,
+                    "control": 44
+                  }
+                },
+                {
+                  "bucket": "2026-11-27T11:00:00+00:00",
+                  "converted_identities": {
+                    "blank": 33,
+                    "control": 37
+                  }
+                }
+              ],
+              "granularity": "hour"
+            }
+          },
+          {
+            "variants": {
+              "blank": {
+                "n": 1043,
+                "sum": 938,
+                "sum_squares": 2456
+              },
+              "control": {
+                "n": 961,
+                "sum": 1178,
+                "sum_squares": 2824
+              }
+            },
+            "inference": {
+              "blank": {
+                "lift": -0.26633698339809253,
+                "ci_low": -0.34283133773452507,
+                "ci_high": -0.18984262906166,
+                "chance_to_win": 0.9999999999955784
+              }
+            },
+            "metric_id": 799,
+            "conversions_timeseries": null
+          }
+        ],
+        "srm_p_value": null,
+        "exposures_timeseries": {
+          "points": [
+            {
+              "bucket": "2026-11-27T07:00:00+00:00",
+              "new_identities": {
+                "blank": 89,
+                "control": 69
+              }
+            },
+            {
+              "bucket": "2026-11-27T08:00:00+00:00",
+              "new_identities": {
+                "blank": 267,
+                "control": 255
+              }
+            },
+            {
+              "bucket": "2026-11-27T09:00:00+00:00",
+              "new_identities": {
+                "blank": 256,
+                "control": 225
+              }
+            },
+            {
+              "bucket": "2026-11-27T10:00:00+00:00",
+              "new_identities": {
+                "blank": 273,
+                "control": 248
+              }
+            },
+            {
+              "bucket": "2026-11-27T11:00:00+00:00",
+              "new_identities": {
+                "blank": 158,
+                "control": 164
+              }
+            }
+          ],
+          "granularity": "hour"
+        }
+      },
+      "is_final": false
+    },
+    "exposures": {
+      "as_of": "2026-11-28T14:17:48.328161Z",
+      "last_error_at": null,
+      "refresh_requested_at": "2026-11-28T14:17:48.251210Z",
+      "payload": {
+        "timeseries": {
+          "points": [
+            {
+              "bucket": "2026-11-27T07:00:00+00:00",
+              "new_identities": {
+                "blank": 89,
+                "control": 69
+              }
+            },
+            {
+              "bucket": "2026-11-27T08:00:00+00:00",
+              "new_identities": {
+                "blank": 267,
+                "control": 255
+              }
+            },
+            {
+              "bucket": "2026-11-27T09:00:00+00:00",
+              "new_identities": {
+                "blank": 256,
+                "control": 225
+              }
+            },
+            {
+              "bucket": "2026-11-27T10:00:00+00:00",
+              "new_identities": {
+                "blank": 273,
+                "control": 248
+              }
+            },
+            {
+              "bucket": "2026-11-27T11:00:00+00:00",
+              "new_identities": {
+                "blank": 158,
+                "control": 164
+              }
+            }
+          ],
+          "granularity": "hour"
+        },
+        "excluded_identities": 0
+      },
+      "is_final": false
+    }
+  }
+}
